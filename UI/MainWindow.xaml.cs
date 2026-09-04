@@ -499,4 +499,42 @@ public partial class MainWindow : FluentWindow
             Owner = this,
         }.ShowDialog();
     }
+
+    private void RestoreBackupMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "削除前バックアップを選択",
+            Filter = "JSONマニフェスト (*.json)|*.json",
+            InitialDirectory = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "UninstallTool", "RemovalBackups"),
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        var confirm = MessageBox.Show(
+            "選択したバックアップからファイル・フォルダ・レジストリを復元します。\n" +
+            "既存のファイルやレジストリ値は上書きされる場合があります。\n\n実行しますか？",
+            "バックアップから復元", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            var restored = new RemovalRestoreService(_log).Restore(dialog.FileName);
+            MessageBox.Show($"復元処理が完了しました。復元件数: {restored}件", "復元完了",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            RefreshLogView();
+        }
+        catch (System.Exception ex)
+        {
+            new CrashReportWindow(_log.BuildErrorReport(ex)) { Owner = this }.ShowDialog();
+        }
+    }
 }

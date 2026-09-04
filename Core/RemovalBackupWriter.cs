@@ -38,6 +38,14 @@ public sealed class RemovalBackupWriter
             {
                 entry.RegistryBackupPath = ExportRegistryKey(item.Location, backupDirectory, timestamp);
             }
+            else if (item.Category is ResidueCategory.MftFile or ResidueCategory.Startup)
+            {
+                entry.SnapshotPath = SnapshotFile(item.Location, backupDirectory, entries.Count);
+            }
+            else if (item.Category is ResidueCategory.Service or ResidueCategory.ScheduledTask)
+            {
+                entry.DefinitionSnapshot = CaptureCommandOutput(item);
+            }
 
             entries.Add(entry);
         }
@@ -106,6 +114,57 @@ public sealed class RemovalBackupWriter
         var invalid = Path.GetInvalidFileNameChars();
         return new string(value.Select(character => invalid.Contains(character) ? '_' : character).ToArray());
     }
+
+    private static string? SnapshotFile(string path, string directory, int index)
+    {
+        if (File.Exists(path))
+        {
+            var target = Path.Combine(directory, $"File_{index}_{SanitizeFileName(Path.GetFileName(path))}");
+            File.Copy(path, target, overwrite: true);
+            return target;
+        }
+
+        if (Directory.Exists(path))
+        {
+            var target = Path.Combine(directory, $"Folder_{index}_{SanitizeFileName(Path.GetFileName(path))}");
+            CopyDirectory(path, target);
+            return target;
+        }
+
+        return null;
+    }
+
+    private static void CopyDirectory(string source, string target)
+    {
+        Directory.CreateDirectory(target);
+        foreach (var file in Directory.GetFiles(source))
+        {
+            File.Copy(file, Path.Combine(target, Path.GetFileName(file)), overwrite: true);
+        }
+        foreach (var child in Directory.GetDirectories(source))
+        {
+            CopyDirectory(child, Path.Combine(target, Path.GetFileName(child)));
+        }
+    }
+
+    private static string? CaptureCommandOutput(ResidueItem item)
+    {
+        var (fileName, arguments) = item.Category == ResidueCategory.Service
+            ? ("sc.exe", $"qc \"{item.Location}\"")
+            : ("schtasks.exe", $"/Query /TN \"{item.Location}\" /XML");
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = fileName,
+            Arguments = arguments,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        });
+        if (process == null) return null;
+        process.WaitForExit();
+        return process.ExitCode == 0 ? process.StandardOutput.ReadToEnd() : null;
+    }
 }
 
 public sealed class RemovalBackupManifest
@@ -122,4 +181,6 @@ public sealed class RemovalBackupEntry
     public string Confidence { get; init; } = "";
     public bool? ExistsBeforeRemoval { get; init; }
     public string? RegistryBackupPath { get; set; }
+    public string? SnapshotPath { get; set; }
+    public string? DefinitionSnapshot { get; set; }
 }
