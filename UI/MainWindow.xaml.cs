@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.ComponentModel;
+using System.Threading;
 using UninstallTool;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
@@ -30,6 +31,7 @@ public partial class MainWindow : FluentWindow
     private readonly OrphanExclusionStore _orphanExclusions;
     private ICollectionView? _appView;
     private int _totalAppCount;
+    private CancellationTokenSource? _scanCts;
 
     public MainWindow()
     {
@@ -240,10 +242,20 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     private async Task RunResidueScanAsync(string appName, bool silentIfEmpty = false)
     {
+        _scanCts?.Dispose();
+        _scanCts = new CancellationTokenSource();
+        CancelScanButton.Visibility = Visibility.Visible;
+        ScanStatusText.Text = "スキャン準備中";
+
         try
         {
+            var progress = new Progress<ScanProgress>(value =>
+            {
+                ScanStatusText.Text = $"{value.Category}: {value.CurrentItem}";
+            });
             var results = await Task.Run(() =>
-                _scanner.ScanAll(appName, includeMftSearch: false));
+                _scanner.ScanAll(appName, includeMftSearch: false,
+                    cancellationToken: _scanCts.Token, progress: progress), _scanCts.Token);
 
             RefreshLogView();
 
@@ -264,10 +276,28 @@ public partial class MainWindow : FluentWindow
             residueWindow.ShowDialog();
             RefreshLogView();
         }
+        catch (OperationCanceledException)
+        {
+            _log.Info("ResidueScan", "残存物スキャンをキャンセルしました", appName);
+            RefreshLogView();
+        }
         catch (System.Exception ex)
         {
             new CrashReportWindow(_log.BuildErrorReport(ex)) { Owner = this }.ShowDialog();
         }
+        finally
+        {
+            _scanCts?.Dispose();
+            _scanCts = null;
+            CancelScanButton.Visibility = Visibility.Collapsed;
+            ScanStatusText.Text = "待機中";
+        }
+    }
+
+    private void CancelScanButton_Click(object sender, RoutedEventArgs e)
+    {
+        _scanCts?.Cancel();
+        ScanStatusText.Text = "キャンセル中...";
     }
 
     /// <summary>

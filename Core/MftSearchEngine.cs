@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
 namespace UninstallTool
@@ -107,11 +108,12 @@ namespace UninstallTool
         /// 指定ドライブ(例: "C:")のMFTを読み、検索語を含むファイル/フォルダ名のフルパス一覧を返す。
         /// 大文字小文字を無視した部分一致検索。
         /// </summary>
-        public List<string> Search(string driveLetter, string searchTerm)
+        public List<string> Search(string driveLetter, string searchTerm, CancellationToken cancellationToken = default,
+            IProgress<int>? progress = null)
         {
             _log.Info("MftSearch", "MFT高速検索を開始", $"検索語: {searchTerm}, ドライブ: {driveLetter}");
 
-            var records = ReadAllRecords(driveLetter);
+            var records = ReadAllRecords(driveLetter, cancellationToken, progress);
             if (records == null)
             {
                 return new List<string>();
@@ -128,6 +130,7 @@ namespace UninstallTool
             var results = new List<string>();
             foreach (var match in matches)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var fullPath = BuildFullPath(match, recordsById, driveLetter);
                 if (fullPath != null)
                 {
@@ -177,7 +180,7 @@ namespace UninstallTool
         /// </summary>
         public List<(string Name, string FullPath)> ListSubdirectories(string driveLetter, IEnumerable<string> parentFullPaths)
         {
-            var records = ReadAllRecords(driveLetter);
+            var records = ReadAllRecords(driveLetter, default, null);
             if (records == null)
             {
                 return new List<(string, string)>();
@@ -217,7 +220,7 @@ namespace UninstallTool
             return results;
         }
 
-        private List<MftRecord>? ReadAllRecords(string driveLetter)
+        private List<MftRecord>? ReadAllRecords(string driveLetter, CancellationToken cancellationToken, IProgress<int>? progress)
         {
             var volumePath = $@"\\.\{driveLetter.TrimEnd('\\', ':')}:";
             _log.Info("MftSearch", "ボリュームをオープン", volumePath);
@@ -253,6 +256,7 @@ namespace UninstallTool
             {
                 while (true)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     bool ok = DeviceIoControl(
                         volumeHandle,
                         FSCTL_ENUM_USN_DATA,
@@ -281,10 +285,12 @@ namespace UninstallTool
 
                     // バッファ先頭8バイトは次回開始位置(NextStartFileReferenceNumber)
                     medv0.StartFileReferenceNumber = (ulong)Marshal.ReadInt64(buffer, 0);
+                    progress?.Report(0);
 
                     int offset = sizeof(ulong);
                     while (offset < bytesReturned)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         int recordLength = Marshal.ReadInt32(buffer, offset + UsnRecordV2Offset.RecordLength);
                         if (recordLength <= 0)
                         {

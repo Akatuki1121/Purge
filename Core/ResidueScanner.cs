@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.ServiceProcess;
+using System.Threading;
 using Microsoft.Win32;
 
 namespace UninstallTool
@@ -16,6 +17,8 @@ namespace UninstallTool
         Startup,
         MftFile,
     }
+
+    public sealed record ScanProgress(string Category, string CurrentItem, int Percent);
 
     public sealed class ResidueItem
     {
@@ -52,20 +55,22 @@ namespace UninstallTool
         /// MFT検索はオプション(重いため既定はfalse、必要な時だけ呼び出し側でtrueにする)。
         /// </summary>
         public List<ResidueItem> ScanAll(string appName, bool includeMftSearch = false,
-            string mftDrive = WellKnownConstants.DefaultMftSearchDrive)
+            string mftDrive = WellKnownConstants.DefaultMftSearchDrive,
+            CancellationToken cancellationToken = default, IProgress<ScanProgress>? progress = null)
         {
             _log.Info("ResidueScan", "横断残存物スキャンを開始", appName);
             var results = new List<ResidueItem>();
 
-            results.AddRange(ScanRegistry(appName));
-            results.AddRange(ScanServices(appName));
-            results.AddRange(ScanScheduledTasks(appName));
-            results.AddRange(ScanEnvironmentPath(appName));
-            results.AddRange(ScanStartup(appName));
+            progress?.Report(new ScanProgress("準備", appName, 0));
+            results.AddRange(ScanRegistry(appName, cancellationToken, progress));
+            results.AddRange(ScanServices(appName, cancellationToken, progress));
+            results.AddRange(ScanScheduledTasks(appName, cancellationToken, progress));
+            results.AddRange(ScanEnvironmentPath(appName, cancellationToken, progress));
+            results.AddRange(ScanStartup(appName, cancellationToken, progress));
 
             if (includeMftSearch)
             {
-                results.AddRange(ScanMftFiles(appName, mftDrive));
+                results.AddRange(ScanMftFiles(appName, mftDrive, cancellationToken, progress));
             }
 
             _log.Info("ResidueScan", "横断残存物スキャン完了", $"{results.Count}件");
@@ -76,7 +81,7 @@ namespace UninstallTool
         /// HKCU/HKLMの主要ハイブを、Uninstallキーに限らず文字列一致で横断検索する。
         /// 深い探索はコストが高いため、代表的な場所(Software直下、数階層まで)に絞る。
         /// </summary>
-        private List<ResidueItem> ScanRegistry(string appName)
+        private List<ResidueItem> ScanRegistry(string appName, CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
         {
             _log.Info("ResidueScan", "レジストリ横断検索を開始", appName);
             var results = new List<ResidueItem>();
@@ -97,6 +102,8 @@ namespace UninstallTool
 
                     foreach (var childName in root.GetSubKeyNames())
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        progress?.Report(new ScanProgress("レジストリ", childName, 0));
                         if (NameMatcher.IsSafeMatch(childName, appName))
                         {
                             results.Add(new ResidueItem
@@ -121,7 +128,7 @@ namespace UninstallTool
         /// <summary>
         /// Windowsサービス登録の中からアプリ名に一致するものを探す。
         /// </summary>
-        private List<ResidueItem> ScanServices(string appName)
+        private List<ResidueItem> ScanServices(string appName, CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
         {
             _log.Info("ResidueScan", "サービス登録を確認", appName);
             var results = new List<ResidueItem>();
@@ -130,6 +137,8 @@ namespace UninstallTool
             {
                 foreach (var service in ServiceController.GetServices())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    progress?.Report(new ScanProgress("サービス", service.DisplayName, 0));
                     if (NameMatcher.IsSafeMatch(service.ServiceName, appName) ||
                         NameMatcher.IsSafeMatch(service.DisplayName, appName))
                     {
@@ -155,7 +164,7 @@ namespace UninstallTool
         /// タスクスケジューラのタスクフォルダ(レジストリ経由)からアプリ名一致を探す。
         /// schtasks.exeを使わず、レジストリのタスク定義を直接読む簡易実装。
         /// </summary>
-        private List<ResidueItem> ScanScheduledTasks(string appName)
+        private List<ResidueItem> ScanScheduledTasks(string appName, CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
         {
             _log.Info("ResidueScan", "タスクスケジューラのエントリを確認", appName);
             var results = new List<ResidueItem>();
@@ -173,6 +182,8 @@ namespace UninstallTool
 
                 foreach (var taskGuid in tasksKey.GetSubKeyNames())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    progress?.Report(new ScanProgress("タスク", taskGuid, 0));
                     using var taskKey = tasksKey.OpenSubKey(taskGuid);
                     var taskPath = taskKey?.GetValue(WellKnownConstants.RegistryValueNames.ScheduledTaskPath) as string;
 
@@ -200,7 +211,7 @@ namespace UninstallTool
         /// <summary>
         /// システム/ユーザーのPATH環境変数に、アプリ名を含むパスが残っていないか確認する。
         /// </summary>
-        private List<ResidueItem> ScanEnvironmentPath(string appName)
+        private List<ResidueItem> ScanEnvironmentPath(string appName, CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
         {
             _log.Info("ResidueScan", "環境変数PATHを確認", appName);
             var results = new List<ResidueItem>();
@@ -221,6 +232,8 @@ namespace UninstallTool
 
                     foreach (var entry in entries)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        progress?.Report(new ScanProgress("PATH", entry, 0));
                         if (NameMatcher.IsSafeMatchAnywhere(entry, appName))
                         {
                             results.Add(new ResidueItem
@@ -246,7 +259,7 @@ namespace UninstallTool
         /// <summary>
         /// スタートアップ項目(レジストリRunキー + スタートアップフォルダ)を確認する。
         /// </summary>
-        private List<ResidueItem> ScanStartup(string appName)
+        private List<ResidueItem> ScanStartup(string appName, CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
         {
             _log.Info("ResidueScan", "スタートアップ項目を確認", appName);
             var results = new List<ResidueItem>();
@@ -266,6 +279,8 @@ namespace UninstallTool
 
                     foreach (var valueName in runKey.GetValueNames())
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        progress?.Report(new ScanProgress("スタートアップ", valueName, 0));
                         var value = runKey.GetValue(valueName) as string ?? "";
                         if (NameMatcher.IsSafeMatch(valueName, appName) ||
                             NameMatcher.IsSafeMatchAnywhere(value, appName))
@@ -299,6 +314,8 @@ namespace UninstallTool
 
                     foreach (var file in Directory.EnumerateFiles(folder))
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        progress?.Report(new ScanProgress("スタートアップ", Path.GetFileName(file), 0));
                         if (NameMatcher.IsSafeMatch(Path.GetFileName(file), appName))
                         {
                             results.Add(new ResidueItem
@@ -324,9 +341,12 @@ namespace UninstallTool
         /// Phase4のMFT高速検索エンジンを使い、ファイルシステム全体からアプリ名一致を探す。
         /// 他のスキャンより大幅に時間がかかるため、呼び出し側の判断でオプトインさせる。
         /// </summary>
-        private List<ResidueItem> ScanMftFiles(string appName, string driveLetter)
+        private List<ResidueItem> ScanMftFiles(string appName, string driveLetter,
+            CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
         {
-            var paths = _mft.Search(driveLetter, appName);
+            progress?.Report(new ScanProgress("MFT", $"{driveLetter}: 全体を走査中", 0));
+            var paths = _mft.Search(driveLetter, appName, cancellationToken,
+                new Progress<int>(percent => progress?.Report(new ScanProgress("MFT", $"{driveLetter}: 全体を走査中", percent))));
             return paths.Select(p => new ResidueItem
             {
                 Category = ResidueCategory.MftFile,
