@@ -134,7 +134,7 @@
                                     </GridViewColumn>
                                     <GridViewColumn Header="アプリ名" Width="300" DisplayMemberBinding="{Binding DisplayName}"/>
                                     <GridViewColumn Header="バージョン" Width="110" DisplayMemberBinding="{Binding DisplayVersion}"/>
-                                    <GridViewColumn Header="発行元" Width="210" DisplayMemberBinding="{Binding Publisher}"/>
+                                    <GridViewColumn Header="発行元" Width="210" DisplayMemberBinding="{Binding PublisherDisplay}"/>
                                     <GridViewColumn Header="インストール場所" Width="220" DisplayMemberBinding="{Binding InstallLocation}"/>
                                 </GridView>
                             </ListView.View>

@@ -20,22 +20,28 @@ namespace UninstallTool.UI
                 return app.Publisher;
             }
 
-            var exePath = AppIconResolver.FindExecutablePath(app);
-            if (exePath == null || !File.Exists(exePath))
+            foreach (var exePath in AppIconResolver.FindExecutablePaths(app))
             {
-                return null;
+                try
+                {
+                    var info = FileVersionInfo.GetVersionInfo(exePath);
+                    if (!string.IsNullOrWhiteSpace(info.CompanyName))
+                    {
+                        return info.CompanyName.Trim();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(info.ProductName))
+                    {
+                        return info.ProductName.Trim();
+                    }
+                }
+                catch
+                {
+                    // 1つの実行ファイルで読めなくても、次の候補を試す。
+                }
             }
 
-            try
-            {
-                var info = FileVersionInfo.GetVersionInfo(exePath);
-                return string.IsNullOrWhiteSpace(info.CompanyName) ? null : info.CompanyName;
-            }
-            catch
-            {
-                // 読み取り失敗はベストエフォートとして無視し、空欄のまま扱う。
-                return null;
-            }
+            return null;
         }
     }
 }

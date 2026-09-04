@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -45,9 +46,37 @@ namespace UninstallTool.UI
         /// </summary>
         public static string? FindExecutablePath(InstalledApp app)
         {
-            return ExtractExecutablePath(app.DisplayIconPath)
-                ?? ExtractExecutablePath(app.UninstallString)
-                ?? FindExeInInstallLocation(app.InstallLocation);
+            foreach (var path in FindExecutablePaths(app))
+            {
+                return path;
+            }
+
+            return null;
+        }
+
+        public static IEnumerable<string> FindExecutablePaths(InstalledApp app)
+        {
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var path in new[]
+            {
+                ExtractExecutablePath(app.DisplayIconPath),
+                ExtractExecutablePath(app.UninstallString),
+            })
+            {
+                if (!string.IsNullOrWhiteSpace(path) && File.Exists(path) && seen.Add(path))
+                {
+                    yield return path;
+                }
+            }
+
+            foreach (var path in FindExesInInstallLocation(app.InstallLocation))
+            {
+                if (seen.Add(path))
+                {
+                    yield return path;
+                }
+            }
         }
 
         private static ImageSource? TryExtractIcon(string path)
@@ -152,29 +181,33 @@ namespace UninstallTool.UI
         /// InstallLocation直下、それで見つからなければ直下のサブフォルダ(1階層のみ)から
         /// それらしい実行ファイルを1つ探す。深い階層まで探索すると起動時の負荷が増えるため1階層に留める。
         /// </summary>
-        private static string? FindExeInInstallLocation(string? installLocation)
+        private static IEnumerable<string> FindExesInInstallLocation(string? installLocation)
         {
             if (string.IsNullOrWhiteSpace(installLocation) || !Directory.Exists(installLocation))
             {
-                return null;
+                yield break;
             }
 
+            var candidates = new List<string>();
             try
             {
                 var exeFiles = Directory.GetFiles(installLocation, "*.exe", SearchOption.TopDirectoryOnly);
-                if (exeFiles.Length > 0) return exeFiles[0];
+                candidates.AddRange(exeFiles);
 
                 foreach (var subDir in Directory.GetDirectories(installLocation))
                 {
                     var subExeFiles = Directory.GetFiles(subDir, "*.exe", SearchOption.TopDirectoryOnly);
-                    if (subExeFiles.Length > 0) return subExeFiles[0];
+                    candidates.AddRange(subExeFiles);
                 }
-
-                return null;
             }
             catch
             {
-                return null;
+                yield break;
+            }
+
+            foreach (var candidate in candidates)
+            {
+                yield return candidate;
             }
         }
     }

@@ -32,6 +32,7 @@ namespace UninstallTool.UI
         /// exe/dllのCompanyNameで補完された値に置き換わる(それでも取得できなければ空のまま)。
         /// </summary>
         public string? Publisher => _publisher;
+        public string PublisherDisplay => string.IsNullOrWhiteSpace(_publisher) ? "発行元情報なし" : _publisher;
 
         public string? InstallLocation => App.InstallLocation;
 
@@ -76,6 +77,7 @@ namespace UninstallTool.UI
             {
                 _publisher = resolved;
                 RaisePropertyChanged(nameof(Publisher));
+                RaisePropertyChanged(nameof(PublisherDisplay));
             });
         }
 
