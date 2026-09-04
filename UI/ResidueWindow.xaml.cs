@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Wpf.Ui.Controls;
@@ -10,17 +10,20 @@ using MessageBoxResult = System.Windows.MessageBoxResult;
 namespace UninstallTool.UI
 {
     /// <summary>
-    /// 残存物スキャン結果を一覧表示し、チェックした項目のみ削除する画面。
+    /// 残存物スキャン結果を一覧表示し、選択した項目のみ削除する画面。
+    /// 選択はチェックボックス列ではなく、ListView標準の行選択(Ctrl/Shiftで複数選択可)を使う。
     /// </summary>
     public partial class ResidueWindow : FluentWindow
     {
         private readonly OperationLog _log;
         private readonly ResidueRemover _remover;
         private readonly List<SelectableResidueItem> _items;
+        private readonly string _appName;
 
         public ResidueWindow(string appName, List<ResidueItem> residueItems, OperationLog log)
         {
             InitializeComponent();
+            _appName = appName;
             _log = log;
             _remover = new ResidueRemover(_log);
 
@@ -31,12 +34,12 @@ namespace UninstallTool.UI
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var item in _items) item.IsSelected = true;
+            ResidueListView.SelectAll();
         }
 
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var item in _items) item.IsSelected = false;
+            ResidueListView.UnselectAll();
         }
 
         /// <summary>
@@ -74,10 +77,11 @@ namespace UninstallTool.UI
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            var selected = _items.Where(i => i.IsSelected).ToList();
+            var selected = ResidueListView.SelectedItems.Cast<SelectableResidueItem>().ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show("削除する項目を選択してください。", "未選択", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("削除する項目を選択してください(行をクリックして選択できます)。", "未選択",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -128,6 +132,51 @@ namespace UninstallTool.UI
                 }
                 ResidueListView.Items.Refresh();
             }
+        }
+
+        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseState.IsProUnlocked)
+            {
+                MessageBox.Show(
+                    "スキャン結果のエクスポート(CSV保存)はPro版の機能です。\n(現在ライセンス販売は準備中です)",
+                    "Pro機能", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "スキャン結果をCSVエクスポート",
+                Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*",
+                FileName = $"ResidueScan_{_appName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+            };
+
+            if (dialog.ShowDialog(this) != true) return;
+
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("種別,場所,詳細");
+                foreach (var item in _items)
+                {
+                    sb.AppendLine($"{EscapeCsv(item.CategoryText)},{EscapeCsv(item.LocationText)},{EscapeCsv(item.DetailText)}");
+                }
+
+                System.IO.File.WriteAllText(dialog.FileName, sb.ToString(), System.Text.Encoding.UTF8);
+                MessageBox.Show($"スキャン結果({_items.Count}件)をCSV出力しました:\n{dialog.FileName}",
+                    "エクスポート完了", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"エクスポート中にエラーが発生しました:\n{ex.Message}",
+                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static string EscapeCsv(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return "\"\"";
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
     }
 }

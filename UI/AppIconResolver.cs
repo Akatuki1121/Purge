@@ -26,9 +26,7 @@ namespace UninstallTool.UI
         {
             lock (ResolveLock)
             {
-                var candidatePath = ExtractExecutablePath(app.DisplayIconPath)
-                    ?? ExtractExecutablePath(app.UninstallString)
-                    ?? FindExeInInstallLocation(app.InstallLocation);
+                var candidatePath = FindExecutablePath(app);
 
                 if (candidatePath != null && File.Exists(candidatePath))
                 {
@@ -39,6 +37,17 @@ namespace UninstallTool.UI
                 // ここまでで見つからなかった場合、Windows標準の汎用実行ファイルアイコンにフォールバックする。
                 return GetGenericAppIcon();
             }
+        }
+
+        /// <summary>
+        /// アイコン解決と同じ探索順序(DisplayIcon→UninstallStringのexe→InstallLocation配下)で
+        /// 実行ファイルのフルパスを特定する。発行元の補完(AppPublisherResolver)でも同じロジックを使うため公開する。
+        /// </summary>
+        public static string? FindExecutablePath(InstalledApp app)
+        {
+            return ExtractExecutablePath(app.DisplayIconPath)
+                ?? ExtractExecutablePath(app.UninstallString)
+                ?? FindExeInInstallLocation(app.InstallLocation);
         }
 
         private static ImageSource? TryExtractIcon(string path)

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="Core\UninstallTool.Core.csproj" />
@@ -12,13 +12,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- UI(WPF)とCoreは別プロジェクトなので、このコンソールプロジェクトのビルド対象から除外する -->
+    <!-- UI(WPF), Core, Testsは別プロジェクトなので、このコンソールプロジェクトのビルド対象から除外する -->
     <Compile Remove="UI\**" />
     <Compile Remove="Core\**" />
+    <Compile Remove="Tests\**" />
     <EmbeddedResource Remove="UI\**" />
     <EmbeddedResource Remove="Core\**" />
+    <EmbeddedResource Remove="Tests\**" />
     <None Remove="UI\**" />
     <None Remove="Core\**" />
+    <None Remove="Tests\**" />
   </ItemGroup>
 
 </Project>

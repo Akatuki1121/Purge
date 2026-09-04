@@ -1,4 +1,4 @@
-﻿<ui:FluentWindow x:Class="UninstallTool.UI.MainWindow"
+<ui:FluentWindow x:Class="UninstallTool.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,6 +7,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="UninstallTool" Height="700" Width="1040" MinWidth="880" MinHeight="580"
+        Icon="app.ico"
         ExtendsContentIntoTitleBar="True">
     <Window.Resources>
         <Style x:Key="SectionLabel" TargetType="TextBlock">
@@ -14,6 +15,12 @@
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="Gray"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <!-- WPF-UIのAppearance="Danger"は背景赤に対し既定の文字色のコントラストが弱いため、
+             白文字を明示して視認性を確保する。ResidueWindow/OrphanWindowの危険ボタンにも同じ対策を適用する。 -->
+        <Style x:Key="DangerButtonReadable" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+            <Setter Property="Appearance" Value="Danger"/>
+            <Setter Property="Foreground" Value="White"/>
         </Style>
     </Window.Resources>
 
@@ -41,7 +48,7 @@
                           Click="ShowLogMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="ツール(_T)">
-                <MenuItem Header="孤児候補をスキャン(実験的)" Click="ScanOrphanButton_Click"/>
+                <MenuItem Header="対応アプリ不明フォルダをスキャン(実験的)" Click="ScanOrphanButton_Click"/>
                 <MenuItem Header="このツール自身をアンインストール" Click="SelfUninstallButton_Click"/>
             </MenuItem>
             <MenuItem Header="ヘルプ(_H)">
@@ -52,7 +59,7 @@
         <Border x:Name="ElevationWarningBorder" Grid.Row="2" Background="#FFF3CD" BorderBrush="#FFECB5"
                 BorderThickness="1" Padding="8" Margin="10,4,10,0" Visibility="Collapsed">
             <TextBlock TextWrapping="Wrap" Foreground="#664D03"
-                       Text="⚠ 管理者権限で実行されていません。MFT高速検索(残存物の全体スキャン・孤児候補スキャン)は正しく動作せず、無言で0件になります。exeを右クリック→「管理者として実行」で起動し直してください。"/>
+                       Text="⚠ 管理者権限で実行されていません。MFT高速検索(残存物の全体スキャン・対応アプリ不明フォルダのスキャン)は正しく動作せず、無言で0件になります。exeを右クリック→「管理者として実行」で起動し直してください。"/>
         </Border>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="14,10,14,8">
@@ -103,6 +110,17 @@
                                Icon="{ui:SymbolIcon Apps24}" Margin="8,0,0,0" Click="BatchUninstallButton_Click"
                                Visibility="Collapsed"/>
                 </StackPanel>
+
+                <!-- 危険操作/実験的機能: 通常操作から視覚的に分離し、右端に寄せて誤クリックを防ぐ -->
+                <Border BorderBrush="#EAEAEA" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:Button x:Name="ScanOrphanInlineButton" Content="対応アプリ不明フォルダをスキャン(実験的)"
+                                   Icon="{ui:SymbolIcon QuestionCircle24}" Click="ScanOrphanButton_Click"/>
+                        <ui:Button x:Name="SelfUninstallButton" Content="このツール自身をアンインストール"
+                                   Style="{StaticResource DangerButtonReadable}" Icon="{ui:SymbolIcon Warning24}"
+                                   Margin="8,0,0,0" Click="SelfUninstallButton_Click"/>
+                    </StackPanel>
+                </Border>
 
             </StackPanel>
         </ui:Card>

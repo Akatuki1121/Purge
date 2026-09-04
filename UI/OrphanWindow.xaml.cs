@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
@@ -11,7 +11,8 @@ using MessageBoxResult = System.Windows.MessageBoxResult;
 namespace UninstallTool.UI
 {
     /// <summary>
-    /// 孤児候補スキャン結果を一覧表示し、チェックした項目のみ削除する画面。
+    /// 対応アプリ不明フォルダのスキャン結果を一覧表示し、選択した項目のみ削除する画面。
+    /// 選択はチェックボックス列ではなく、ListView標準の行選択(Ctrl/Shiftで複数選択可)を使う。
     /// 削除は既存のResidueRemover(MftFileカテゴリ)に委譲し、削除ロジックを一本化する。
     /// </summary>
     public partial class OrphanWindow : FluentWindow
@@ -65,10 +66,11 @@ namespace UninstallTool.UI
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            var selected = _items.Where(i => i.IsSelected).ToList();
+            var selected = OrphanListView.SelectedItems.Cast<SelectableOrphanCandidate>().ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show("開く項目を選択してください。", "未選択", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("開く項目を選択してください(行をクリックして選択できます)。", "未選択",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -92,10 +94,11 @@ namespace UninstallTool.UI
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            var selected = _items.Where(i => i.IsSelected).ToList();
+            var selected = OrphanListView.SelectedItems.Cast<SelectableOrphanCandidate>().ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show("削除する項目を選択してください。", "未選択", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("削除する項目を選択してください(行をクリックして選択できます)。", "未選択",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -105,7 +108,7 @@ namespace UninstallTool.UI
             {
                 var confirm = MessageBox.Show(
                     $"選択した{selected.Count}件を実際に削除します。\n\n" +
-                    "これらは「孤児候補」であり、誤検出の可能性があります。\n" +
+                    "これらは「対応アプリ不明フォルダ」であり、誤検出の可能性があります。\n" +
                     "本当に不要と確認したものだけ選択していることを確認してください。\n\n" +
                     "よろしいですか？この操作は取り消せません。",
                     "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -121,7 +124,7 @@ namespace UninstallTool.UI
                 {
                     Category = ResidueCategory.MftFile,
                     Location = item.FullPath,
-                    Detail = "孤児候補として検出",
+                    Detail = "対応アプリ不明フォルダとして検出",
                 };
 
                 var result = _remover.Remove(residueItem, dryRun);
@@ -155,6 +158,51 @@ namespace UninstallTool.UI
                     _items.Remove(succeeded);
                 }
             }
+        }
+
+        private void ExportButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenseState.IsProUnlocked)
+            {
+                MessageBox.Show(
+                    "スキャン結果のエクスポート(CSV保存)はPro版の機能です。\n(現在ライセンス販売は準備中です)",
+                    "Pro機能", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "対応アプリ不明フォルダ一覧をCSVエクスポート",
+                Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*",
+                FileName = $"OrphanFolders_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+            };
+
+            if (dialog.ShowDialog(this) != true) return;
+
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("フォルダ名,場所の説明,ファイル数,サイズ,最終更新日時,フルパス");
+                foreach (var item in _items)
+                {
+                    sb.AppendLine($"{EscapeCsv(item.FolderName)},{EscapeCsv(item.LocationDescription)},{EscapeCsv(item.FileCountDisplay)},{EscapeCsv(item.SizeDisplay)},{EscapeCsv(item.LastModifiedDisplay)},{EscapeCsv(item.FullPath)}");
+                }
+
+                System.IO.File.WriteAllText(dialog.FileName, sb.ToString(), System.Text.Encoding.UTF8);
+                MessageBox.Show($"候補フォルダ一覧({_items.Count}件)をCSV出力しました:\n{dialog.FileName}",
+                    "エクスポート完了", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"エクスポート中にエラーが発生しました:\n{ex.Message}",
+                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static string EscapeCsv(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return "\"\"";
+            return $"\"{value.Replace("\"", "\"\"")}\"";
         }
     }
 }

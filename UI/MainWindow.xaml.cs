@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using UninstallTool;
@@ -95,8 +95,8 @@ public partial class MainWindow : FluentWindow
     /// アプリ一覧の読み込みを2段階に分ける。
     /// 1段目: レジストリ読み取り(112件規模で数百ms〜要することがある)をバックグラウンドスレッドで行い、
     /// UIスレッドを一切ブロックしないようにする。
-    /// 2段目: アイコン抽出(1件あたり数十ms、100件超だと合計で数秒規模)もバックグラウンドで行い、
-    /// 完了したものから順にUIへ反映する。
+    /// 2段目: アイコン抽出・発行元補完(いずれも1件あたり数十ms、100件超だと合計で数秒規模)も
+    /// バックグラウンドで行い、完了したものから順にUIへ反映する。
     /// これによりウィンドウ表示(UAC承認直後)からアプリ一覧が見えるまでの体感待ち時間を最小化する。
     /// </summary>
     private async void LoadApps()
@@ -114,6 +114,8 @@ public partial class MainWindow : FluentWindow
             foreach (var item in items)
             {
                 item.ResolveIcon();
+                // 発行元がレジストリ未登録の場合、exe/dllのCompanyNameで補完する(発行元が空欄になる問題への対策)
+                item.ResolvePublisher();
             }
         });
     }
@@ -163,23 +165,17 @@ public partial class MainWindow : FluentWindow
             LoadApps();
         }
 
-        // アンインストール実行(ドライラン含む)の直後に、残存物スキャンを行うかその場で尋ねる。
-        // ユーザーが別ボタンを自分で探しに行かなくて済むよう、一連の流れとして繋げる。
-        var scanConfirm = MessageBox.Show(
-            $"続けて「{selectedApp.DisplayName}」の残存物をスキャンしますか？\n(レジストリ・サービス・タスク・PATH・スタートアップを確認します)",
-            "残存物スキャン", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-        if (scanConfirm == MessageBoxResult.Yes)
-        {
-            await RunResidueScanAsync(selectedApp.DisplayName);
-        }
+        // アンインストール完了後、確認を挟まずそのまま残存物スキャンへ移行する
+        // (以前は「スキャンしますか？」の確認ダイアログを挟んでいたが、
+        // アンインストール後に残存物を確認するのは既定の流れなので、都度尋ねる必要はないと判断)
+        await RunResidueScanAsync(selectedApp.DisplayName);
     }
 
     /// <summary>
     /// 残存物スキャンの共通処理。単体アンインストール後の自動提案からも、
-    /// 将来ボタンを復活させる場合からも呼べるよう独立したメソッドにしている。
+    /// 一括アンインストール後からも呼べるよう独立したメソッドにしている。
     /// </summary>
-    private async Task RunResidueScanAsync(string appName)
+    private async Task RunResidueScanAsync(string appName, bool silentIfEmpty = false)
     {
         try
         {
@@ -190,8 +186,11 @@ public partial class MainWindow : FluentWindow
 
             if (results.Count == 0)
             {
-                MessageBox.Show("残存物は見つかりませんでした。", "スキャン結果",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!silentIfEmpty)
+                {
+                    MessageBox.Show("残存物は見つかりませんでした。", "スキャン結果",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
                 return;
             }
 
@@ -283,15 +282,23 @@ public partial class MainWindow : FluentWindow
         try
         {
             int successCount = 0, failCount = 0, dryRunCount = 0;
+            var successApps = new List<InstalledApp>();
 
             foreach (var app in selectedApps)
             {
                 var result = await Task.Run(() => _uninstaller.ExecuteUninstall(app, dryRun));
                 switch (result)
                 {
-                    case UninstallResult.Success: successCount++; break;
-                    case UninstallResult.DryRun: dryRunCount++; break;
-                    default: failCount++; break;
+                    case UninstallResult.Success:
+                        successCount++;
+                        successApps.Add(app);
+                        break;
+                    case UninstallResult.DryRun:
+                        dryRunCount++;
+                        break;
+                    default:
+                        failCount++;
+                        break;
                 }
                 RefreshLogView();
             }
@@ -304,6 +311,12 @@ public partial class MainWindow : FluentWindow
             if (!dryRun)
             {
                 LoadApps();
+
+                // アンインストール成功したアプリの残存物を順次スキャン(見つかったもののみ表示)
+                foreach (var app in successApps)
+                {
+                    await RunResidueScanAsync(app.DisplayName, silentIfEmpty: true);
+                }
             }
         }
         finally
@@ -377,7 +390,7 @@ public partial class MainWindow : FluentWindow
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(
-            "UninstallTool\n\n残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンする、\nGeek Uninstallerを超えることを目指したアンインストーラーです。",
+            "UninstallTool\n\n残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。",
             "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

@@ -97,7 +97,7 @@ namespace UninstallTool
 
                     foreach (var childName in root.GetSubKeyNames())
                     {
-                        if (childName.Contains(appName, StringComparison.OrdinalIgnoreCase))
+                        if (NameMatcher.IsSafeMatch(childName, appName))
                         {
                             results.Add(new ResidueItem
                             {
@@ -130,8 +130,8 @@ namespace UninstallTool
             {
                 foreach (var service in ServiceController.GetServices())
                 {
-                    if (service.ServiceName.Contains(appName, StringComparison.OrdinalIgnoreCase) ||
-                        service.DisplayName.Contains(appName, StringComparison.OrdinalIgnoreCase))
+                    if (NameMatcher.IsSafeMatch(service.ServiceName, appName) ||
+                        NameMatcher.IsSafeMatch(service.DisplayName, appName))
                     {
                         results.Add(new ResidueItem
                         {
@@ -177,7 +177,7 @@ namespace UninstallTool
                     var taskPath = taskKey?.GetValue(WellKnownConstants.RegistryValueNames.ScheduledTaskPath) as string;
 
                     if (!string.IsNullOrEmpty(taskPath) &&
-                        taskPath.Contains(appName, StringComparison.OrdinalIgnoreCase))
+                        NameMatcher.IsSafeMatchAnywhere(taskPath, appName))
                     {
                         results.Add(new ResidueItem
                         {
@@ -221,7 +221,7 @@ namespace UninstallTool
 
                     foreach (var entry in entries)
                     {
-                        if (entry.Contains(appName, StringComparison.OrdinalIgnoreCase))
+                        if (NameMatcher.IsSafeMatchAnywhere(entry, appName))
                         {
                             results.Add(new ResidueItem
                             {
@@ -267,8 +267,8 @@ namespace UninstallTool
                     foreach (var valueName in runKey.GetValueNames())
                     {
                         var value = runKey.GetValue(valueName) as string ?? "";
-                        if (valueName.Contains(appName, StringComparison.OrdinalIgnoreCase) ||
-                            value.Contains(appName, StringComparison.OrdinalIgnoreCase))
+                        if (NameMatcher.IsSafeMatch(valueName, appName) ||
+                            NameMatcher.IsSafeMatchAnywhere(value, appName))
                         {
                             results.Add(new ResidueItem
                             {
@@ -299,7 +299,7 @@ namespace UninstallTool
 
                     foreach (var file in Directory.EnumerateFiles(folder))
                     {
-                        if (Path.GetFileName(file).Contains(appName, StringComparison.OrdinalIgnoreCase))
+                        if (NameMatcher.IsSafeMatch(Path.GetFileName(file), appName))
                         {
                             results.Add(new ResidueItem
                             {
