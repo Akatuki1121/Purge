@@ -52,6 +52,7 @@
                 <MenuItem Header="このツール自身をアンインストール" Click="SelfUninstallButton_Click"/>
             </MenuItem>
             <MenuItem Header="ヘルプ(_H)">
+                <MenuItem Header="不具合を報告" Click="ReportBugMenuItem_Click"/>
                 <MenuItem Header="バージョン情報" Click="AboutMenuItem_Click"/>
             </MenuItem>
         </Menu>

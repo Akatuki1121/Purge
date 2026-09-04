@@ -23,9 +23,13 @@ namespace UninstallTool
 
         public static void OpenIssueWithReport(string errorReport)
         {
-            var title = Uri.EscapeDataString("[自動生成] エラー報告");
+            OpenIssue("[自動生成] エラー報告", errorReport, "bug,auto-report");
+        }
 
-            var body = errorReport;
+        public static void OpenIssue(string title, string body, string labels = "bug")
+        {
+            var encodedTitle = Uri.EscapeDataString(title);
+
             bool truncated = false;
             if (body.Length > MaxBodyLength)
             {
@@ -39,7 +43,7 @@ namespace UninstallTool
             }
 
             var encodedBody = Uri.EscapeDataString(body);
-            var url = $"{RepositoryUrl}/issues/new?title={title}&body={encodedBody}&labels=bug,auto-report";
+            var url = $"{RepositoryUrl}/issues/new?title={encodedTitle}&body={encodedBody}&labels={Uri.EscapeDataString(labels)}";
 
             var psi = new ProcessStartInfo
             {

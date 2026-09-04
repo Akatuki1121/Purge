@@ -393,4 +393,12 @@ public partial class MainWindow : FluentWindow
             "UninstallTool\n\n残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。",
             "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
     }
+
+    private void ReportBugMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        new BugReportWindow(_log)
+        {
+            Owner = this,
+        }.ShowDialog();
+    }
 }
