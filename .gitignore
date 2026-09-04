@@ -1,6 +1,7 @@
 # ビルド成果物
 bin/
 obj/
+.artifacts/
 
 # デバッグ出力(スキャン結果の一時保存)
 orphan_candidates.txt
