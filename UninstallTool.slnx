@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/UninstallTool.Core.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/UninstallTool.Tests.csproj" />
+  </Folder>
+  <Folder Name="/UI/">
+    <Project Path="UI/UninstallTool.UI.csproj" />
+  </Folder>
+  <Project Path="UninstallTool.csproj" />
+</Solution>
