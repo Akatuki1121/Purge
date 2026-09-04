@@ -31,20 +31,7 @@ namespace UninstallTool
 
             log.Info("SelfUninstall", "自己削除用batファイルを生成", batPath);
 
-            // タスクバーやエクスプローラーへの解放猶予を含め、PIDの終了をポーリング待機してから削除する。
-            // "del \"%~f0\"" は実行中の自分自身(batファイル)を最後に削除する定番のイディオム。
-            var batContent = $"""
-                @echo off
-                :waitloop
-                tasklist /FI "PID eq {currentPid}" 2>NUL | find "{currentPid}" >NUL
-                if not errorlevel 1 (
-                    timeout /t 1 /nobreak >NUL
-                    goto waitloop
-                )
-                del /f /q "{exePath}"
-                rmdir "{Path.GetDirectoryName(exePath)}" 2>NUL
-                del /f /q "%~f0"
-                """;
+            var batContent = BuildBatchContent(currentPid, exePath);
 
             File.WriteAllText(batPath, batContent);
 
@@ -58,6 +45,29 @@ namespace UninstallTool
 
             Process.Start(psi);
             log.Info("SelfUninstall", "削除用batを起動、プロセス終了待機に入りました", batPath);
+        }
+
+        internal static string BuildBatchContent(int processId, string exePath)
+        {
+            var exeDirectory = Path.GetDirectoryName(exePath);
+            if (string.IsNullOrEmpty(exeDirectory))
+            {
+                throw new ArgumentException("実行ファイルの親フォルダを取得できません", nameof(exePath));
+            }
+
+            // タスクバーやエクスプローラーへの解放猶予を含め、PIDの終了をポーリング待機してから削除する。
+            return $"""
+                @echo off
+                :waitloop
+                tasklist /FI "PID eq {processId}" 2>NUL | find "{processId}" >NUL
+                if not errorlevel 1 (
+                    timeout /t 1 /nobreak >NUL
+                    goto waitloop
+                )
+                del /f /q "{exePath}"
+                rmdir "{exeDirectory}" 2>NUL
+                del /f /q "%~f0"
+                """;
         }
     }
 }
