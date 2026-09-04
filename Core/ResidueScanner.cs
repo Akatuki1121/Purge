@@ -360,7 +360,8 @@ namespace UninstallTool
         {
             progress?.Report(new ScanProgress("MFT", $"{driveLetter}: 全体を走査中", 0));
             var paths = _mft.Search(driveLetter, appName, cancellationToken,
-                new Progress<int>(percent => progress?.Report(new ScanProgress("MFT", $"{driveLetter}: 全体を走査中", percent))));
+                new Progress<int>(records => progress?.Report(new ScanProgress(
+                    "MFT", $"{driveLetter}: {records:N0}件を走査中", -1))));
             return paths.Select(p => new ResidueItem
             {
                 Category = ResidueCategory.MftFile,

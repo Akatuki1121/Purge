@@ -128,10 +128,11 @@ namespace UninstallTool
             _log.Info("MftSearch", "名前一致レコードを抽出", $"{matches.Count}件");
 
             var results = new List<string>();
+            var pathCache = new Dictionary<ulong, string?>();
             foreach (var match in matches)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var fullPath = BuildFullPath(match, recordsById, driveLetter);
+                var fullPath = BuildFullPath(match, recordsById, driveLetter, pathCache);
                 if (fullPath != null)
                 {
                     results.Add(fullPath);
@@ -146,8 +147,14 @@ namespace UninstallTool
         /// ParentFileReferenceNumberを辿ってルートまでのフルパスを組み立てる。
         /// 循環参照や未知の親IDに当たった場合は安全に打ち切る。
         /// </summary>
-        private string? BuildFullPath(MftRecord record, Dictionary<ulong, MftRecord> recordsById, string driveLetter)
+        private string? BuildFullPath(MftRecord record, Dictionary<ulong, MftRecord> recordsById,
+            string driveLetter, Dictionary<ulong, string?>? pathCache = null)
         {
+            if (pathCache?.TryGetValue(record.FileReferenceNumber, out var cachedPath) == true)
+            {
+                return cachedPath;
+            }
+
             var parts = new List<string> { record.FileName };
             var current = record;
             var visited = new HashSet<ulong> { record.FileReferenceNumber };
@@ -157,6 +164,7 @@ namespace UninstallTool
                 if (!visited.Add(parent.FileReferenceNumber))
                 {
                     // 循環参照を検知した場合は壊れたパスとして破棄
+                    pathCache?[record.FileReferenceNumber] = null;
                     return null;
                 }
 
@@ -170,7 +178,9 @@ namespace UninstallTool
             }
 
             parts.Reverse();
-            return driveLetter.TrimEnd('\\', ':') + ":\\" + string.Join('\\', parts);
+            var fullPath = driveLetter.TrimEnd('\\', ':') + ":\\" + string.Join('\\', parts);
+            pathCache?[record.FileReferenceNumber] = fullPath;
+            return fullPath;
         }
 
         /// <summary>
@@ -285,7 +295,7 @@ namespace UninstallTool
 
                     // バッファ先頭8バイトは次回開始位置(NextStartFileReferenceNumber)
                     medv0.StartFileReferenceNumber = (ulong)Marshal.ReadInt64(buffer, 0);
-                    progress?.Report(0);
+                    progress?.Report(records.Count);
 
                     int offset = sizeof(ulong);
                     while (offset < bytesReturned)
