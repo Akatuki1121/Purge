@@ -30,7 +30,9 @@
                     Message="どのアプリにも対応が確認できなかったフォルダの候補です。「最終更新」が最近のものは、まだ使われている可能性があるため注意してください。行をクリックして選択できます(Ctrl/Shiftで複数選択可)。"/>
 
         <ui:Card Grid.Row="2" Margin="14,0,14,10" Padding="0">
-            <ListView x:Name="OrphanListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent">
+            <ListView x:Name="OrphanListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
+                      VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="フォルダ名" Width="180" DisplayMemberBinding="{Binding FolderName}"/>

@@ -34,7 +34,9 @@
         </StackPanel>
 
         <ui:Card Grid.Row="2" Margin="14,0,14,10" Padding="0">
-            <ListView x:Name="ResidueListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent">
+            <ListView x:Name="ResidueListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
+                      VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="種別" Width="120" DisplayMemberBinding="{Binding CategoryText}"/>
