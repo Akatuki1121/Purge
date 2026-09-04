@@ -53,7 +53,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="150"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <ui:TitleBar Grid.Row="0" Title="UninstallTool" ShowMaximize="True" ShowMinimize="True"/>
@@ -91,7 +91,7 @@
             <TextBlock x:Name="CountText" Margin="16,0,0,0" VerticalAlignment="Center" Foreground="Gray"/>
         </StackPanel>
 
-        <ui:Card Grid.Row="4" Margin="14,0,14,10" Padding="0">
+                <ui:Card Grid.Row="4" Margin="14,0,14,10" Padding="0">
                         <ListView x:Name="AppListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
                                             ItemContainerStyle="{StaticResource AppListItemStyle}">
                 <ListView.View>
