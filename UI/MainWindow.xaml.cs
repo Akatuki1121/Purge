@@ -108,6 +108,8 @@ public partial class MainWindow : FluentWindow
     private async void LoadApps()
     {
         CountText.Text = "読み込み中...";
+        EmptyStateText.Text = "アプリ一覧を読み込み中...";
+        EmptyStatePanel.Visibility = Visibility.Visible;
 
         var apps = await Task.Run(() => _inventory.GetInstalledApps());
         var items = apps.Select(a => new AppListItem(a)).ToList();
@@ -116,6 +118,7 @@ public partial class MainWindow : FluentWindow
         _appView.Filter = FilterApp;
         AppListView.ItemsSource = _appView;
         UpdateAppCount();
+        UpdateEmptyState();
         RefreshLogView();
 
         await Task.Run(() =>
@@ -163,6 +166,21 @@ public partial class MainWindow : FluentWindow
         CountText.Text = visibleCount == _totalAppCount
             ? $"{_totalAppCount}件"
             : $"{visibleCount} / {_totalAppCount}件";
+        UpdateEmptyState();
+    }
+
+    private void UpdateEmptyState()
+    {
+        if (_appView == null)
+        {
+            return;
+        }
+
+        var visibleCount = _appView.Cast<object>().Count();
+        EmptyStatePanel.Visibility = visibleCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyStateText.Text = _totalAppCount == 0
+            ? "インストール済みアプリは見つかりませんでした"
+            : "検索条件に一致するアプリはありません";
     }
 
     /// <summary>
