@@ -447,7 +447,12 @@ public partial class MainWindow : FluentWindow
 
     private void ShowLogMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        LogCard.Visibility = ShowLogMenuItem.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+        LogExpander.IsExpanded = ShowLogMenuItem.IsChecked;
+    }
+
+    private void LogExpander_Changed(object sender, RoutedEventArgs e)
+    {
+        ShowLogMenuItem.IsChecked = LogExpander.IsExpanded;
     }
 
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)

@@ -173,27 +173,33 @@
             </StackPanel>
         </ui:Card>
 
-        <ui:Card x:Name="LogCard" Grid.Row="6" Margin="14,0,14,10" Padding="14,10" Visibility="Collapsed">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Margin="0,0,0,6">
+        <Expander x:Name="LogExpander" Grid.Row="6" Margin="14,0,14,10" IsExpanded="False"
+                  Background="#F7F9FC" BorderBrush="#DCE3EB" BorderThickness="1"
+                  Expanded="LogExpander_Changed" Collapsed="LogExpander_Changed">
+            <Expander.Header>
+                <Grid Width="980">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="操作ログ" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="16" Foreground="#657487"
+                                       Margin="0,0,8,0"/>
+                        <TextBlock Text="操作ログ" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="診断情報と直近の操作履歴" Margin="10,0,0,0" Foreground="#8793A1"
+                                   FontSize="11"/>
+                    </StackPanel>
                     <ui:Button Grid.Column="1" x:Name="CopyLogButton" Content="コピー" Icon="{ui:SymbolIcon Copy24}"
                                FontSize="11" Padding="8,2" Click="CopyLogButton_Click"/>
                 </Grid>
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            </Expander.Header>
+            <Border Padding="14,0,14,12">
+                <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto">
                     <TextBox x:Name="LogText" FontFamily="Cascadia Mono, Consolas" FontSize="11" TextWrapping="NoWrap"
                              IsReadOnly="True" BorderThickness="0" Background="Transparent" AcceptsReturn="True"
                              VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto"/>
                 </ScrollViewer>
-            </Grid>
-        </ui:Card>
+            </Border>
+        </Expander>
     </Grid>
 </ui:FluentWindow>
