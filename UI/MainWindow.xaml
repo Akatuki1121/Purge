@@ -16,6 +16,27 @@
             <Setter Property="Foreground" Value="Gray"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+        <Style x:Key="AppListItemStyle" TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="#243447"/>
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F3F6FA"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#DCEBFA"/>
+                    <Setter Property="Foreground" Value="#173B63"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="GridHeaderStyle" TargetType="GridViewColumnHeader">
+            <Setter Property="Foreground" Value="#5B6878"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
         <!-- WPF-UIのAppearance="Danger"は背景赤に対し既定の文字色のコントラストが弱いため、
              白文字を明示して視認性を確保する。ResidueWindow/OrphanWindowの危険ボタンにも同じ対策を適用する。 -->
         <Style x:Key="DangerButtonReadable" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -44,7 +65,7 @@
                 <MenuItem Header="終了" Click="ExitMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="表示(_V)">
-                <MenuItem x:Name="ShowLogMenuItem" Header="操作ログを表示" IsCheckable="True" IsChecked="True"
+                <MenuItem x:Name="ShowLogMenuItem" Header="操作ログを表示" IsCheckable="True" IsChecked="False"
                           Click="ShowLogMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="ツール(_T)">
@@ -71,9 +92,10 @@
         </StackPanel>
 
         <ui:Card Grid.Row="4" Margin="14,0,14,10" Padding="0">
-            <ListView x:Name="AppListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent">
+                        <ListView x:Name="AppListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
+                                            ItemContainerStyle="{StaticResource AppListItemStyle}">
                 <ListView.View>
-                    <GridView>
+                                        <GridView AllowsColumnReorder="True" ColumnHeaderContainerStyle="{StaticResource GridHeaderStyle}">
                         <GridViewColumn Header="" Width="32">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -126,7 +148,7 @@
             </StackPanel>
         </ui:Card>
 
-        <ui:Card x:Name="LogCard" Grid.Row="6" Margin="14,0,14,10" Padding="14,10">
+        <ui:Card x:Name="LogCard" Grid.Row="6" Margin="14,0,14,10" Padding="14,10" Visibility="Collapsed">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
