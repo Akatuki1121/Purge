@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
+using System.ComponentModel;
 using UninstallTool;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
@@ -26,6 +28,8 @@ public partial class MainWindow : FluentWindow
     private readonly ResidueScanner _scanner;
     private readonly OrphanDetector _orphanDetector;
     private readonly OrphanExclusionStore _orphanExclusions;
+    private ICollectionView? _appView;
+    private int _totalAppCount;
 
     public MainWindow()
     {
@@ -107,8 +111,11 @@ public partial class MainWindow : FluentWindow
 
         var apps = await Task.Run(() => _inventory.GetInstalledApps());
         var items = apps.Select(a => new AppListItem(a)).ToList();
-        AppListView.ItemsSource = items;
-        CountText.Text = $"{items.Count}件検出";
+        _totalAppCount = items.Count;
+        _appView = CollectionViewSource.GetDefaultView(items);
+        _appView.Filter = FilterApp;
+        AppListView.ItemsSource = _appView;
+        UpdateAppCount();
         RefreshLogView();
 
         await Task.Run(() =>
@@ -120,6 +127,42 @@ public partial class MainWindow : FluentWindow
                 item.ResolvePublisher();
             }
         });
+    }
+
+    private bool FilterApp(object item)
+    {
+        if (item is not AppListItem app)
+        {
+            return false;
+        }
+
+        var query = SearchTextBox?.Text.Trim();
+        if (string.IsNullOrEmpty(query))
+        {
+            return true;
+        }
+
+        return new[] { app.DisplayName, app.DisplayVersion, app.Publisher, app.InstallLocation }
+            .Any(value => value?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    private void SearchTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        _appView?.Refresh();
+        UpdateAppCount();
+    }
+
+    private void UpdateAppCount()
+    {
+        if (_appView == null)
+        {
+            return;
+        }
+
+        var visibleCount = _appView.Cast<object>().Count();
+        CountText.Text = visibleCount == _totalAppCount
+            ? $"{_totalAppCount}件"
+            : $"{visibleCount} / {_totalAppCount}件";
     }
 
     /// <summary>

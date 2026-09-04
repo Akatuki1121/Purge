@@ -84,12 +84,30 @@
                        Text="⚠ 管理者権限で実行されていません。MFT高速検索(残存物の全体スキャン・対応アプリ不明フォルダのスキャン)は正しく動作せず、無言で0件になります。exeを右クリック→「管理者として実行」で起動し直してください。"/>
         </Border>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="14,10,14,8">
-            <TextBlock Text="インストール済みアプリ" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-            <ui:Button x:Name="RefreshButton" Content="再読み込み" Icon="{ui:SymbolIcon ArrowSync24}"
-                       Margin="16,0,0,0" Click="RefreshButton_Click"/>
-            <TextBlock x:Name="CountText" Margin="16,0,0,0" VerticalAlignment="Center" Foreground="Gray"/>
-        </StackPanel>
+        <Grid Grid.Row="3" Margin="14,10,14,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="インストール済みアプリ" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock x:Name="CountText" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#6B7785"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Border Background="#F5F7FA" BorderBrush="#D9E0E8" BorderThickness="1"
+                        CornerRadius="5" Padding="10,0" Width="250" Height="34">
+                    <Grid>
+                        <TextBox x:Name="SearchTextBox" BorderThickness="0" Background="Transparent"
+                                 VerticalContentAlignment="Center" Padding="22,0,0,0"
+                                 TextChanged="SearchTextBox_TextChanged" ToolTip="アプリ名、発行元、場所で検索"/>
+                        <ui:SymbolIcon Symbol="Search24" FontSize="16" Foreground="#7A8795"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+                <ui:Button x:Name="RefreshButton" Content="再読み込み" Icon="{ui:SymbolIcon ArrowSync24}"
+                           Margin="8,0,0,0" Click="RefreshButton_Click"/>
+            </StackPanel>
+        </Grid>
 
                 <ui:Card Grid.Row="4" Margin="14,0,14,10" Padding="0">
                         <ListView x:Name="AppListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
@@ -133,17 +151,6 @@
                                Icon="{ui:SymbolIcon Apps24}" Margin="8,0,0,0" Click="BatchUninstallButton_Click"
                                Visibility="Collapsed"/>
                 </StackPanel>
-
-                <!-- 危険操作/実験的機能: 通常操作から視覚的に分離し、右端に寄せて誤クリックを防ぐ -->
-                <Border BorderBrush="#EAEAEA" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,12,0,0">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <ui:Button x:Name="ScanOrphanInlineButton" Content="対応アプリ不明フォルダをスキャン(実験的)"
-                                   Icon="{ui:SymbolIcon QuestionCircle24}" Click="ScanOrphanButton_Click"/>
-                        <ui:Button x:Name="SelfUninstallButton" Content="このツール自身をアンインストール"
-                                   Style="{StaticResource DangerButtonReadable}" Icon="{ui:SymbolIcon Warning24}"
-                                   Margin="8,0,0,0" Click="SelfUninstallButton_Click"/>
-                    </StackPanel>
-                </Border>
 
             </StackPanel>
         </ui:Card>
