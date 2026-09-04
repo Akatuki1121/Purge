@@ -25,6 +25,7 @@ public partial class MainWindow : FluentWindow
     private readonly AppUninstaller _uninstaller;
     private readonly ResidueScanner _scanner;
     private readonly OrphanDetector _orphanDetector;
+    private readonly OrphanExclusionStore _orphanExclusions;
 
     public MainWindow()
     {
@@ -32,7 +33,8 @@ public partial class MainWindow : FluentWindow
         _inventory = new AppInventory(_log);
         _uninstaller = new AppUninstaller(_log);
         _scanner = new ResidueScanner(_log);
-        _orphanDetector = new OrphanDetector(_log);
+        _orphanExclusions = new OrphanExclusionStore();
+        _orphanDetector = new OrphanDetector(_log, _orphanExclusions);
 
         if (!ElevationChecker.IsRunningAsAdministrator())
         {
@@ -230,7 +232,7 @@ public partial class MainWindow : FluentWindow
                 return;
             }
 
-            var orphanWindow = new OrphanWindow(orphans, _log)
+            var orphanWindow = new OrphanWindow(orphans, _log, _orphanExclusions)
             {
                 Owner = this,
             };

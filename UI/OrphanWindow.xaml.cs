@@ -19,13 +19,16 @@ namespace UninstallTool.UI
     {
         private readonly OperationLog _log;
         private readonly ResidueRemover _remover;
+        private readonly OrphanExclusionStore _exclusions;
         private readonly ObservableCollection<SelectableOrphanCandidate> _items;
 
-        public OrphanWindow(System.Collections.Generic.List<OrphanCandidate> candidates, OperationLog log)
+        public OrphanWindow(System.Collections.Generic.List<OrphanCandidate> candidates, OperationLog log,
+            OrphanExclusionStore? exclusions = null)
         {
             InitializeComponent();
             _log = log;
             _remover = new ResidueRemover(_log);
+            _exclusions = exclusions ?? new OrphanExclusionStore();
 
             _items = new ObservableCollection<SelectableOrphanCandidate>(
                 candidates.Select(c => new SelectableOrphanCandidate(c)));
@@ -158,6 +161,32 @@ namespace UninstallTool.UI
                     _items.Remove(succeeded);
                 }
             }
+        }
+
+        private void ExcludeButton_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = OrphanListView.SelectedItems.Cast<SelectableOrphanCandidate>().ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("除外する項目を選択してください。", "未選択",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var confirm = MessageBox.Show(
+                $"選択した{selected.Count}件を今後の孤児候補スキャンから除外します。\n\n" +
+                "ファイルやフォルダは削除されません。\nよろしいですか？",
+                "除外設定", MessageBoxButton.YesNo, MessageBoxImage.Information);
+            if (confirm != MessageBoxResult.Yes) return;
+
+            _exclusions.Add(selected.Select(item => item.FullPath));
+            foreach (var item in selected)
+            {
+                _items.Remove(item);
+            }
+            _log.Info("OrphanDetect", "孤児候補を除外リストに追加", $"{selected.Count}件");
+            MessageBox.Show($"{selected.Count}件を除外しました。ファイルは削除されていません。",
+                "除外設定", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)

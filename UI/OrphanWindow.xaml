@@ -75,6 +75,8 @@
                 </Border>
                 <ui:Button x:Name="OpenFolderButton" Content="選択項目をエクスプローラーで開く"
                            Icon="{ui:SymbolIcon FolderOpen24}" Margin="16,0,0,0" Click="OpenFolderButton_Click"/>
+                <ui:Button x:Name="ExcludeButton" Content="今後表示しない"
+                           Icon="{ui:SymbolIcon EyeOff24}" Margin="8,0,0,0" Click="ExcludeButton_Click"/>
                 <ui:Button x:Name="DeleteButton" Content="選択した項目を削除" Style="{StaticResource DangerButtonReadable}"
                            Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" Click="DeleteButton_Click"/>
                 <ui:Button x:Name="ExportButton" Content="エクスポート(Pro)" Icon="{ui:SymbolIcon ArrowDownload24}"

@@ -41,11 +41,13 @@ namespace UninstallTool
     {
         private readonly OperationLog _log;
         private readonly MftSearchEngine _mft;
+        private readonly OrphanExclusionStore _exclusions;
 
-        public OrphanDetector(OperationLog log)
+        public OrphanDetector(OperationLog log, OrphanExclusionStore? exclusions = null)
         {
             _log = log;
             _mft = new MftSearchEngine(log);
+            _exclusions = exclusions ?? new OrphanExclusionStore();
         }
 
         /// <summary>
@@ -211,6 +213,11 @@ namespace UninstallTool
 
             foreach (var (name, fullPath) in subdirectories)
             {
+                if (_exclusions.Contains(fullPath))
+                {
+                    continue;
+                }
+
                 if (KnownNonAppFolderNames.Contains(name))
                 {
                     continue;
