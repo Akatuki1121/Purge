@@ -24,6 +24,8 @@ namespace UninstallTool.UI
         public string CategoryText => Item.Category.ToString();
         public string LocationText => Item.Location;
         public string DetailText => Item.Detail;
+        public string ConfidenceText => Item.Confidence == ResidueConfidence.Medium ? "中" : "低";
+        public string DetectionReasonText => Item.DetectionReason;
 
         public SelectableResidueItem(ResidueItem item)
         {

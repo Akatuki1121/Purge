@@ -38,8 +38,9 @@
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="種別" Width="120" DisplayMemberBinding="{Binding CategoryText}"/>
+                        <GridViewColumn Header="確度" Width="60" DisplayMemberBinding="{Binding ConfidenceText}"/>
                         <GridViewColumn Header="場所" Width="500" DisplayMemberBinding="{Binding LocationText}"/>
-                        <GridViewColumn Header="詳細" Width="240" DisplayMemberBinding="{Binding DetailText}"/>
+                        <GridViewColumn Header="検出根拠" Width="300" DisplayMemberBinding="{Binding DetectionReasonText}"/>
                     </GridView>
                 </ListView.View>
             </ListView>

@@ -17,6 +17,7 @@ namespace UninstallTool.UI
     {
         private readonly OperationLog _log;
         private readonly ResidueRemover _remover;
+        private readonly RemovalBackupWriter _backupWriter;
         private readonly List<SelectableResidueItem> _items;
         private readonly string _appName;
 
@@ -26,6 +27,7 @@ namespace UninstallTool.UI
             _appName = appName;
             _log = log;
             _remover = new ResidueRemover(_log);
+            _backupWriter = new RemovalBackupWriter(_log);
 
             _items = residueItems.Select(i => new SelectableResidueItem(i)).ToList();
             ResidueListView.ItemsSource = _items;
@@ -93,6 +95,21 @@ namespace UninstallTool.UI
                     $"選択した{selected.Count}件を実際に削除します。よろしいですか？\n\nこの操作は取り消せません。",
                     "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (confirm != MessageBoxResult.Yes) return;
+
+                string manifestPath;
+                try
+                {
+                    manifestPath = _backupWriter.Write(selected.Select(item => item.Item).ToList());
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show(
+                        $"削除前バックアップを作成できなかったため、削除を中止しました。\n{ex.Message}",
+                        "バックアップ失敗", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                _log.Info("ResidueBackup", "削除前バックアップを作成", manifestPath);
             }
 
             int successCount = 0, failCount = 0, dryRunCount = 0;

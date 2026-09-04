@@ -18,6 +18,12 @@ namespace UninstallTool
         MftFile,
     }
 
+    public enum ResidueConfidence
+    {
+        Medium,
+        Low,
+    }
+
     public sealed record ScanProgress(string Category, string CurrentItem, int Percent);
 
     public sealed class ResidueItem
@@ -25,6 +31,14 @@ namespace UninstallTool
         public ResidueCategory Category { get; init; }
         public string Location { get; init; } = "";
         public string Detail { get; init; } = "";
+
+        public ResidueConfidence Confidence => Category switch
+        {
+            ResidueCategory.Registry or ResidueCategory.Startup => ResidueConfidence.Medium,
+            _ => ResidueConfidence.Low,
+        };
+
+        public string DetectionReason => Detail;
 
         /// <summary>
         /// EnvironmentPathカテゴリの場合、削除時にどちらのPATH変数から除去するかを保持する。

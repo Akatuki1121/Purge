@@ -19,6 +19,7 @@ namespace UninstallTool.UI
     {
         private readonly OperationLog _log;
         private readonly ResidueRemover _remover;
+        private readonly RemovalBackupWriter _backupWriter;
         private readonly OrphanExclusionStore _exclusions;
         private readonly ObservableCollection<SelectableOrphanCandidate> _items;
 
@@ -28,6 +29,7 @@ namespace UninstallTool.UI
             InitializeComponent();
             _log = log;
             _remover = new ResidueRemover(_log);
+            _backupWriter = new RemovalBackupWriter(_log);
             _exclusions = exclusions ?? new OrphanExclusionStore();
 
             _items = new ObservableCollection<SelectableOrphanCandidate>(
@@ -116,6 +118,24 @@ namespace UninstallTool.UI
                     "よろしいですか？この操作は取り消せません。",
                     "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (confirm != MessageBoxResult.Yes) return;
+
+                try
+                {
+                    var backupItems = selected.Select(item => new ResidueItem
+                    {
+                        Category = ResidueCategory.MftFile,
+                        Location = item.FullPath,
+                        Detail = "対応アプリ不明フォルダとして検出",
+                    }).ToList();
+                    _backupWriter.Write(backupItems);
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show(
+                        $"削除前マニフェストを作成できなかったため、削除を中止しました。\n{ex.Message}",
+                        "バックアップ失敗", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
             }
 
             int successCount = 0, failCount = 0, dryRunCount = 0;
