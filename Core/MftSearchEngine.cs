@@ -109,7 +109,7 @@ namespace UninstallTool
         /// 大文字小文字を無視した部分一致検索。
         /// </summary>
         public List<string> Search(string driveLetter, string searchTerm, CancellationToken cancellationToken = default,
-            IProgress<int>? progress = null)
+            IProgress<int>? progress = null, IReadOnlyCollection<string>? pathPrefixes = null)
         {
             _log.Info("MftSearch", "MFT高速検索を開始", $"検索語: {searchTerm}, ドライブ: {driveLetter}");
 
@@ -133,7 +133,7 @@ namespace UninstallTool
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var fullPath = BuildFullPath(match, recordsById, driveLetter, pathCache);
-                if (fullPath != null)
+                if (fullPath != null && IsUnderPathPrefix(fullPath, pathPrefixes))
                 {
                     results.Add(fullPath);
                 }
@@ -141,6 +141,21 @@ namespace UninstallTool
 
             _log.Info("MftSearch", "検索完了", $"{results.Count}件のパスを解決");
             return results;
+        }
+
+        private static bool IsUnderPathPrefix(string path, IReadOnlyCollection<string>? pathPrefixes)
+        {
+            if (pathPrefixes == null || pathPrefixes.Count == 0)
+            {
+                return true;
+            }
+
+            return pathPrefixes.Any(prefix =>
+            {
+                var normalized = prefix.TrimEnd('\\') + "\\";
+                return path.StartsWith(normalized, StringComparison.OrdinalIgnoreCase)
+                    || path.Equals(prefix.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase);
+            });
         }
 
         /// <summary>

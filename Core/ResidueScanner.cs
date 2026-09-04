@@ -70,7 +70,8 @@ namespace UninstallTool
         /// </summary>
         public List<ResidueItem> ScanAll(string appName, bool includeMftSearch = false,
             string mftDrive = WellKnownConstants.DefaultMftSearchDrive,
-            CancellationToken cancellationToken = default, IProgress<ScanProgress>? progress = null)
+            CancellationToken cancellationToken = default, IProgress<ScanProgress>? progress = null,
+            IReadOnlyCollection<string>? mftPathPrefixes = null)
         {
             _log.Info("ResidueScan", "横断残存物スキャンを開始", appName);
             var results = new List<ResidueItem>();
@@ -84,7 +85,7 @@ namespace UninstallTool
 
             if (includeMftSearch)
             {
-                results.AddRange(ScanMftFiles(appName, mftDrive, cancellationToken, progress));
+                results.AddRange(ScanMftFiles(appName, mftDrive, cancellationToken, progress, mftPathPrefixes));
             }
 
             _log.Info("ResidueScan", "横断残存物スキャン完了", $"{results.Count}件");
@@ -356,12 +357,13 @@ namespace UninstallTool
         /// 他のスキャンより大幅に時間がかかるため、呼び出し側の判断でオプトインさせる。
         /// </summary>
         private List<ResidueItem> ScanMftFiles(string appName, string driveLetter,
-            CancellationToken cancellationToken, IProgress<ScanProgress>? progress)
+            CancellationToken cancellationToken, IProgress<ScanProgress>? progress,
+            IReadOnlyCollection<string>? pathPrefixes)
         {
             progress?.Report(new ScanProgress("MFT", $"{driveLetter}: 全体を走査中", 0));
             var paths = _mft.Search(driveLetter, appName, cancellationToken,
                 new Progress<int>(records => progress?.Report(new ScanProgress(
-                    "MFT", $"{driveLetter}: {records:N0}件を走査中", -1))));
+                    "MFT", $"{driveLetter}: {records:N0}件を走査中", -1))), pathPrefixes);
             return paths.Select(p => new ResidueItem
             {
                 Category = ResidueCategory.MftFile,
