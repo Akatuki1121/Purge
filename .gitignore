@@ -10,3 +10,7 @@ orphan_candidates.txt
 # 開発者専用のPro機能ローカル解除フラグ(配布物・リポジトリに含めない)
 dev_unlock.flag
 
+# ライセンス発行用の秘密鍵(絶対にコミットしない。これが漏洩すると誰でも有効なキーを偽造できる)
+LicenseKeyIssuer/*.private.xml
+LicenseKeyIssuer/public_key.xml
+
