@@ -19,9 +19,8 @@ namespace UninstallTool
         private const string DevUnlockFlagFileName = "dev_unlock.flag";
         private const string LicenseKeyFileName = "license.key";
 
-        // TODO: 本番Stripeアカウント開設・商品公開後、本番用のPayment Link URLに差し替える。
-        // 現在はテストモードのリンクのため、実際の代金は発生しない。
-        public const string PurchaseUrl = "https://buy.stripe.com/test_dRm7sEage3XyebR2zp1gs00";
+        // 本番Stripeアカウントの商品・Payment Link(2026-09-13、本人確認審査中に作成)。
+        public const string PurchaseUrl = "https://buy.stripe.com/bJeaERa508ig9vTcxc1Nu00";
 
         private static bool? _cachedIsProUnlocked;
         private static LicensePayload? _cachedPayload;
