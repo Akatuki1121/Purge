@@ -87,6 +87,8 @@
                                   Click="ShowLogMenuItem_Click"/>
                         <MenuItem Header="削除前バックアップから復元" Click="RestoreBackupMenuItem_Click"/>
                         <Separator/>
+                        <MenuItem Header="ライセンス認証(Pro)" Click="LicenseMenuItem_Click"/>
+                        <Separator/>
                         <MenuItem Header="このツール自身をアンインストール" Click="SelfUninstallButton_Click"/>
                         <MenuItem Header="バージョン情報" Click="AboutMenuItem_Click"/>
                         <Separator/>

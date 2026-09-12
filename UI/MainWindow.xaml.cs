@@ -345,9 +345,25 @@ public partial class MainWindow : FluentWindow
     {
         if (!LicenseState.IsProUnlocked)
         {
-            MessageBox.Show(
-                "複数アプリの一括アンインストールはPro版の機能です。\n(現在ライセンス販売は準備中です)",
-                "Pro機能", MessageBoxButton.OK, MessageBoxImage.Information);
+            var purchaseConfirm = MessageBox.Show(
+                "複数アプリの一括アンインストールはPro版の機能です。\n\n購入ページを開きますか？",
+                "Pro機能", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+            if (purchaseConfirm == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = LicenseState.PurchaseUrl,
+                        UseShellExecute = true,
+                    });
+                }
+                catch (System.Exception ex)
+                {
+                    _log.Warning("Purchase", "購入ページを開けなかった", ex.Message);
+                }
+            }
             return;
         }
 
@@ -536,5 +552,18 @@ public partial class MainWindow : FluentWindow
         {
             new CrashReportWindow(_log.BuildErrorReport(ex)) { Owner = this }.ShowDialog();
         }
+    }
+
+    private void LicenseMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        new LicenseWindow
+        {
+            Owner = this,
+        }.ShowDialog();
+
+        // ライセンス状態が変わった可能性があるため、一括アンインストールボタンの表示文言を更新する
+        BatchUninstallButton.Content = LicenseState.IsProUnlocked
+            ? "選択した複数アプリを一括アンインストール"
+            : "選択した複数アプリを一括アンインストール (Pro)";
     }
 }
