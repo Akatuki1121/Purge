@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// 実行中の自分自身(exe)を含め、アプリの痕跡を完全に消去する機能。

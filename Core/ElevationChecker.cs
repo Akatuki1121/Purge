@@ -1,6 +1,6 @@
 using System.Security.Principal;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// 現在のプロセスが管理者権限で実行されているか判定するヘルパー。

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// 「アプリ名らしき文字列」と「候補文字列」を安全に突き合わせるための共通ロジック。

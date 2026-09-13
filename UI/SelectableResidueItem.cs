@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// ResidueItemにチェックボックス選択状態を持たせるためのUI用ラッパー。

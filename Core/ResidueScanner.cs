@@ -6,7 +6,7 @@ using System.ServiceProcess;
 using System.Threading;
 using Microsoft.Win32;
 
-namespace UninstallTool
+namespace Purge
 {
     public enum ResidueCategory
     {

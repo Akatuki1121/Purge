@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// GitHub Issue作成ページを、エラーレポート内容を事前入力した状態でブラウザに開く。
@@ -13,7 +13,7 @@ namespace UninstallTool
     /// </summary>
     public static class GitHubIssueReporter
     {
-        private const string RepositoryUrl = "https://github.com/Akatuki1121/UninstallTool";
+        private const string RepositoryUrl = "https://github.com/Akatuki1121/Purge";
 
         /// <summary>
         /// GitHubのURL長制限(実用上安全な範囲)を超えないよう、bodyをこの文字数で切り詰める。

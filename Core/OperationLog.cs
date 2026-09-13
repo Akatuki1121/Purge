@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// 1件の操作ステップを表す。「何を」「いつ」「どういう状態で」実行したかを記録する。

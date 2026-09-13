@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// OrphanCandidateにチェックボックス選択状態を持たせ、

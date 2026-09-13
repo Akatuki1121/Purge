@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// InstalledAppからアイコンを抽出し、WPFで表示可能なImageSourceに変換する。

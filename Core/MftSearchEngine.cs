@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// USN Journal (FSCTL_ENUM_USN_DATA) を使い、NTFSボリューム上の全ファイル名を

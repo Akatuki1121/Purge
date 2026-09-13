@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using System.IO;
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// InstalledApp.Publisherがレジストリに登録されておらず空欄の場合に、

@@ -4,18 +4,18 @@ using System.Windows;
 using System.Windows.Data;
 using System.ComponentModel;
 using System.Threading;
-using UninstallTool;
+using Purge;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 using MessageBoxResult = System.Windows.MessageBoxResult;
 
-namespace UninstallTool.UI;
+namespace Purge.UI;
 
 /// <summary>
 /// アプリ一覧表示・アンインストール実行の最小画面。
-/// ロジックは UninstallTool.Core (AppInventory, AppUninstaller, OperationLog, ResidueScanner) にすべて委譲する。
+/// ロジックは Purge.Core (AppInventory, AppUninstaller, OperationLog, ResidueScanner) にすべて委譲する。
 ///
 /// 画面遷移方針: メインの流れは「アプリを選ぶ→アンインストール→(自動提案で)残存物スキャン」の1本道にし、
 /// 選択と無関係な孤児候補スキャンはメニュー「ツール」からのみ呼び出す。
@@ -504,7 +504,7 @@ public partial class MainWindow : FluentWindow
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
         MessageBox.Show(
-            "UninstallTool\n\n残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。",
+            "Purge\n\n残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。",
             "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -524,7 +524,7 @@ public partial class MainWindow : FluentWindow
             Filter = "JSONマニフェスト (*.json)|*.json",
             InitialDirectory = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "UninstallTool", "RemovalBackups"),
+                "Purge", "RemovalBackups"),
         };
 
         if (dialog.ShowDialog(this) != true)

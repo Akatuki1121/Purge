@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\UninstallTool.Core.csproj" />
+    <ProjectReference Include="..\Core\Purge.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

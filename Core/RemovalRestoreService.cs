@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 
-namespace UninstallTool;
+namespace Purge;
 
 public sealed class RemovalRestoreService
 {

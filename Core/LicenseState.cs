@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// 無料版/有料版(Pro)の機能ゲート。
@@ -117,7 +117,7 @@ namespace UninstallTool
             // (Program Filesは書き込み権限が無いことが多く、exeフォルダ直下だと再インストール時に消えるため)
             var dir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "UninstallTool");
+                "Purge");
             Directory.CreateDirectory(dir);
             return Path.Combine(dir, LicenseKeyFileName);
         }

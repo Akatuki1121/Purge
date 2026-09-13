@@ -1,4 +1,4 @@
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// レジストリ値名・外部プロセス名・環境変数名など、複数クラスにまたがって
