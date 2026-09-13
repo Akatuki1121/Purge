@@ -1,6 +1,6 @@
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.Tests;
+namespace Purge.Tests;
 
 /// <summary>
 /// LicenseKeyVerifier の自動テスト。

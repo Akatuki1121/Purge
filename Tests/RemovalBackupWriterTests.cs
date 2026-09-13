@@ -1,14 +1,14 @@
 using System.Text.Json;
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.Tests;
+namespace Purge.Tests;
 
 public class RemovalBackupWriterTests
 {
     [Fact]
     public void 削除前マニフェストに対象と検出根拠が保存される()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"UninstallToolTests_{Guid.NewGuid():N}");
+        var directory = Path.Combine(Path.GetTempPath(), $"PurgeTests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
 
         try
@@ -40,7 +40,7 @@ public class RemovalBackupWriterTests
     [Fact]
     public void サービスやPATHは未確認として保存される()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"UninstallToolTests_{Guid.NewGuid():N}");
+        var directory = Path.Combine(Path.GetTempPath(), $"PurgeTests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
 
         try

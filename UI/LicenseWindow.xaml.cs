@@ -1,12 +1,12 @@
 ﻿using System.Windows;
-using UninstallTool;
+using Purge;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 using MessageBoxResult = System.Windows.MessageBoxResult;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// ライセンスキーの入力・認証・解除を行う画面。

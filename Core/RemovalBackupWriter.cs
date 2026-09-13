@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 
-namespace UninstallTool;
+namespace Purge;
 
 public sealed class RemovalBackupWriter
 {
@@ -16,7 +16,7 @@ public sealed class RemovalBackupWriter
     {
         var backupDirectory = directory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "UninstallTool", "RemovalBackups");
+            "Purge", "RemovalBackups");
         Directory.CreateDirectory(backupDirectory);
 
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");

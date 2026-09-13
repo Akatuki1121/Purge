@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace UninstallTool
+namespace Purge
 {
     public enum UninstallResult
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Win32;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// レジストリのUninstallキーから読み取った1アプリ分の情報。

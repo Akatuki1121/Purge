@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// InstalledAppにアイコン(ImageSource)・補完済み発行元を付加した、AppListView表示専用のラッパー。

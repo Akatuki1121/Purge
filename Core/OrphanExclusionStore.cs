@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace UninstallTool;
+namespace Purge;
 
 /// <summary>
 /// ユーザーが「今後表示しない」と指定した孤児候補のパスを保存する。
@@ -15,7 +15,7 @@ public sealed class OrphanExclusionStore
     {
         _filePath = filePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "UninstallTool",
+            "Purge",
             "orphan-exclusions.json");
         Load();
     }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Threading;
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.UI;
+namespace Purge.UI;
 
 /// <summary>
 /// Interaction logic for App.xaml

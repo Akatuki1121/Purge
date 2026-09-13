@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace UninstallTool
+namespace Purge
 {
     /// <summary>
     /// ライセンスキーに含める情報。JSON化してから署名する。

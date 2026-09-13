@@ -1,12 +1,12 @@
-<ui:FluentWindow x:Class="UninstallTool.UI.MainWindow"
+<ui:FluentWindow x:Class="Purge.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:UninstallTool.UI"
+        xmlns:local="clr-namespace:Purge.UI"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="UninstallTool" Height="700" Width="1040" MinWidth="880" MinHeight="580"
+        Title="Purge" Height="700" Width="1040" MinWidth="880" MinHeight="580"
         Icon="app.ico"
         ExtendsContentIntoTitleBar="True">
     <Window.Resources>
@@ -56,7 +56,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="UninstallTool" ShowMaximize="True" ShowMinimize="True"/>
+        <ui:TitleBar Grid.Row="0" Title="Purge" ShowMaximize="True" ShowMinimize="True"/>
 
         <Border Grid.Row="1" Background="#F7F9FC" BorderBrush="#E3E8EF" BorderThickness="0,0,0,1"
                 Padding="10,6">

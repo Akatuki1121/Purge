@@ -20,19 +20,19 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore UI/UninstallTool.UI.csproj --runtime win-x64
+        run: dotnet restore UI/Purge.UI.csproj --runtime win-x64
 
       - name: Build Core and UI
-        run: dotnet build UI/UninstallTool.UI.csproj --configuration Release --no-restore
+        run: dotnet build UI/Purge.UI.csproj --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test Tests/UninstallTool.Tests.csproj --configuration Release --no-restore
+        run: dotnet test Tests/Purge.Tests.csproj --configuration Release --no-restore
 
       - name: Publish self-contained package
-        run: dotnet publish UI/UninstallTool.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/uninstalltool --no-restore
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/Purge --no-restore
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: UninstallTool-win-x64
-          path: artifacts/uninstalltool/
+          name: Purge-win-x64
+          path: artifacts/Purge/

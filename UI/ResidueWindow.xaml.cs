@@ -7,7 +7,7 @@ using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 using MessageBoxResult = System.Windows.MessageBoxResult;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// 残存物スキャン結果を一覧表示し、選択した項目のみ削除する画面。

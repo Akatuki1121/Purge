@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/Purge.Core.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Purge.Tests.csproj" />
+  </Folder>
+  <Folder Name="/UI/">
+    <Project Path="UI/Purge.UI.csproj" />
+  </Folder>
+</Solution>

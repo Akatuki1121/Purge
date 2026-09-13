@@ -1,13 +1,13 @@
 using System;
 using System.Text;
 using System.Windows;
-using UninstallTool;
+using Purge;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 
-namespace UninstallTool.UI;
+namespace Purge.UI;
 
 public partial class BugReportWindow : FluentWindow
 {

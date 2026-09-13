@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace UninstallTool
+namespace Purge
 {
     public sealed class OrphanCandidate
     {

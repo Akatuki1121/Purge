@@ -1,13 +1,13 @@
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.Tests;
+namespace Purge.Tests;
 
 public class OrphanExclusionStoreTests
 {
     [Fact]
     public void 除外パスを保存して別インスタンスで読み込める()
     {
-        var filePath = Path.Combine(Path.GetTempPath(), $"uninstalltool_exclusions_{Guid.NewGuid():N}.json");
+        var filePath = Path.Combine(Path.GetTempPath(), $"Purge_exclusions_{Guid.NewGuid():N}.json");
         try
         {
             var store = new OrphanExclusionStore(filePath);
@@ -25,7 +25,7 @@ public class OrphanExclusionStoreTests
     [Fact]
     public void 同じパスの大文字小文字違いを重複登録しない()
     {
-        var filePath = Path.Combine(Path.GetTempPath(), $"uninstalltool_exclusions_{Guid.NewGuid():N}.json");
+        var filePath = Path.Combine(Path.GetTempPath(), $"Purge_exclusions_{Guid.NewGuid():N}.json");
         try
         {
             var store = new OrphanExclusionStore(filePath);

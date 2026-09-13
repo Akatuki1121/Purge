@@ -1,11 +1,11 @@
 ﻿using System.Windows;
-using UninstallTool;
+using Purge;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 
-namespace UninstallTool.UI
+namespace Purge.UI
 {
     /// <summary>
     /// 未処理例外/致命的でないエラーの両方から使う共通のエラー報告ダイアログ。

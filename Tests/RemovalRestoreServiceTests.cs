@@ -1,14 +1,14 @@
 using System.Text.Json;
-using UninstallTool;
+using Purge;
 
-namespace UninstallTool.Tests;
+namespace Purge.Tests;
 
 public class RemovalRestoreServiceTests
 {
     [Fact]
     public void ファイルスナップショットを復元できる()
     {
-        var directory = Path.Combine(Path.GetTempPath(), $"UninstallToolRestoreTests_{Guid.NewGuid():N}");
+        var directory = Path.Combine(Path.GetTempPath(), $"PurgeRestoreTests_{Guid.NewGuid():N}");
         var sourceDirectory = Path.Combine(directory, "source");
         var targetDirectory = Path.Combine(directory, "target");
         Directory.CreateDirectory(sourceDirectory);
