@@ -8,5 +8,4 @@
   <Folder Name="/UI/">
     <Project Path="UI/UninstallTool.UI.csproj" />
   </Folder>
-  <Project Path="UninstallTool.csproj" />
 </Solution>
