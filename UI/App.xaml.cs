@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Threading;
 using Purge;
+using Velopack;
+using Velopack.Sources;
 
 namespace Purge.UI;
 
@@ -18,8 +20,20 @@ public partial class App : Application
     /// </summary>
     public static readonly OperationLog SharedLog = new();
 
+    /// <summary>
+    /// バックグラウンドでダウンロード済みの更新情報。null以外なら次回起動 or 終了時に適用できる。
+    /// </summary>
+    private static Velopack.UpdateInfo? _pendingUpdate;
+
+    private static readonly UpdateManager s_updateManager = new(
+        new GithubSource("https://github.com/Akatuki1121/Purge", null, false));
+
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Velopackのインストール/アンインストール/更新後起動などのフック処理。
+        // 通常起動時は何もせずそのまま処理が戻ってくる。
+        VelopackApp.Build().Run();
+
         base.OnStartup(e);
 
         // UIスレッドで発生した未処理例外を捕捉し、専用のクラッシュレポート画面を表示する。
@@ -33,6 +47,48 @@ public partial class App : Application
         var mainWindow = new MainWindow();
         MainWindow = mainWindow;
         mainWindow.Show();
+
+        Exit += OnAppExit;
+
+        // 起動をブロックしないよう、更新チェック～ダウンロードは完全にバックグラウンドで行う。
+        // ユーザーへの通知やダイアログは出さず、適用は次回起動時 or 今回の終了時に静かに行う。
+        _ = CheckForUpdatesInBackgroundAsync();
+    }
+
+    /// <summary>
+    /// GitHub Releasesを更新元として、新バージョンの確認とダウンロードをバックグラウンドで行う。
+    /// UIは一切ブロックせず、失敗しても(オフライン等)アプリの動作に影響を与えない。
+    /// </summary>
+    private static async System.Threading.Tasks.Task CheckForUpdatesInBackgroundAsync()
+    {
+        try
+        {
+            var newVersion = await s_updateManager.CheckForUpdatesAsync();
+            if (newVersion is null)
+            {
+                return;
+            }
+
+            await s_updateManager.DownloadUpdatesAsync(newVersion);
+            _pendingUpdate = newVersion;
+        }
+        catch
+        {
+            // 更新確認自体の失敗(オフライン、GitHub障害など)は静かに無視する。
+            // 次回起動時にまた試みればよく、ユーザー操作を妨げるべきではない。
+        }
+    }
+
+    /// <summary>
+    /// アプリ終了時、ダウンロード済みの更新があれば適用して再起動する。
+    /// ユーザーが普段通り「閉じる」を押した瞬間にだけ発動するため、起動時の邪魔にならない。
+    /// </summary>
+    private static void OnAppExit(object sender, ExitEventArgs e)
+    {
+        if (_pendingUpdate is not null)
+        {
+            s_updateManager.ApplyUpdatesAndRestart(_pendingUpdate);
+        }
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

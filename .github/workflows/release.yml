@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Install Velopack CLI
+        run: dotnet tool install -g vpk
+
+      - name: Restore
+        run: dotnet restore UI/Purge.UI.csproj --runtime win-x64
+
+      - name: Run tests
+        run: dotnet test Tests/Purge.Tests.csproj --configuration Release --no-restore
+
+      - name: Publish self-contained package
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Pack with Velopack
+        run: >
+          vpk pack
+          --packId Purge
+          --packVersion ${{ steps.version.outputs.version }}
+          --packDir publish/Purge
+          --mainExe Purge.UI.exe
+          --icon UI/app.ico
+          --outputDir releases
+
+      - name: Upload to GitHub Releases
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/Akatuki1121/Purge
+          --token ${{ secrets.GITHUB_TOKEN }}
+          --tag ${{ github.ref_name }}
+          --publish
+          --outputDir releases
