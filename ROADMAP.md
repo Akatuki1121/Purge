@@ -169,7 +169,7 @@
 - [x] Product.wxsのバージョンをハードコードから`$(var.ProductVersion)`変数化、wixprojでMSBuildプロパティ経由(`-p:ProductVersion=`)で注入できるように変更。ローカルで`-p:ProductVersion=9.9.9`指定のビルドが成功することを確認
 - [x] GitHub Actions(release.yml)をVelopack向けからWiX/MSIビルドへ書き換え完了(dotnet publish→dotnet build installer/Purge.Installer.wixproj→MSIをバージョン付きファイル名にリネーム→softprops/action-gh-releaseでGitHub Releasesへ添付)
 - [ ] スタートメニュー/デスクトップショートカットの動作確認、アンインストール時の挙動確認(MSI標準機能のため未検証)
-- [ ] リリース用のコード署名(未検証・未定)
+- [x] リリース用のコード署名を検討(2026-09-13)。安価なAzure Artifact Signing(旧Trusted Signing、月$9.99)は個人開発者向けが現状米国・カナダ限定のため利用不可と判明。残る従来型OV証明書は年$100〜400程度かかるため、売上実績のない初回リリースでは見送りと決定。**当面は無署名でリリースし、SmartScreen警告が出ることをリリースノートで案内する。売上が育ってから証明書購入を再検討する**方針
 - [ ] 自動更新機構は当面見送り。導入する場合は「起動時に新バージョンの有無だけ確認し、ダウンロードページに案内する」程度の軽量な手動更新確認に留める方針で検討(要相談)
 
 ## 技術メモ
