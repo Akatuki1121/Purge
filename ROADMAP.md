@@ -141,16 +141,36 @@
 - [x] Native AOTの適用可否を検証(WPFのトリミング非対応によりNETSDK1168。self-contained方式を採用)
 - [ ] リリース用署名、ライセンス同梱、アップデート方針を決定
 
-### Phase 12: 製品化・課金 [ライセンス検証の実装完了、決済導線は未着手]
+### Phase 12: 製品化・課金 [実装完了、本番運用移行済み]
 - [x] ライセンスキーの署名検証方式を実装(RSA、オフライン完結、サーバー不要)
   - LicenseKeyVerifier(Core): 公開鍵のみ埋め込み。秘密鍵は絶対に含めない設計
   - LicenseKeyIssuer(開発者専用、非配布プロジェクト): 鍵ペア生成・キー発行のコンソールツール
-  - LicenseState: dev_unlock.flagに加え、%LocalAppData%\UninstallTool\license.keyへの保存・検証に対応
-  - LicenseWindow(UI): メニュー「その他→ライセンス認証(Pro)」から入力・認証・解除ができる画面
+  - LicenseState: dev_unlock.flagに加え、%LocalAppData%\Purge\license.keyへの保存・検証に対応
+  - LicenseWindow(UI): メニューから入力・認証・解除・「購入はこちら」導線
   - 自動テスト6件追加(正常系、改ざん検知、不正形式)。全50件成功を確認
-- [ ] 決済サービス(Stripe Payment Links等)と購入後のライセンス発行導線(現状は手動発行運用を想定)
-- [ ] 無料版とPro版の機能・価格を確定
-- [ ] オフライン時の認証、再インストール時の復旧を検証(現状はローカル保存のみなので、PC買い替え時の再発行方針が未確定)
+- [x] 決済導線: Stripe(Managed Payments、3.5%/取引、税務・不正対策・サポートをStripe側に一任)+ Payment Link
+- [x] 決済完了→ライセンス自動発行の仕組み: Cloudflare Worker(PurgeLicenseServerプロジェクト)がStripeのWebhook(checkout.session.completed)を受信し、LicenseKeyIssuerと同じRSA署名ロジックでキーを発行、SendGrid経由でメール送信(Resendから切替済み)
+- [x] 価格確定: ¥2,980(税込)、買い切り(無期限)。競合調査(Geek Uninstaller Pro $24.95が最も近い比較対象)を踏まえて設定
+- [x] 返金ポリシー確定: 返金不可。PC買い替え・再インストール時はメールで送付済みの同じキーを再入力すれば復旧可能
+- [x] セキュリティインシデント対応: 秘密鍵をチャット上に誤表示した事故を受け、発行実績ゼロの段階で鍵をローテーション(再生成)。Core側公開鍵・テストのサンプルキー・Cloudflare側のシークレットすべて新しい鍵に更新済み
+- [ ] 特定商取引法の表記: テンプレート作成済み(Obsidian Vault内)、氏名・メールアドレス等の個人情報欄が未記入
+- [ ] 本番Stripeアカウントの最終確認(個人事業主登録・本人確認・銀行口座登録)
+- [ ] エンドツーエンドの購入テスト(テストカードでの一連の動作確認)が未実施
+- [ ] LicenseState.PurchaseUrlが現状テストモードのPayment Linkのまま。本番リンクへの差し替えが必要
+
+### Phase 13: 配布パッケージング [方針転換: Velopack撤去、WiXベースのMSIインストーラーを採用]
+- [x] (2026-09-12) Velopackを一時採用したが、Velopackの自動更新は「バックグラウンドで気づかれずに更新する」設計が前提であり、本アプリは管理者権限(requireAdministrator)で起動するため更新のたびに必ずUAC同意が要ることが判明。この前提と自動更新の相性が悪いと判断し撤去(UI/Purge.UI.csprojからVelopackパッケージ参照を削除、App.xaml.cs内のVelopack関連コードを撤去)
+- [x] (2026-09-12〜13) WiXベースのMSIインストーラーに回帰。installer/フォルダを再作成し、以下を解決:
+  - Files要素でpublish/Purge配下を再帰的に取り込み、手動でのファイル一覧列挙を回避
+  - ComponentGroupRefのID不正エラー(Files要素の自動生成IDにパス文字列がそのまま使われ不正な識別子になる)→ComponentGroup要素を明示してId/Directoryを指定する形に修正
+  - 日本語文言(WIX0311: コードページ1252に日本語が含まれない)→Package要素にCodepage="65001"を追加
+  - ICE80(32bit/64bit不整合: self-contained発行のexeは64bitだが既定でコンポーネントが32bit扱いになる)→.wixprojにPlatforms=x64を追加、dotnet build -p:Platform=x64でビルド
+  - 最終的にPurge.Installer.msi(約55MB)の生成に成功
+- [x] Product.wxsのバージョンをハードコードから`$(var.ProductVersion)`変数化、wixprojでMSBuildプロパティ経由(`-p:ProductVersion=`)で注入できるように変更。ローカルで`-p:ProductVersion=9.9.9`指定のビルドが成功することを確認
+- [x] GitHub Actions(release.yml)をVelopack向けからWiX/MSIビルドへ書き換え完了(dotnet publish→dotnet build installer/Purge.Installer.wixproj→MSIをバージョン付きファイル名にリネーム→softprops/action-gh-releaseでGitHub Releasesへ添付)
+- [ ] スタートメニュー/デスクトップショートカットの動作確認、アンインストール時の挙動確認(MSI標準機能のため未検証)
+- [ ] リリース用のコード署名(未検証・未定)
+- [ ] 自動更新機構は当面見送り。導入する場合は「起動時に新バージョンの有無だけ確認し、ダウンロードページに案内する」程度の軽量な手動更新確認に留める方針で検討(要相談)
 
 ## 技術メモ
 - .NET 8 / C# / WPF
@@ -196,6 +216,13 @@
 - 2026-09-04: 実削除前に対象・確度・存在状態をJSONマニフェストへ保存し、レジストリ項目は.regへエクスポートする削除前バックアップを追加。バックアップ失敗時は削除を中止する
 - 2026-09-04: 削除前バックアップにファイル/フォルダのスナップショットとサービス/タスク定義の記録を追加。ファイル/レジストリ復元とメイン画面の復元メニューも実装し、UIビルド・テスト44件を確認
 - 2026-09-04: 孤児候補の除外リスト保存を追加。ユーザー単位のLocalAppData配下へJSON保存し、検出画面の「今後表示しない」から再スキャン以降の候補を除外できるようにした。自動テスト・UIビルド確認済み
+- 2026-09-06: Phase 12(製品化・課金)着手。ライセンスキーのRSA署名検証方式を実装(LicenseKeyVerifier/LicenseKeyIssuer/LicenseState/LicenseWindow)。自動テスト6件追加、全50件成功
+- 2026-09-06〜12: 決済導線を構築。製品名を「Purge」に決定(競合調査を踏まえ命名。虫眼鏡モチーフは既存の高速検索ソフトと被るため不採用、削除・掃除モチーフの独自アイコンを作成)。価格¥2,980・買い切り・返金不可で確定。Stripe Managed Payments(3.5%/取引)を採用し税務・不正対策・サポートを一任する方針に決定。Cloudflare Worker(PurgeLicenseServerプロジェクト)でStripe Webhook受信→ライセンスキー自動発行→メール送信の一連の自動化を構築。メール送信サービスはResendからSendGridへ切替
+- 2026-09-11: セキュリティインシデント対応。RSA秘密鍵が別チャットで誤って平文表示された事故を受け、発行実績ゼロの段階で鍵をローテーション(再生成)。Core側公開鍵・テストのサンプルキー・Cloudflare側のシークレットをすべて新しい鍵に更新し、影響ゼロで収束
+- 2026-09-12: リポジトリ・プロジェクト名をUninstallToolからPurgeへリネーム(GitHub・ローカルとも)。releases/・publish/を.gitignoreに追加してビルド成果物をリポジトリ管理から除外(フォルダ構造の整理)
+- 2026-09-12: Velopackを一時導入しGitHub Actionsでの自動配布(v0.1.0)まで構築したが、requireAdministrator(常時管理者権限起動)のアプリではアップデートのたびに必ずUAC同意が必要になり、Velopackが前提とする「バックグラウンドで気づかれずに更新」という設計と相性が悪いと判明したため撤去を決定
+- **【訂正】2026-09-12の同日中に、上記の方針転換を知らない別セッションが「installer/(WiX実装)は不要な残骸」と誤って判断し削除してしまう事故が発生。その直後、別セッションがWiXインストーラーの再構築に着手し、Product.wxsのビルドエラー(ComponentGroupRefのID不正、日本語コードページ、32/64bit不整合等)を解消してPurge.Installer.msiの生成に成功、installer/フォルダは復元済み。ただし`.github/workflows/release.yml`はVelopack時代のまま未修正で残っていたため、このタイミングでWiX/MSIビルドへ書き換える(詳細はPhase 13参照)
+- 2026-09-13: ROADMAP.md内の矛盾した記述(直前の進捗ログが「Velopackで完全自動化を構築」、Phase 13が「WiXへ回帰」と正反対の内容だった)を発見・訂正。実態(installer/フォルダの存在、csprojにVelopack参照なし)を確認した上で、release.ymlをWiX/MSIビルドへ書き換え。Product.wxsのバージョンを`-p:ProductVersion=`で注入可能にし、ローカルでのpublish→WiXビルドの一連の成功を確認
 
 ## 未実装・要対応(会話で挙がったが手つかずのもの)
 - [x] 単体アンインストール後に残存物スキャンを自動提案 ではなく、提案なしで移行へ。 (完了)

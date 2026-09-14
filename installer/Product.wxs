@@ -1,0 +1,57 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="Purge"
+           Manufacturer="Purge"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="a1e6b6b0-6b1a-4b1a-9b1a-6b1a4b1a9b1a"
+           Codepage="65001"
+           Scope="perMachine"
+           InstallerVersion="500">
+
+    <MajorUpgrade DowngradeErrorMessage="より新しいバージョンのPurgeが既にインストールされています。" />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(var.PublishDir)\..\..\UI\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Purge">
+        <Component Id="ApplicationFiles" Guid="b2f7c6b0-6b1a-4b1a-9b1a-6b1a4b1a9b1b">
+          <File Id="MainExe" Source="$(var.PublishDir)\Purge.UI.exe" KeyPath="yes">
+            <Shortcut Id="StartMenuShortcut"
+                      Directory="ProgramMenuFolder"
+                      Name="Purge"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="AppIcon.ico"
+                      Advertise="yes" />
+            <Shortcut Id="DesktopShortcut"
+                      Directory="DesktopFolder"
+                      Name="Purge"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="AppIcon.ico"
+                      Advertise="yes" />
+          </File>
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <ComponentGroup Id="AppFilesGroup" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)\**">
+        <Exclude Files="$(var.PublishDir)\Purge.UI.exe" />
+      </Files>
+    </ComponentGroup>
+
+    <Feature Id="MainFeature" Title="Purge" Level="1">
+      <ComponentRef Id="ApplicationFiles" />
+      <ComponentGroupRef Id="AppFilesGroup" />
+    </Feature>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+  </Package>
+</Wix>
