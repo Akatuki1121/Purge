@@ -1,0 +1,15 @@
+<Project Sdk="WixToolset.Sdk/6.0.1">
+
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <Platforms>x64</Platforms>
+    <ProductVersion Condition="'$(ProductVersion)'==''">0.1.0</ProductVersion>
+    <DefineConstants>PublishDir=$(MSBuildProjectDirectory)\..\publish\Purge;ProductVersion=$(ProductVersion)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="6.0.1" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="6.0.1" />
+  </ItemGroup>
+
+</Project>
