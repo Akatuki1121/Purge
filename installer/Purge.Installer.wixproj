@@ -5,6 +5,7 @@
     <Platforms>x64</Platforms>
     <ProductVersion Condition="'$(ProductVersion)'==''">0.1.0</ProductVersion>
     <DefineConstants>PublishDir=$(MSBuildProjectDirectory)\..\publish\Purge;ProductVersion=$(ProductVersion)</DefineConstants>
+    <Cultures>ja-JP</Cultures>
   </PropertyGroup>
 
   <ItemGroup>
