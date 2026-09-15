@@ -22,6 +22,29 @@ namespace Purge
         // 本番Stripeアカウントの商品・Payment Link(2026-09-13、本人確認審査中に作成)。
         public const string PurchaseUrl = "https://buy.stripe.com/bJeaERa508ig9vTcxc1Nu00";
 
+        /// <summary>
+        /// 購入ページ(既定ブラウザ)を開く。
+        ///
+        /// 本アプリはapp.manifestでrequireAdministratorを指定しており、常に管理者権限(高い整合性レベル)で
+        /// 起動している。一方、既定のブラウザは通常のユーザー権限(中程度の整合性レベル)で動くプロセスのため、
+        /// 管理者権限プロセスから直接 Process.Start(url) を呼ぶと、Windowsのプロセス整合性の仕組み
+        /// (UIPI: User Interface Privilege Isolation)によりブラウザの起動がブロック・無視されることがある
+        /// (例外は投げられず、単に何も起きないように見える)。
+        ///
+        /// 回避策として、explorer.exe を経由してURLを開く。explorer.exeは常に標準ユーザーの整合性レベルで
+        /// 動作しているため、そこにURLを渡すと標準ユーザー文脈でブラウザが起動でき、この問題を回避できる。
+        /// </summary>
+        public static void OpenPurchasePage()
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = PurchaseUrl,
+                UseShellExecute = true,
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+
         private static bool? _cachedIsProUnlocked;
         private static LicensePayload? _cachedPayload;
 

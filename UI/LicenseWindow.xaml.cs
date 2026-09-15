@@ -103,11 +103,7 @@ namespace Purge.UI
         {
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = LicenseState.PurchaseUrl,
-                    UseShellExecute = true,
-                });
+                LicenseState.OpenPurchasePage();
             }
             catch (System.Exception ex)
             {
