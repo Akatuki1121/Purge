@@ -213,9 +213,21 @@ namespace Purge.UI
         {
             if (!LicenseState.IsProUnlocked)
             {
-                MessageBox.Show(
-                    "スキャン結果のエクスポート(CSV保存)はPro版の機能です。\n(現在ライセンス販売は準備中です)",
-                    "Pro機能", MessageBoxButton.OK, MessageBoxImage.Information);
+                var purchaseConfirm = MessageBox.Show(
+                    "スキャン結果のエクスポート(CSV保存)はPro版の機能です。\n\n購入ページを開きますか？",
+                    "Pro機能", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                if (purchaseConfirm == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        LicenseState.OpenPurchasePage();
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Purchase", "購入ページを開けなかった", ex.Message);
+                    }
+                }
                 return;
             }
 
