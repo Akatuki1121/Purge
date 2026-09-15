@@ -71,7 +71,7 @@
                                Click="RefreshButton_Click"/>
                     <ui:Button Content="不具合・要望" Icon="{ui:SymbolIcon Bug24}"
                                Margin="8,0,0,0" Click="ReportBugMenuItem_Click"/>
-                    <ui:Button Content="孤児候補をスキャン" Icon="{ui:SymbolIcon Search24}"
+                    <ui:Button Content="対応アプリ不明フォルダをスキャン" Icon="{ui:SymbolIcon Search24}"
                                Margin="8,0,0,0" Click="ScanOrphanButton_Click"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0">

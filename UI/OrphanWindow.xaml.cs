@@ -194,7 +194,7 @@ namespace Purge.UI
             }
 
             var confirm = MessageBox.Show(
-                $"選択した{selected.Count}件を今後の孤児候補スキャンから除外します。\n\n" +
+                $"選択した{selected.Count}件を今後の対応アプリ不明フォルダのスキャンから除外します。\n\n" +
                 "ファイルやフォルダは削除されません。\nよろしいですか？",
                 "除外設定", MessageBoxButton.YesNo, MessageBoxImage.Information);
             if (confirm != MessageBoxResult.Yes) return;
@@ -204,7 +204,7 @@ namespace Purge.UI
             {
                 _items.Remove(item);
             }
-            _log.Info("OrphanDetect", "孤児候補を除外リストに追加", $"{selected.Count}件");
+            _log.Info("OrphanDetect", "対応アプリ不明フォルダを除外リストに追加", $"{selected.Count}件");
             MessageBox.Show($"{selected.Count}件を除外しました。ファイルは削除されていません。",
                 "除外設定", MessageBoxButton.OK, MessageBoxImage.Information);
         }
