@@ -1,8 +1,12 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 using Purge;
 using Wpf.Ui.Controls;
+using Clipboard = System.Windows.Clipboard;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
@@ -12,11 +16,40 @@ namespace Purge.UI;
 public partial class BugReportWindow : FluentWindow
 {
     private readonly OperationLog _log;
+    private string? _attachedScreenshotFileName;
 
     public BugReportWindow(OperationLog log)
     {
         InitializeComponent();
         _log = log;
+    }
+
+    private void AttachScreenshotButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "スクリーンショット画像を選択",
+            Filter = "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.gif",
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(dialog.FileName);
+            bitmap.EndInit();
+
+            Clipboard.SetImage(bitmap);
+            _attachedScreenshotFileName = Path.GetFileName(dialog.FileName);
+            AttachedFileText.Text = $"「{_attachedScreenshotFileName}」をクリップボードにコピーしました";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"画像を読み込めませんでした。\n{ex.Message}", "エラー",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void ReportButton_Click(object sender, RoutedEventArgs e)
@@ -35,6 +68,14 @@ public partial class BugReportWindow : FluentWindow
             var prefix = isFeatureRequest ? "[要望]" : "[不具合]";
             var labels = isFeatureRequest ? "enhancement,user-request" : "bug,user-report";
             GitHubIssueReporter.OpenIssue($"{prefix} {summary}", BuildReport(), labels);
+
+            if (_attachedScreenshotFileName != null)
+            {
+                MessageBox.Show(
+                    "画像はクリップボードにコピーされています。\n開いたGitHubのIssue作成画面の本文欄に貼り付け(Ctrl+V)てください。",
+                    "スクリーンショットの貼り付け", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
             Close();
         }
         catch (Exception ex)
