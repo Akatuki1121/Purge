@@ -27,6 +27,12 @@ public partial class App : Application
     /// </summary>
     public static string? AvailableUpdateTag { get; private set; }
 
+    /// <summary>
+    /// 新バージョンのMSIインストーラーのダウンロードURL(GitHub Releasesのasset)。
+    /// AvailableUpdateTagとセットで設定される。
+    /// </summary>
+    public static string? AvailableUpdateMsiUrl { get; private set; }
+
     private const string GitHubReleasesApiUrl = "https://api.github.com/repos/Akatuki1121/Purge/releases/latest";
 
     protected override void OnStartup(StartupEventArgs e)
@@ -82,6 +88,22 @@ public partial class App : Application
                 && latestVersion > currentVersion)
             {
                 AvailableUpdateTag = latestTag;
+
+                // Releaseのassets一覧から、release.ymlが生成する ".msi" 拡張子のファイルを探す。
+                // 見つからない場合(assetsが空、命名規則が変わった等)はURLをnullのままにし、
+                // MainWindow側は「新バージョンがあります」の案内のみ出す(ダウンロードボタンは無効化)。
+                if (doc.RootElement.TryGetProperty("assets", out var assets))
+                {
+                    foreach (var asset in assets.EnumerateArray())
+                    {
+                        var name = asset.GetProperty("name").GetString();
+                        if (name != null && name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
+                        {
+                            AvailableUpdateMsiUrl = asset.GetProperty("browser_download_url").GetString();
+                            break;
+                        }
+                    }
+                }
             }
         }
         catch

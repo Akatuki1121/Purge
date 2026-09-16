@@ -170,7 +170,7 @@
 - [x] GitHub Actions(release.yml)をVelopack向けからWiX/MSIビルドへ書き換え完了(dotnet publish→dotnet build installer/Purge.Installer.wixproj→MSIをバージョン付きファイル名にリネーム→softprops/action-gh-releaseでGitHub Releasesへ添付)
 - [x] スタートメニュー/デスクトップショートカットの動作確認、アンインストール時の挙動確認(MSI標準機能のため未検証) → 2026-09-14実機確認済み。ローカルビルドのMSIをmsiexec /qnで実行し、スタートメニュー(`C:\ProgramData\...\Purge.lnk`)・共通デスクトップ(`C:\Users\Public\Desktop\Purge.lnk`)の両方に正しくショートカットが作成されることを確認。per-machineインストールのため個人デスクトップでなく共通デスクトップに作成される仕様(エクスプローラー上は自分のデスクトップと統合表示される)
 - [x] リリース用のコード署名を検討(2026-09-13)。安価なAzure Artifact Signing(旧Trusted Signing、月$9.99)は個人開発者向けが現状米国・カナダ限定のため利用不可と判明。残る従来型OV証明書は年$100〜400程度かかるため、売上実績のない初回リリースでは見送りと決定。**当面は無署名でリリースし、SmartScreen警告が出ることをリリースノートで案内する。売上が育ってから証明書購入を再検討する**方針
-- [ ] 自動更新機構は当面見送り。導入する場合は「起動時に新バージョンの有無だけ確認し、ダウンロードページに案内する」程度の軽量な手動更新確認に留める方針で検討(要相談)
+- [ ] 自動更新機構: 「バックグラウンドで気づかれずに更新」は管理者権限起動(requireAdministrator)である以上不可能(更新のたびに必ずUAC同意が要る)と判明済み。代わりに「半自動更新」(起動時に新バージョンをバックグラウンドでチェック→控えめなバナーで通知→ユーザーがボタンを押したらMSIをダウンロードして起動、以降はユーザー操作でインストール)を実装する方針に確定(2026-09-16)。App.xaml.cs側は新バージョンのタグ検出(AvailableUpdateTag)とMSIダウンロードURL取得(AvailableUpdateMsiUrl)まで実装済み(未コミット)。残作業: MainWindowに通知バナーUIを追加、ボタン押下でMSIをダウンロードして起動する処理を実装
 
 ## 技術メモ
 - .NET 8 / C# / WPF
@@ -223,6 +223,9 @@
 - 2026-09-12: Velopackを一時導入しGitHub Actionsでの自動配布(v0.1.0)まで構築したが、requireAdministrator(常時管理者権限起動)のアプリではアップデートのたびに必ずUAC同意が必要になり、Velopackが前提とする「バックグラウンドで気づかれずに更新」という設計と相性が悪いと判明したため撤去を決定
 - **【訂正】2026-09-12の同日中に、上記の方針転換を知らない別セッションが「installer/(WiX実装)は不要な残骸」と誤って判断し削除してしまう事故が発生。その直後、別セッションがWiXインストーラーの再構築に着手し、Product.wxsのビルドエラー(ComponentGroupRefのID不正、日本語コードページ、32/64bit不整合等)を解消してPurge.Installer.msiの生成に成功、installer/フォルダは復元済み。ただし`.github/workflows/release.yml`はVelopack時代のまま未修正で残っていたため、このタイミングでWiX/MSIビルドへ書き換える(詳細はPhase 13参照)
 - 2026-09-13: ROADMAP.md内の矛盾した記述(直前の進捗ログが「Velopackで完全自動化を構築」、Phase 13が「WiXへ回帰」と正反対の内容だった)を発見・訂正。実態(installer/フォルダの存在、csprojにVelopack参照なし)を確認した上で、release.ymlをWiX/MSIビルドへ書き換え。Product.wxsのバージョンを`-p:ProductVersion=`で注入可能にし、ローカルでのpublish→WiXビルドの一連の成功を確認
+- 2026-09-14〜15: Issue #1〜#11に対応(GitHub上でクローズ済み、詳細はリポジトリのPR履歴参照): 開始時のSmartScreen警告への案内、孤児候補→対応アプリ不明フォルダの表記統一漏れ修正、管理者権限起動時にStripe購入ページ(explorer.exe経由のURLオープンでUIPI制限を回避)、WiXインストーラーの日本語化、CSVエクスポートの購入導線統一、不具合報告への任意スクリーンショット添付、GitHub ActionsへのNuGetキャッシュ導入(ビルド時間短縮)
+- 2026-09-16: UI/UX改善。(1)「その他」メニュー内にしかなかったPro導線が気づかれにくいとの指摘を受け、メイン画面ツールバーに常設の「Proにアップグレード」ボタンを追加(購入済みなら自動的に非表示)。(2)「ドライラン」という用語が直感的でないとの指摘を受け、MainWindow/ResidueWindow/OrphanWindow全3画面のトグルを「テスト実行(削除しない)」/「本番実行(削除する)」という動作がそのまま伝わる文言に統一。(3)自動更新について、管理者権限起動が前提のため完全なバックグラウンド自動更新は不可能(更新ごとに必ずUAC同意が要る)と改めて確認した上で、「新バージョンを検知→控えめな通知→ワンクリックでMSIダウンロード・起動」という半自動更新の方針を確定(実装は次回以降)
+- 2026-09-16: 別セッションが5時間の利用上限に達したため引き継ぎ。未コミットのまま残っていた3点を検証・完成させてPR化: (1) App.xaml.csのAvailableUpdateMsiUrlが宣言のみで値を設定する処理が無い未完成状態だったため、GitHub Releases APIのassets一覧から.msi拡張子のファイルを探して設定する処理を追加。(2) installer/の多言語対応(Issue #12)下地としてLoc/ja-jp.wxl・en-us.wxl・License.ja-jp.rtf・License.en-us.rtfを追加、wixprojのCulturesをja-JP;en-USに拡張し、ローカルビルドでja-JP/en-US両方のMSIが正常に生成されることを確認(0エラー・0警告)。(3) ショートカット作成のオン/オフ切り替え(Issue #14)の下地として、Product.wxsのショートカットをAdvertise方式からINSTALLSTARTMENUSHORTCUT/INSTALLDESKTOPSHORTCUTプロパティによる条件付きComponentへ再構成(ただし値は現状常に1固定で、インストール中にユーザーが選択するWixUIカスタムダイアログは未実装のまま。Issue #14はクローズせず継続)。release.ymlもja-JP/en-US両方のMSIをGitHub Releasesにアップロードするよう更新済み
 
 ## 未実装・要対応(会話で挙がったが手つかずのもの)
 - [x] 単体アンインストール後に残存物スキャンを自動提案 ではなく、提案なしで移行へ。 (完了)

@@ -80,6 +80,8 @@
                                FontSize="11" VerticalAlignment="Center"/>
                     <ui:Button x:Name="CancelScanButton" Content="キャンセル" Appearance="Secondary"
                                Visibility="Collapsed" Click="CancelScanButton_Click"/>
+                    <ui:Button x:Name="ProUpgradeButton" Content="Proにアップグレード" Appearance="Primary"
+                               Icon="{ui:SymbolIcon Star24}" Margin="8,0,0,0" Click="ProUpgradeButton_Click"/>
                 </StackPanel>
                 <Menu Grid.Column="2" Background="Transparent" Padding="4,0" VerticalAlignment="Center">
                     <MenuItem Header="その他(_M)">
@@ -166,7 +168,7 @@
                 <!-- 通常操作: アンインストール(単体が基本、複数選択時のみ一括ボタンが現れる) -->
                 <StackPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Delete24" FontSize="16" Margin="0,0,8,0" Foreground="#666"/>
-                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="ドライラン" OffContent="実際に実行" IsChecked="True"
+                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="テスト実行(削除しない)" OffContent="本番実行(削除する)" IsChecked="True"
                                       VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"/>
                     <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
                             Background="#E6F4EA" VerticalAlignment="Center">

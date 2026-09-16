@@ -5,12 +5,18 @@
     <Platforms>x64</Platforms>
     <ProductVersion Condition="'$(ProductVersion)'==''">0.1.0</ProductVersion>
     <DefineConstants>PublishDir=$(MSBuildProjectDirectory)\..\publish\Purge;ProductVersion=$(ProductVersion)</DefineConstants>
-    <Cultures>ja-JP</Cultures>
+    <Cultures>ja-JP;en-US</Cultures>
+    <SuppressIces>ICE43;ICE57;ICE69</SuppressIces>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext" Version="6.0.1" />
     <PackageReference Include="WixToolset.Util.wixext" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <WxlFile Include="Loc\ja-jp.wxl" />
+    <WxlFile Include="Loc\en-us.wxl" />
   </ItemGroup>
 
 </Project>
