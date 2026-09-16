@@ -23,7 +23,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="対応アプリ不明フォルダのスキャン結果(実験的機能)"/>
+        <ui:TitleBar Grid.Row="0" Title="対応アプリ不明フォルダのスキャン結果"/>
 
         <ui:InfoBar Grid.Row="1" Margin="14,10,14,8" IsOpen="True" IsClosable="False" Severity="Warning"
                     Title="削除前に必ず確認してください"
