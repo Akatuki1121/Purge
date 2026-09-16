@@ -50,7 +50,7 @@
 
         <ui:Card Grid.Row="3" Margin="14,0,14,14" Padding="14,10">
             <StackPanel Orientation="Horizontal">
-                <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="ドライラン" OffContent="実際に削除" IsChecked="True"
+                <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="テスト実行(削除しない)" OffContent="本番実行(削除する)" IsChecked="True"
                                   VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"/>
                 <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
                         Background="#E6F4EA" VerticalAlignment="Center">
