@@ -51,6 +51,7 @@ public partial class MainWindow : FluentWindow
         if (LicenseState.IsProUnlocked)
         {
             BatchUninstallButton.Content = "選択した複数アプリを一括アンインストール";
+            ProUpgradeButton.Visibility = Visibility.Collapsed;
         }
 
         AppListView.SelectionChanged += AppListView_SelectionChanged;
@@ -552,14 +553,32 @@ public partial class MainWindow : FluentWindow
 
     private void LicenseMenuItem_Click(object sender, RoutedEventArgs e)
     {
+        OpenLicenseWindowAndRefresh();
+    }
+
+    /// <summary>
+    /// メイン画面右上に常設した「Proにアップグレード」ボタン。
+    /// 以前は「その他」メニューの奥にしかPro導線がなく気づかれにくかったため、
+    /// 常に見える位置に配置した(Pro解放済みの場合はコンストラクタでVisibility.Collapsedにする)。
+    /// </summary>
+    private void ProUpgradeButton_Click(object sender, RoutedEventArgs e)
+    {
+        OpenLicenseWindowAndRefresh();
+    }
+
+    private void OpenLicenseWindowAndRefresh()
+    {
         new LicenseWindow
         {
             Owner = this,
         }.ShowDialog();
 
-        // ライセンス状態が変わった可能性があるため、一括アンインストールボタンの表示文言を更新する
+        // ライセンス状態が変わった可能性があるため、関連するUIの表示を更新する
         BatchUninstallButton.Content = LicenseState.IsProUnlocked
             ? "選択した複数アプリを一括アンインストール"
             : "選択した複数アプリを一括アンインストール (Pro)";
+        ProUpgradeButton.Visibility = LicenseState.IsProUnlocked
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
 }

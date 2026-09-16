@@ -20,6 +20,14 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
       - name: Extract version from tag
         id: version
         shell: pwsh
@@ -29,24 +37,29 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore Purge.slnx
+        run: |
+          dotnet restore Purge.slnx
+          dotnet restore installer/Purge.Installer.wixproj
 
       - name: Run tests
         run: dotnet test Tests/Purge.Tests.csproj --configuration Release --no-restore
 
       - name: Publish self-contained package
-        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ steps.version.outputs.version }}
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ steps.version.outputs.version }} --no-restore
 
       - name: Build WiX installer (MSI)
-        run: dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ steps.version.outputs.version }}
+        run: dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ steps.version.outputs.version }} --no-restore
 
       - name: Rename MSI with version
         shell: pwsh
         run: |
-          Copy-Item "installer/bin/x64/Release/Purge.Installer.msi" "installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64.msi"
+          Copy-Item "installer/bin/x64/Release/ja-JP/Purge.Installer.msi" "installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-ja.msi"
+          Copy-Item "installer/bin/x64/Release/en-US/Purge.Installer.msi" "installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-en.msi"
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
-          files: installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64.msi
+          files: |
+            installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-ja.msi
+            installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-en.msi
           token: ${{ secrets.GITHUB_TOKEN }}

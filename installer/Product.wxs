@@ -5,6 +5,7 @@
            Manufacturer="Purge"
            Version="$(var.ProductVersion)"
            UpgradeCode="a1e6b6b0-6b1a-4b1a-9b1a-6b1a4b1a9b1a"
+           Language="1041"
            Codepage="65001"
            Scope="perMachine"
            InstallerVersion="500">
@@ -16,23 +17,35 @@
     <Icon Id="AppIcon.ico" SourceFile="$(var.PublishDir)\..\..\UI\app.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
 
+    <Property Id="INSTALLSTARTMENUSHORTCUT" Value="1" />
+    <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" />
+
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="Purge">
         <Component Id="ApplicationFiles" Guid="b2f7c6b0-6b1a-4b1a-9b1a-6b1a4b1a9b1b">
-          <File Id="MainExe" Source="$(var.PublishDir)\Purge.UI.exe" KeyPath="yes">
-            <Shortcut Id="StartMenuShortcut"
-                      Directory="ProgramMenuFolder"
-                      Name="Purge"
-                      WorkingDirectory="INSTALLFOLDER"
-                      Icon="AppIcon.ico"
-                      Advertise="yes" />
-            <Shortcut Id="DesktopShortcut"
-                      Directory="DesktopFolder"
-                      Name="Purge"
-                      WorkingDirectory="INSTALLFOLDER"
-                      Icon="AppIcon.ico"
-                      Advertise="yes" />
-          </File>
+          <File Id="MainExe" Source="$(var.PublishDir)\Purge.UI.exe" KeyPath="yes" />
+        </Component>
+        <Component Id="StartMenuShortcutComponent" Guid="c3a8d7c1-7c2b-4c2b-ac2b-7c2b5c2bac2c" Condition="INSTALLSTARTMENUSHORTCUT">
+          <RegistryValue Root="HKLM" Key="Software\Purge" Name="StartMenuShortcutInstalled"
+                          Type="integer" Value="1" KeyPath="yes" />
+          <Shortcut Id="StartMenuShortcut"
+                    Directory="ProgramMenuFolder"
+                    Name="Purge"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Icon="AppIcon.ico"
+                    Target="[#MainExe]"
+                    Advertise="no" />
+        </Component>
+        <Component Id="DesktopShortcutComponent" Guid="d4b9e8d2-8d3c-4d3c-bd3c-8d3c6d3cbd3d" Condition="INSTALLDESKTOPSHORTCUT">
+          <RegistryValue Root="HKLM" Key="Software\Purge" Name="DesktopShortcutInstalled"
+                          Type="integer" Value="1" KeyPath="yes" />
+          <Shortcut Id="DesktopShortcut"
+                    Directory="DesktopFolder"
+                    Name="Purge"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Icon="AppIcon.ico"
+                    Target="[#MainExe]"
+                    Advertise="no" />
         </Component>
       </Directory>
     </StandardDirectory>
@@ -49,9 +62,12 @@
     <Feature Id="MainFeature" Title="Purge" Level="1">
       <ComponentRef Id="ApplicationFiles" />
       <ComponentGroupRef Id="AppFilesGroup" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
     </Feature>
 
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="!(loc.LicenseRtfPath)" />
     <UIRef Id="WixUI_ErrorProgressText" />
 
   </Package>
