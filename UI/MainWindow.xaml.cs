@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.ComponentModel;
 using System.Threading;
 using Purge;
@@ -302,14 +303,24 @@ public partial class MainWindow : FluentWindow
     }
 
     /// <summary>
-    /// 孤児候補スキャン: 特定アプリの選択は不要(システム全体を横断走査するため)。
+    /// 対応アプリ不明フォルダのスキャン: 特定アプリの選択は不要(システム全体を横断走査するため)。
     /// メニュー「ツール」からのみ呼び出される、選択操作から独立した機能。
     /// MFT検索+exe/dllメタデータチェックを含む重い処理のため、UIスレッドをブロックしないよう別スレッドで実行する。
     /// </summary>
     private async void ScanOrphanButton_Click(object sender, RoutedEventArgs e)
     {
+        var button = (System.Windows.Controls.Button)sender;
+        var originalContent = button.Content;
+
         try
         {
+            // スキャンはMFT検索を含み数十秒かかることがあるため、進行中であることを
+            // 明示してボタンの二重押しを防ぐ(押せたかどうか分からない、という指摘への対応)。
+            button.IsEnabled = false;
+            button.Content = "スキャン中...";
+            ScanStatusText.Text = "対応アプリ不明フォルダをスキャン中...";
+            Mouse.OverrideCursor = Cursors.Wait;
+
             var apps = _inventory.GetInstalledApps();
 
             var orphans = await Task.Run(() =>
@@ -319,10 +330,13 @@ public partial class MainWindow : FluentWindow
 
             if (orphans.Count == 0)
             {
-                MessageBox.Show("孤児候補は見つかりませんでした。", "スキャン結果",
+                ScanStatusText.Text = "スキャン完了(該当なし)";
+                MessageBox.Show("対応アプリ不明フォルダは見つかりませんでした。", "スキャン結果",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+
+            ScanStatusText.Text = $"スキャン完了({orphans.Count}件)";
 
             var orphanWindow = new OrphanWindow(orphans, _log, _orphanExclusions)
             {
@@ -333,7 +347,14 @@ public partial class MainWindow : FluentWindow
         }
         catch (System.Exception ex)
         {
+            ScanStatusText.Text = "スキャンに失敗しました";
             new CrashReportWindow(_log.BuildErrorReport(ex)) { Owner = this }.ShowDialog();
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+            button.IsEnabled = true;
+            button.Content = originalContent;
         }
     }
 
