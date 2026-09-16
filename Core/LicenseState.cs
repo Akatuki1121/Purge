@@ -20,7 +20,7 @@ namespace Purge
         private const string LicenseKeyFileName = "license.key";
 
         // 本番Stripeアカウントの商品・Payment Link(2026-09-13、本人確認審査中に作成)。
-        public const string PurchaseUrl = "https://buy.stripe.com/bJeaERa508ig9vTcxc1Nu00";
+        public const string PurchaseUrl = "https://buy.stripe.com/bJeaERa5O8ig9vTcxc1Nu00";
 
         /// <summary>
         /// 購入ページ(既定ブラウザ)を開く。
