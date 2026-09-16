@@ -109,6 +109,22 @@ namespace Purge.UI
 
             bool dryRun = DryRunToggle.IsChecked == true;
 
+            // 複数選択の一括削除はPro機能。無料版では1件ずつ削除してもらう。
+            // (テスト実行は無料版でも複数選択で試せるようにして、Pro購入の判断材料にする)
+            if (!dryRun && selected.Count > 1 && !LicenseState.IsProUnlocked)
+            {
+                var purchaseConfirm = MessageBox.Show(
+                    $"複数フォルダ({selected.Count}件)の一括削除はPro版の機能です。\n\n" +
+                    "無料版では1件ずつ削除できます。\n\n" +
+                    "購入ページを開きますか？",
+                    "Pro版の機能", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (purchaseConfirm == MessageBoxResult.Yes)
+                {
+                    LicenseState.OpenPurchasePage();
+                }
+                return;
+            }
+
             if (!dryRun)
             {
                 var confirm = MessageBox.Show(
