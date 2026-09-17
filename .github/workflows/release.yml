@@ -39,6 +39,7 @@ jobs:
       - name: Restore
         run: |
           dotnet restore Purge.slnx
+          dotnet restore UI/Purge.UI.csproj --runtime win-x64
           dotnet restore installer/Purge.Installer.wixproj
 
       - name: Run tests
