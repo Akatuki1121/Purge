@@ -39,9 +39,15 @@ jobs:
         run: dotnet test Tests/Purge.Tests.csproj --configuration Release --no-restore
 
       - name: Publish self-contained package
+        # PRごとに毎回フルのself-contained発行(.NETランタイム一式のコピー)をするのは
+        # ビルド・テストの正しさ確認には不要で時間もかかるため、mainへの直接push時のみ実行する。
+        # 配布用の正式な成果物はrelease.yml(タグpush時)で作られるため、ここは開発中の
+        # 簡易確認用アーティファクトという位置づけ。
+        if: github.event_name == 'push'
         run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/Purge --no-restore
 
       - name: Upload package
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: Purge-win-x64
