@@ -35,6 +35,13 @@ namespace Purge.UI
             _items = new ObservableCollection<SelectableOrphanCandidate>(
                 candidates.Select(c => new SelectableOrphanCandidate(c)));
             OrphanListView.ItemsSource = _items;
+
+            // 列幅をウィンドウ幅に追従させ、横ホイールでの横スクロールも有効化する。
+            // 列順: フォルダ名/場所/サイズ/ファイル数/最終更新/フルパス。
+            GridViewColumnSizer.AttachAutoSize(OrphanListView,
+                new double?[] { 18, 18, 8, 8, 20, 28 });
+            HorizontalScrollSupport.AttachToWindow(this);
+            HorizontalScrollSupport.AttachShiftWheel(OrphanListView);
         }
 
         /// <summary>

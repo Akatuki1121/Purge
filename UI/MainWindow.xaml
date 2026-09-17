@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Purge.UI"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="Purge" Height="700" Width="1040" MinWidth="880" MinHeight="580"
+        Title="Purge" Height="700" Width="1040" MinWidth="640" MinHeight="480"
         Icon="app.ico"
         ExtendsContentIntoTitleBar="True">
     <Window.Resources>
@@ -66,15 +66,15 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <WrapPanel Grid.Column="0" Orientation="Horizontal">
                     <ui:Button Content="再読み込み" Icon="{ui:SymbolIcon ArrowSync24}"
                                Click="RefreshButton_Click"/>
                     <ui:Button Content="不具合・要望" Icon="{ui:SymbolIcon Bug24}"
                                Margin="8,0,0,0" Click="ReportBugMenuItem_Click"/>
                     <ui:Button Content="対応アプリ不明フォルダをスキャン" Icon="{ui:SymbolIcon Search24}"
                                Margin="8,0,0,0" Click="ScanOrphanButton_Click"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0">
+                </WrapPanel>
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0">
                     <ui:SymbolIcon Symbol="ArrowSync24" FontSize="15" Foreground="#6B7785"/>
                     <TextBlock x:Name="ScanStatusText" Text="待機中" Margin="6,0,8,0" Foreground="#6B7785"
                                FontSize="11" VerticalAlignment="Center"/>
@@ -82,7 +82,7 @@
                                Visibility="Collapsed" Click="CancelScanButton_Click"/>
                     <ui:Button x:Name="ProUpgradeButton" Content="Proにアップグレード" Appearance="Primary"
                                Icon="{ui:SymbolIcon Star24}" Margin="8,0,0,0" Click="ProUpgradeButton_Click"/>
-                </StackPanel>
+                </WrapPanel>
                 <Menu Grid.Column="2" Background="Transparent" Padding="4,0" VerticalAlignment="Center">
                     <MenuItem Header="その他(_M)">
                         <MenuItem x:Name="ShowLogMenuItem" Header="操作ログを表示" IsCheckable="True" IsChecked="False"
@@ -134,7 +134,8 @@
                 <ui:Card Grid.Row="4" Margin="14,0,14,10" Padding="0">
                     <Grid>
                         <ListView x:Name="AppListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
-                                  ItemContainerStyle="{StaticResource AppListItemStyle}">
+                                  ItemContainerStyle="{StaticResource AppListItemStyle}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
                             <ListView.View>
                                 <GridView AllowsColumnReorder="True" ColumnHeaderContainerStyle="{StaticResource GridHeaderStyle}">
                                     <GridViewColumn Header="" Width="32">
@@ -166,7 +167,7 @@
             <StackPanel>
 
                 <!-- 通常操作: アンインストール(単体が基本、複数選択時のみ一括ボタンが現れる) -->
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Delete24" FontSize="16" Margin="0,0,8,0" Foreground="#666"/>
                     <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="テスト実行(削除しない)" OffContent="本番実行(削除する)" IsChecked="True"
                                       VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"/>
@@ -181,7 +182,7 @@
                     <ui:Button x:Name="BatchUninstallButton" Content="選択した複数アプリを一括アンインストール (Pro)"
                                Icon="{ui:SymbolIcon Apps24}" Margin="8,0,0,0" Click="BatchUninstallButton_Click"
                                Visibility="Collapsed"/>
-                </StackPanel>
+                </WrapPanel>
 
             </StackPanel>
         </ui:Card>
@@ -190,7 +191,10 @@
                   Background="#F7F9FC" BorderBrush="#DCE3EB" BorderThickness="1"
                   Expanded="LogExpander_Changed" Collapsed="LogExpander_Changed">
             <Expander.Header>
-                <Grid Width="980">
+                <!-- 固定幅(旧: Width=980)だとウィンドウを縮めたときにヘッダーが
+                     はみ出すため、親の幅に追従させる。 -->
+                <Grid HorizontalAlignment="Stretch"
+                      Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
