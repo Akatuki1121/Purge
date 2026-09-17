@@ -21,3 +21,8 @@ LicenseKeyIssuer/public_key.xml
 # ローカル調査用の一時出力
 defender-check.txt
 install-log.txt
+
+# Claude(このPCでの作業エージェント)向けのローカル作業ノウハウ。
+# 環境固有の癖(プロセスが詰まる対策等)が中心で、Purge自体のドキュメントではないため
+# リポジトリには含めない。
+docs/WORKFLOW_NOTES.md
