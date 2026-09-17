@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
-        Title="対応アプリ不明フォルダのスキャン結果" Height="660" Width="960"
+        Title="対応アプリ不明フォルダのスキャン結果" Height="660" Width="960" MinWidth="620" MinHeight="420"
         Icon="app.ico"
         ExtendsContentIntoTitleBar="True">
     <Window.Resources>
@@ -32,7 +32,8 @@
         <ui:Card Grid.Row="2" Margin="14,0,14,10" Padding="0">
             <ListView x:Name="OrphanListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
                       VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
-                      ScrollViewer.CanContentScroll="True">
+                      ScrollViewer.CanContentScroll="True"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="フォルダ名" Width="180" DisplayMemberBinding="{Binding FolderName}"/>
@@ -67,7 +68,7 @@
         </ui:Card>
 
         <ui:Card Grid.Row="3" Margin="14,0,14,14" Padding="14,10">
-            <StackPanel Orientation="Horizontal">
+            <WrapPanel Orientation="Horizontal">
                 <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="テスト実行(削除しない)" OffContent="本番実行(削除する)" IsChecked="True"
                                   VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"/>
                 <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
@@ -83,7 +84,7 @@
                            Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" Click="DeleteButton_Click"/>
                 <ui:Button x:Name="ExportButton" Content="エクスポート(Pro)" Icon="{ui:SymbolIcon ArrowDownload24}"
                            Margin="8,0,0,0" Click="ExportButton_Click"/>
-            </StackPanel>
+            </WrapPanel>
         </ui:Card>
     </Grid>
 </ui:FluentWindow>
