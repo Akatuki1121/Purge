@@ -36,10 +36,20 @@ namespace Purge
         /// </summary>
         public static void OpenPurchasePage()
         {
+            OpenUrl(PurchaseUrl);
+        }
+
+        /// <summary>
+        /// 任意のURLをexplorer.exe経由で開く。理由はOpenPurchasePageのコメントを参照
+        /// (管理者権限で実行中のプロセスから直接Process.Startするとブラウザが起動しないUIPI問題の回避)。
+        /// アップデート通知のダウンロードリンク等、購入ページ以外のURLを開く場合もこちらを使う。
+        /// </summary>
+        public static void OpenUrl(string url)
+        {
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "explorer.exe",
-                Arguments = PurchaseUrl,
+                Arguments = url,
                 UseShellExecute = true,
             };
             System.Diagnostics.Process.Start(psi);

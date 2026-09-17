@@ -33,6 +33,14 @@ public partial class App : Application
     /// </summary>
     public static string? AvailableUpdateMsiUrl { get; private set; }
 
+    /// <summary>
+    /// バックグラウンドの更新チェックで新バージョンが見つかった時点で発火する。
+    /// MainWindowのコンストラクタは先にShow()されているため、チェック完了を待たず
+    /// 起動する。MainWindow側はこのイベントを購読し、見つかり次第バナーを表示する。
+    /// UIスレッドで呼び出すことを保証する(購読側でDispatcher対応を意識しなくてよいように)。
+    /// </summary>
+    public static event Action<string, string?>? UpdateAvailable;
+
     private const string GitHubReleasesApiUrl = "https://api.github.com/repos/Akatuki1121/Purge/releases/latest";
 
     protected override void OnStartup(StartupEventArgs e)
@@ -104,6 +112,8 @@ public partial class App : Application
                         }
                     }
                 }
+
+                Current?.Dispatcher.Invoke(() => UpdateAvailable?.Invoke(AvailableUpdateTag, AvailableUpdateMsiUrl));
             }
         }
         catch

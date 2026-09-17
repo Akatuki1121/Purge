@@ -107,6 +107,24 @@
                        Text="⚠ 管理者権限で実行されていません。MFT高速検索(残存物の全体スキャン・対応アプリ不明フォルダのスキャン)は正しく動作せず、無言で0件になります。exeを右クリック→「管理者として実行」で起動し直してください。"/>
         </Border>
 
+        <Border x:Name="UpdateAvailableBorder" Grid.Row="2" Background="#E7F1FF" BorderBrush="#B6D4FE"
+                BorderThickness="1" Padding="8" Margin="10,4,10,0" Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="UpdateAvailableText" Grid.Column="0" TextWrapping="Wrap" Foreground="#0B3D91"
+                           VerticalAlignment="Center"
+                           Text="🔔 新しいバージョンがあります。"/>
+                <ui:Button x:Name="UpdateDownloadButton" Grid.Column="1" Content="ダウンロード" Appearance="Primary"
+                           Margin="8,0,0,0" Click="UpdateDownloadButton_Click"/>
+                <ui:Button x:Name="UpdateDismissButton" Grid.Column="2" Content="後で" Appearance="Secondary"
+                           Margin="8,0,0,0" Click="UpdateDismissButton_Click"/>
+            </Grid>
+        </Border>
+
         <Grid Grid.Row="3" Margin="14,10,14,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
