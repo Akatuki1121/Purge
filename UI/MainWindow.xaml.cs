@@ -57,6 +57,14 @@ public partial class MainWindow : FluentWindow
 
         AppListView.SelectionChanged += AppListView_SelectionChanged;
 
+        // 列幅をウィンドウ幅に追従させる(固定幅だと縮小時に列が見切れ、拡大時に右側が空く)。
+        // 先頭のアイコン列はnull=固定幅、以降はアプリ名・バージョン・発行元・場所の伸縮比率。
+        GridViewColumnSizer.AttachAutoSize(AppListView, new double?[] { null, 34, 13, 24, 29 });
+
+        // 横ホイール(チルトホイール)とShift+ホイールでの横スクロールを有効化。
+        HorizontalScrollSupport.AttachToWindow(this);
+        HorizontalScrollSupport.AttachShiftWheel(AppListView);
+
         LoadApps();
     }
 

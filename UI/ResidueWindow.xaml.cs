@@ -31,6 +31,13 @@ namespace Purge.UI
 
             _items = residueItems.Select(i => new SelectableResidueItem(i)).ToList();
             ResidueListView.ItemsSource = _items;
+
+            // 列幅をウィンドウ幅に追従させ、横ホイールでの横スクロールも有効化する。
+            // 列順: 種別/確度/場所/検出根拠。
+            GridViewColumnSizer.AttachAutoSize(ResidueListView,
+                new double?[] { 13, 7, 48, 32 });
+            HorizontalScrollSupport.AttachToWindow(this);
+            HorizontalScrollSupport.AttachShiftWheel(ResidueListView);
             TitleText.Text = $"「{appName}」の残存物: {_items.Count}件";
         }
 
