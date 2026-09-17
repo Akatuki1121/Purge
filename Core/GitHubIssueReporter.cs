@@ -16,10 +16,13 @@ namespace Purge
         private const string RepositoryUrl = "https://github.com/Akatuki1121/Purge";
 
         /// <summary>
-        /// GitHubのURL長制限(実用上安全な範囲)を超えないよう、bodyをこの文字数で切り詰める。
-        /// 超過した場合は「コピーして続きを貼り付けてください」という案内を末尾に付ける。
+        /// GitHubのURL長制限(実用上、ブラウザ・サーバー双方で安全な範囲)を超えないよう、
+        /// 完成したURL全体をこの文字数以下に収める。
+        /// 日本語はURLエンコードで1文字が最大9文字(%XX×3バイト)に膨れ上がるため、
+        /// bodyの生文字数ではなくエンコード後のURL長で判定しないと簡単に超過する
+        /// (実際に発生した不具合: Issue #29)。
         /// </summary>
-        private const int MaxBodyLength = 6000;
+        private const int MaxUrlLength = 7600;
 
         public static void OpenIssueWithReport(string errorReport)
         {
@@ -29,21 +32,45 @@ namespace Purge
         public static void OpenIssue(string title, string body, string labels = "bug")
         {
             var encodedTitle = Uri.EscapeDataString(title);
+            var encodedLabels = Uri.EscapeDataString(labels);
+            var baseUrl = $"{RepositoryUrl}/issues/new?title={encodedTitle}&body=";
+            var suffix = $"&labels={encodedLabels}";
 
-            bool truncated = false;
-            if (body.Length > MaxBodyLength)
-            {
-                body = body[..MaxBodyLength];
-                truncated = true;
-            }
-
-            if (truncated)
-            {
-                body += "\n\n(レポートが長いため一部省略されました。全文が必要な場合はアプリ内の「コピー」ボタンをお使いください。)";
-            }
+            const string truncationNotice =
+                "\n\n(レポートが長いため一部省略されました。全文が必要な場合はアプリ内の「コピー」ボタンをお使いください。)";
 
             var encodedBody = Uri.EscapeDataString(body);
-            var url = $"{RepositoryUrl}/issues/new?title={encodedTitle}&body={encodedBody}&labels={Uri.EscapeDataString(labels)}";
+            int overflow = (baseUrl.Length + encodedBody.Length + suffix.Length) - MaxUrlLength;
+
+            if (overflow > 0)
+            {
+                // エンコード後の超過分だけを元にbodyを切り詰めたいが、1文字あたりの
+                // エンコード後サイズは文字種によって変わる(ASCII=そのまま、日本語=最大9文字)ため、
+                // 正確な逆算はできない。安全側に倒し、超過分の1/3の文字数を目安に切り詰めてから
+                // 再エンコードして確認する、を収まるまで繰り返す。
+                var truncatedBody = body;
+                while (true)
+                {
+                    int cut = System.Math.Max(1, overflow / 3 + 50);
+                    if (cut >= truncatedBody.Length)
+                    {
+                        truncatedBody = string.Empty;
+                        break;
+                    }
+
+                    truncatedBody = truncatedBody[..^cut];
+                    var candidateEncoded = Uri.EscapeDataString(truncatedBody + truncationNotice);
+                    overflow = (baseUrl.Length + candidateEncoded.Length + suffix.Length) - MaxUrlLength;
+
+                    if (overflow <= 0)
+                    {
+                        encodedBody = candidateEncoded;
+                        break;
+                    }
+                }
+            }
+
+            var url = baseUrl + encodedBody + suffix;
 
             var psi = new ProcessStartInfo
             {

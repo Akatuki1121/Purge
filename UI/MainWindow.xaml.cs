@@ -300,7 +300,7 @@ public partial class MainWindow : FluentWindow
             _scanCts?.Dispose();
             _scanCts = null;
             CancelScanButton.Visibility = Visibility.Collapsed;
-            ScanStatusText.Text = "待機中";
+            ScanStatusText.Text = "スキャン: 待機中";
         }
     }
 
@@ -492,13 +492,17 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     private void CopyLogButton_Click(object sender, RoutedEventArgs e)
     {
+        // Issue #28対応でヘッダーをHeaderTemplate(DataTemplate)化したため、内部のButtonに
+        // x:Nameでは直接アクセスできなくなった。senderから取得する。
+        var button = (System.Windows.Controls.Button)sender;
+
         if (string.IsNullOrEmpty(LogText.Text))
         {
             return;
         }
 
         Clipboard.SetText(LogText.Text);
-        CopyLogButton.Content = "コピーしました";
+        button.Content = "コピーしました";
 
         var timer = new System.Windows.Threading.DispatcherTimer
         {
@@ -506,7 +510,7 @@ public partial class MainWindow : FluentWindow
         };
         timer.Tick += (_, _) =>
         {
-            CopyLogButton.Content = "コピー";
+            button.Content = "コピー";
             timer.Stop();
         };
         timer.Start();

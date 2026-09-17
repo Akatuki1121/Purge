@@ -74,9 +74,10 @@
                     <ui:Button Content="対応アプリ不明フォルダをスキャン" Icon="{ui:SymbolIcon Search24}"
                                Margin="8,0,0,0" Click="ScanOrphanButton_Click"/>
                 </WrapPanel>
-                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0">
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0"
+                           ToolTip="スキャン状況(対応アプリ不明フォルダの検索)">
                     <ui:SymbolIcon Symbol="ArrowSync24" FontSize="15" Foreground="#6B7785"/>
-                    <TextBlock x:Name="ScanStatusText" Text="待機中" Margin="6,0,8,0" Foreground="#6B7785"
+                    <TextBlock x:Name="ScanStatusText" Text="スキャン: 待機中" Margin="6,0,8,0" Foreground="#6B7785"
                                FontSize="11" VerticalAlignment="Center"/>
                     <ui:Button x:Name="CancelScanButton" Content="キャンセル" Appearance="Secondary"
                                Visibility="Collapsed" Click="CancelScanButton_Click"/>
@@ -190,11 +191,12 @@
         <Expander x:Name="LogExpander" Grid.Row="6" Margin="14,0,14,10" IsExpanded="False"
                   Background="#F7F9FC" BorderBrush="#DCE3EB" BorderThickness="1"
                   Expanded="LogExpander_Changed" Collapsed="LogExpander_Changed">
-            <Expander.Header>
-                <!-- 固定幅(旧: Width=980)だとウィンドウを縮めたときにヘッダーが
-                     はみ出すため、親の幅に追従させる。 -->
-                <Grid HorizontalAlignment="Stretch"
-                      Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}}">
+            <Expander.HeaderTemplate>
+                <!-- HeaderTemplateの直下はExpanderの内部ContentPresenterがHorizontalContentAlignment=Stretch
+                     で幅を渡してくれるため、旧実装(固定幅980や自己参照のWidthバインド)と違い
+                     常に正しい幅で描画される。コピーボタンが見切れる不具合(Issue #28)の修正。 -->
+                <DataTemplate>
+                    <Grid HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -208,8 +210,9 @@
                     </StackPanel>
                     <ui:Button Grid.Column="1" x:Name="CopyLogButton" Content="コピー" Icon="{ui:SymbolIcon Copy24}"
                                FontSize="11" Padding="8,2" Click="CopyLogButton_Click"/>
-                </Grid>
-            </Expander.Header>
+                    </Grid>
+                </DataTemplate>
+            </Expander.HeaderTemplate>
             <Border Padding="14,0,14,12">
                 <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto">
                     <TextBox x:Name="LogText" FontFamily="Cascadia Mono, Consolas" FontSize="11" TextWrapping="NoWrap"
