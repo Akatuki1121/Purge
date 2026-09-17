@@ -642,23 +642,97 @@ public partial class MainWindow : FluentWindow
     private void ShowUpdateBanner(string tag, string? msiUrl)
     {
         UpdateAvailableText.Text = $"🔔 新しいバージョン({tag})があります。";
+        _pendingUpdateTag = tag;
+        _pendingUpdateMsiUrl = msiUrl;
 
-        // assetsからMSIが見つからなかった場合(命名規則変更等)は、ダウンロードボタンを
-        // 無効化しつつRelasesページ自体は開けるようにする(URLが完全に無いよりは救済になる)。
+        // assetsからMSIが見つからなかった場合(命名規則変更等)は、ダウンロードではなく
+        // Releasesページを開くボタンに切り替える(URLが完全に無いよりは救済になる)。
         UpdateDownloadButton.Content = msiUrl != null ? "ダウンロード" : "Releasesページを開く";
-        _pendingUpdateUrl = msiUrl ?? "https://github.com/Akatuki1121/Purge/releases/latest";
 
         UpdateAvailableBorder.Visibility = Visibility.Visible;
     }
 
-    private string? _pendingUpdateUrl;
+    private string? _pendingUpdateTag;
+    private string? _pendingUpdateMsiUrl;
 
-    private void UpdateDownloadButton_Click(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// 「ダウンロード」ボタン押下時の処理。
+    /// MSIのURLが取得できている場合はアプリ内でダウンロードし、完了後にインストーラーを
+    /// 起動するかユーザーに確認する。取得できていない場合はRelasesページをブラウザで開く。
+    /// </summary>
+    private async void UpdateDownloadButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_pendingUpdateUrl != null)
+        if (_pendingUpdateMsiUrl == null)
         {
-            LicenseState.OpenUrl(_pendingUpdateUrl);
+            LicenseState.OpenUrl("https://github.com/Akatuki1121/Purge/releases/latest");
+            return;
         }
+
+        var originalContent = UpdateDownloadButton.Content;
+        UpdateDownloadButton.IsEnabled = false;
+        UpdateDismissButton.IsEnabled = false;
+
+        try
+        {
+            var progress = new Progress<double?>(p =>
+            {
+                UpdateDownloadButton.Content = p.HasValue
+                    ? $"ダウンロード中... {p.Value:P0}"
+                    : "ダウンロード中...";
+            });
+
+            var msiPath = await UpdateDownloader.DownloadAsync(_pendingUpdateMsiUrl, progress);
+
+            var result = MessageBox.Show(
+                $"バージョン {_pendingUpdateTag} のダウンロードが完了しました。\n\n" +
+                "今すぐインストーラーを起動しますか?\n" +
+                "(インストール中はPurgeを終了する必要があります。管理者権限の確認が表示されます)",
+                "ダウンロード完了", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                UpdateDownloader.LaunchInstaller(msiPath);
+                Close();
+            }
+            else
+            {
+                // 「後で」を選んだ場合、次回もダウンロードから促せるようバナーは維持しつつ
+                // ボタンだけ元に戻す(再ダウンロードは避けたいが、パスを覚えておく必要はない。
+                // 次回ダウンロード実行時はUpdateDownloader側で同名ファイルの再利用に任せる)。
+                UpdateDownloadButton.Content = "インストーラーを起動";
+                UpdateDownloadButton.IsEnabled = true;
+                UpdateDismissButton.IsEnabled = true;
+                _downloadedMsiPath = msiPath;
+                UpdateDownloadButton.Click -= UpdateDownloadButton_Click;
+                UpdateDownloadButton.Click += UpdateLaunchButton_Click;
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"アップデートのダウンロードに失敗しました。\n\n{ex.Message}\n\n" +
+                "手動でRelasesページからダウンロードしてください。",
+                "ダウンロード失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UpdateDownloadButton.Content = originalContent;
+        }
+        finally
+        {
+            UpdateDownloadButton.IsEnabled = true;
+            UpdateDismissButton.IsEnabled = true;
+        }
+    }
+
+    private string? _downloadedMsiPath;
+
+    /// <summary>
+    /// ダウンロード済みMSIの起動だけを行うハンドラ。「後で」を選んだ後にボタンを押した場合用。
+    /// </summary>
+    private void UpdateLaunchButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_downloadedMsiPath == null) return;
+        UpdateDownloader.LaunchInstaller(_downloadedMsiPath);
+        Close();
     }
 
     private void UpdateDismissButton_Click(object sender, RoutedEventArgs e)
