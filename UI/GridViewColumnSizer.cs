@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows.Controls;
 
 namespace Purge.UI;
@@ -11,23 +12,19 @@ namespace Purge.UI;
 ///
 /// GridViewColumnはFrameworkElementではなくTagプロパティを持たないため、比率はXAMLではなく
 /// 呼び出し側(コードビハインド)から列インデックス順に渡す。
+///
+/// ユーザーが列ヘッダーの境界をドラッグして手動リサイズした場合、その列は以後「固定幅」
+/// として扱い、比率配分の対象から外す。そうしないと次のウィンドウリサイズで手動調整が
+/// 上書きされて元に戻ってしまう(Issue #28で指摘された不具合)。
 /// </summary>
 public static class GridViewColumnSizer
 {
-    /// <summary>
-    /// 縦スクロールバーとボーダーの分。これを差し引かないと列合計が実幅を超え、
-    /// 常に横スクロールバーが出てしまう。
-    /// </summary>
     private const double ReservedWidth = 28;
-
-    /// <summary>
-    /// 狭くしすぎると列が潰れて読めなくなるため、比率配分する列の下限幅。
-    /// 合計がListView幅を超える場合は横スクロールに委ねる。
-    /// </summary>
     private const double MinColumnWidth = 60;
 
     /// <summary>
     /// ListViewのSizeChangedに購読し、列幅をウィンドウ幅へ自動追従させる。
+    /// 併せて、ユーザーの手動リサイズを検知して以後その列を比率配分から除外する。
     /// </summary>
     /// <param name="listView">対象のListView(ViewはGridViewであること)。</param>
     /// <param name="ratios">
@@ -37,10 +34,49 @@ public static class GridViewColumnSizer
     /// </param>
     public static void AttachAutoSize(ListView listView, double?[] ratios)
     {
+        // 呼び出し元の配列を直接書き換えないよう複製する。ユーザーが手動リサイズした列は
+        // ここでnullに書き換えて「以後は固定幅」として扱う。
+        var mutableRatios = (double?[])ratios.Clone();
+        bool isApplyingProgrammatically = false;
+
+        if (listView.View is GridView gridView)
+        {
+            for (int i = 0; i < gridView.Columns.Count; i++)
+            {
+                if (i >= mutableRatios.Length || !mutableRatios[i].HasValue) continue;
+
+                int columnIndex = i; // クロージャ用にキャプチャ
+                var column = gridView.Columns[columnIndex];
+
+                // GridViewColumn.WidthはDependencyPropertyではないため、
+                // DependencyPropertyDescriptorで変更を監視する。
+                var descriptor = DependencyPropertyDescriptor.FromProperty(
+                    GridViewColumn.WidthProperty, typeof(GridViewColumn));
+                descriptor?.AddValueChanged(column, (_, _) =>
+                {
+                    // Apply()自身によるWidth変更は無視する(自分の処理で自分を固定幅化しない)。
+                    if (isApplyingProgrammatically) return;
+
+                    // ユーザーがヘッダー境界をドラッグした結果の変更とみなし、
+                    // 以後この列は比率配分の対象から外す(固定幅として尊重する)。
+                    mutableRatios[columnIndex] = null;
+                });
+            }
+        }
+
         listView.SizeChanged += (_, e) =>
         {
-            // 高さのみの変化では再計算不要(無駄なレイアウトパスを避ける)。
-            if (e.WidthChanged) Apply(listView, ratios);
+            if (!e.WidthChanged) return;
+
+            isApplyingProgrammatically = true;
+            try
+            {
+                Apply(listView, mutableRatios);
+            }
+            finally
+            {
+                isApplyingProgrammatically = false;
+            }
         };
     }
 
