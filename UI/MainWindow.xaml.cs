@@ -57,6 +57,15 @@ public partial class MainWindow : FluentWindow
 
         AppListView.SelectionChanged += AppListView_SelectionChanged;
 
+        // バックグラウンドの更新チェックがコンストラクタより先に完了していた場合(通常はまず
+        // 無いが将来的な実行順序変更に備え)と、これから完了する場合の両方に対応する。
+        if (App.AvailableUpdateTag != null)
+        {
+            ShowUpdateBanner(App.AvailableUpdateTag, App.AvailableUpdateMsiUrl);
+        }
+        App.UpdateAvailable += OnUpdateAvailable;
+        Closed += (_, _) => App.UpdateAvailable -= OnUpdateAvailable;
+
         // 列幅をウィンドウ幅に追従させる(固定幅だと縮小時に列が見切れ、拡大時に右側が空く)。
         // 先頭のアイコン列はnull=固定幅、以降はアプリ名・バージョン・発行元・場所の伸縮比率。
         GridViewColumnSizer.AttachAutoSize(AppListView, new double?[] { null, 34, 13, 24, 29 });
@@ -613,5 +622,49 @@ public partial class MainWindow : FluentWindow
         ProUpgradeButton.Visibility = LicenseState.IsProUnlocked
             ? Visibility.Collapsed
             : Visibility.Visible;
+    }
+
+    /// <summary>
+    /// App.UpdateAvailableイベントのハンドラ。App.xaml.cs側でUIスレッドから呼ばれることが
+    /// 保証されているため、ここではDispatcher対応は不要。
+    /// </summary>
+    private void OnUpdateAvailable(string tag, string? msiUrl)
+    {
+        ShowUpdateBanner(tag, msiUrl);
+    }
+
+    /// <summary>
+    /// 新バージョン通知バナーを表示する。本アプリは管理者権限起動が前提のため、
+    /// 更新のたびに必ずUAC同意が要り完全な自動更新はできない。そのため「気づいたら
+    /// ユーザー自身がダウンロード・実行する」半自動方式とし、起動やその後の操作を
+    /// 一切妨げない控えめな通知に留める。
+    /// </summary>
+    private void ShowUpdateBanner(string tag, string? msiUrl)
+    {
+        UpdateAvailableText.Text = $"🔔 新しいバージョン({tag})があります。";
+
+        // assetsからMSIが見つからなかった場合(命名規則変更等)は、ダウンロードボタンを
+        // 無効化しつつRelasesページ自体は開けるようにする(URLが完全に無いよりは救済になる)。
+        UpdateDownloadButton.Content = msiUrl != null ? "ダウンロード" : "Releasesページを開く";
+        _pendingUpdateUrl = msiUrl ?? "https://github.com/Akatuki1121/Purge/releases/latest";
+
+        UpdateAvailableBorder.Visibility = Visibility.Visible;
+    }
+
+    private string? _pendingUpdateUrl;
+
+    private void UpdateDownloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pendingUpdateUrl != null)
+        {
+            LicenseState.OpenUrl(_pendingUpdateUrl);
+        }
+    }
+
+    private void UpdateDismissButton_Click(object sender, RoutedEventArgs e)
+    {
+        // 「後で」は今回のセッション中だけ非表示にする(次回起動時はまた表示される)。
+        // 恒久的な非表示設定は現状持たない。
+        UpdateAvailableBorder.Visibility = Visibility.Collapsed;
     }
 }
