@@ -6,9 +6,22 @@ on:
       - "v*"
 
 jobs:
-  release:
+  version:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^v', ''
+          echo "version=$version" >> $env:GITHUB_OUTPUT
 
+  publish:
+    needs: version
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,39 +41,95 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      - name: Extract version from tag
-        id: version
-        shell: pwsh
-        run: |
-          $tag = "${{ github.ref_name }}"
-          $version = $tag -replace '^v', ''
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-
       - name: Restore
         run: |
           dotnet restore Purge.slnx
           dotnet restore UI/Purge.UI.csproj --runtime win-x64
-          dotnet restore installer/Purge.Installer.wixproj
 
       - name: Run tests
         run: dotnet test Tests/Purge.Tests.csproj --configuration Release --no-restore
 
       - name: Publish self-contained package
-        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ steps.version.outputs.version }} --no-restore
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ needs.version.outputs.version }} --no-restore
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-output
+          path: publish/Purge
+          retention-days: 1
+
+  build-msi:
+    needs: [version, publish]
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - culture: ja-JP
+            shortname: ja
+          - culture: en-US
+            shortname: en
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore installer project
+        run: dotnet restore installer/Purge.Installer.wixproj
+
+      - name: Download publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: publish-output
+          path: publish/Purge
 
       - name: Build WiX installer (MSI)
-        run: dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ steps.version.outputs.version }} --no-restore
+        run: dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ needs.version.outputs.version }} -p:Cultures=${{ matrix.culture }} --no-restore
 
       - name: Rename MSI with version
         shell: pwsh
         run: |
-          Copy-Item "installer/bin/x64/Release/ja-JP/Purge.Installer.msi" "installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-ja.msi"
-          Copy-Item "installer/bin/x64/Release/en-US/Purge.Installer.msi" "installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-en.msi"
+          Copy-Item "installer/bin/x64/Release/${{ matrix.culture }}/Purge.Installer.msi" "Purge-${{ needs.version.outputs.version }}-win-x64-${{ matrix.shortname }}.msi"
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-${{ matrix.shortname }}
+          path: Purge-${{ needs.version.outputs.version }}-win-x64-${{ matrix.shortname }}.msi
+          retention-days: 1
+
+  release:
+    needs: [version, build-msi]
+    runs-on: windows-latest
+    steps:
+      - name: Download ja MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-ja
+
+      - name: Download en MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-en
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-ja.msi
-            installer/bin/x64/Release/Purge-${{ steps.version.outputs.version }}-win-x64-en.msi
+            Purge-${{ needs.version.outputs.version }}-win-x64-ja.msi
+            Purge-${{ needs.version.outputs.version }}-win-x64-en.msi
           token: ${{ secrets.GITHUB_TOKEN }}

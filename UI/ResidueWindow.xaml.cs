@@ -142,7 +142,7 @@ namespace Purge.UI
 
             if (dryRun)
             {
-                MessageBox.Show($"ドライラン完了: {dryRunCount}件(実際の削除は行っていません)",
+                MessageBox.Show($"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)",
                     "結果", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else

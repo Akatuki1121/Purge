@@ -71,11 +71,12 @@
                                Click="RefreshButton_Click"/>
                     <ui:Button Content="不具合・要望" Icon="{ui:SymbolIcon Bug24}"
                                Margin="8,0,0,0" Click="ReportBugMenuItem_Click"/>
-                    <ui:Button Content="対応アプリ不明フォルダをスキャン" Icon="{ui:SymbolIcon Search24}"
-                               Margin="8,0,0,0" Click="ScanOrphanButton_Click"/>
+                    <ui:Button Content="不明フォルダを探す" Icon="{ui:SymbolIcon Search24}"
+                               Margin="8,0,0,0" Click="ScanOrphanButton_Click"
+                               ToolTip="どのアプリのものか分からなくなったフォルダを探して一覧表示します"/>
                 </WrapPanel>
                 <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0"
-                           ToolTip="スキャン状況(対応アプリ不明フォルダの検索)">
+                           ToolTip="スキャンの進み具合(不明フォルダ探し・消し残しチェックなど)">
                     <ui:SymbolIcon Symbol="ArrowSync24" FontSize="15" Foreground="#6B7785"/>
                     <TextBlock x:Name="ScanStatusText" Text="スキャン: 待機中" Margin="6,0,8,0" Foreground="#6B7785"
                                FontSize="11" VerticalAlignment="Center"/>
@@ -104,7 +105,7 @@
         <Border x:Name="ElevationWarningBorder" Grid.Row="2" Background="#FFF3CD" BorderBrush="#FFECB5"
                 BorderThickness="1" Padding="8" Margin="10,4,10,0" Visibility="Collapsed">
             <TextBlock TextWrapping="Wrap" Foreground="#664D03"
-                       Text="⚠ 管理者権限で実行されていません。MFT高速検索(残存物の全体スキャン・対応アプリ不明フォルダのスキャン)は正しく動作せず、無言で0件になります。exeを右クリック→「管理者として実行」で起動し直してください。"/>
+                       Text="⚠ 管理者として実行されていません。この状態だと「消し残しの全体チェック」や「不明フォルダ探し」の高速検索が動かず、結果が0件のまま何も見つからないことがあります。exeを右クリックして「管理者として実行」で開き直してください。"/>
         </Border>
 
         <Border x:Name="UpdateAvailableBorder" Grid.Row="2" Background="#E7F1FF" BorderBrush="#B6D4FE"
@@ -188,8 +189,9 @@
                 <!-- 通常操作: アンインストール(単体が基本、複数選択時のみ一括ボタンが現れる) -->
                 <WrapPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Delete24" FontSize="16" Margin="0,0,8,0" Foreground="#666"/>
-                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="テスト実行(削除しない)" OffContent="本番実行(削除する)" IsChecked="True"
-                                      VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"/>
+                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="安全モード(削除しない)" OffContent="削除を実行(本番)" IsChecked="True"
+                                      VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"
+                                      ToolTip="オンの間はボタンを押しても実際には何も削除されません。何が削除されるか安心して確認できます"/>
                     <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
                             Background="#E6F4EA" VerticalAlignment="Center">
                         <TextBlock x:Name="DryRunStatusText" Text="✓ 安全モード(実際には削除されません)"
