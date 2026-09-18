@@ -51,8 +51,9 @@
 
         <ui:Card Grid.Row="3" Margin="14,0,14,14" Padding="14,10">
             <WrapPanel Orientation="Horizontal">
-                <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="テスト実行(削除しない)" OffContent="本番実行(削除する)" IsChecked="True"
-                                  VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"/>
+                <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="安全モード(削除しない)" OffContent="削除を実行(本番)" IsChecked="True"
+                                  VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"
+                                  ToolTip="オンの間はボタンを押しても実際には何も削除されません。何が削除されるか安心して確認できます"/>
                 <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
                         Background="#E6F4EA" VerticalAlignment="Center">
                     <TextBlock x:Name="DryRunStatusText" Text="✓ 安全モード(実際には削除されません)"

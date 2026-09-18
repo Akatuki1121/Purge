@@ -334,8 +334,8 @@ public partial class MainWindow : FluentWindow
             // スキャンはMFT検索を含み数十秒かかることがあるため、進行中であることを
             // 明示してボタンの二重押しを防ぐ(押せたかどうか分からない、という指摘への対応)。
             button.IsEnabled = false;
-            button.Content = "スキャン中...";
-            ScanStatusText.Text = "対応アプリ不明フォルダをスキャン中...";
+            button.Content = "検索中...";
+            ScanStatusText.Text = "不明フォルダを検索中...";
             Mouse.OverrideCursor = Cursors.Wait;
 
             var apps = _inventory.GetInstalledApps();
@@ -347,13 +347,13 @@ public partial class MainWindow : FluentWindow
 
             if (orphans.Count == 0)
             {
-                ScanStatusText.Text = "スキャン完了(該当なし)";
-                MessageBox.Show("対応アプリ不明フォルダは見つかりませんでした。", "スキャン結果",
+                ScanStatusText.Text = "検索完了(該当なし)";
+                MessageBox.Show("不明フォルダは見つかりませんでした。", "検索結果",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ScanStatusText.Text = $"スキャン完了({orphans.Count}件)";
+            ScanStatusText.Text = $"検索完了({orphans.Count}件)";
 
             var orphanWindow = new OrphanWindow(orphans, _log, _orphanExclusions)
             {
@@ -364,7 +364,7 @@ public partial class MainWindow : FluentWindow
         }
         catch (System.Exception ex)
         {
-            ScanStatusText.Text = "スキャンに失敗しました";
+            ScanStatusText.Text = "検索に失敗しました";
             new CrashReportWindow(_log.BuildErrorReport(ex)) { Owner = this }.ShowDialog();
         }
         finally
@@ -448,7 +448,7 @@ public partial class MainWindow : FluentWindow
             }
 
             var summary = dryRun
-                ? $"ドライラン完了: {dryRunCount}件"
+                ? $"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)"
                 : $"完了: 成功 {successCount}件 / 失敗 {failCount}件";
             MessageBox.Show(summary, "一括アンインストール結果", MessageBoxButton.OK, MessageBoxImage.Information);
 
