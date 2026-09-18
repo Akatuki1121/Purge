@@ -10,7 +10,13 @@
            Scope="perMachine"
            InstallerVersion="500">
 
-    <MajorUpgrade DowngradeErrorMessage="より新しいバージョンのPurgeが既にインストールされています。" />
+    <!-- 既定のRemoveExistingProducts(afterInstallExecute)だと、新バージョンのショートカットが
+         旧バージョンのショートカット削除前に作られてしまい、Windowsのアイコン配置システムが
+         「既存アイコンの上書き」ではなく「新規アイコン」と判定してデスクトップ左上の空き位置に
+         置き直してしまう。afterInstallInitializeにして旧バージョンを先に削除することで、
+         新ショートカットが同じ位置に上書きされるようにする。 -->
+    <MajorUpgrade DowngradeErrorMessage="より新しいバージョンのPurgeが既にインストールされています。"
+                  Schedule="afterInstallInitialize" />
 
     <MediaTemplate EmbedCab="yes" CompressionLevel="low" />
 

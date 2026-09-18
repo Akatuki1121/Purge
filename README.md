@@ -70,9 +70,19 @@ Purgeはこうした消し残しを見つけて、安全に片付けられるよ
 
 ### ビルド方法
 
-1. .NET SDKをインストール
-2. `dotnet build` でビルド
-3. `UI/bin/Debug/net*/Purge.UI.exe` を管理者権限で実行
+.NET SDKをインストール済みの状態で、コマンドプロンプトから:
+
+```bat
+git clone https://github.com/Akatuki1121/Purge.git
+cd Purge
+dotnet build
+```
+
+ビルド後、管理者権限のコマンドプロンプトから起動します:
+
+```bat
+UI\bin\Debug\net10.0-windows\Purge.UI.exe
+```
 
 管理者権限が必須です(レジストリの一部書き込み・高速ファイル検索アクセスのため)。
 
