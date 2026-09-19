@@ -1,4 +1,6 @@
 using System.Linq;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
@@ -542,9 +544,61 @@ public partial class MainWindow : FluentWindow
 
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show(
-            "Purge\n\n残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。",
-            "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
+        var versionText = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
+        var latestChangelogEntry = GetLatestChangelogEntry();
+
+        var message = $"Purge v{versionText}\n\n" +
+            "残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。";
+
+        if (!string.IsNullOrWhiteSpace(latestChangelogEntry))
+        {
+            message += $"\n\n【更新内容】\n{latestChangelogEntry}";
+        }
+
+        MessageBox.Show(message, "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    /// <summary>
+    /// 埋め込みリソース化されたCHANGELOG.mdから、先頭(最新)バージョンのセクションのみを抽出する。
+    /// 取得・パースに失敗した場合は空文字を返し、呼び出し側で説明文のみの表示にフォールバックする。
+    /// </summary>
+    private static string GetLatestChangelogEntry()
+    {
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("Purge.UI.CHANGELOG.md");
+            if (stream is null) return string.Empty;
+
+            using var reader = new StreamReader(stream);
+            var lines = reader.ReadToEnd()
+                .Replace("\r\n", "\n")
+                .Split('\n');
+
+            var sb = new System.Text.StringBuilder();
+            var headingCount = 0;
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("## "))
+                {
+                    headingCount++;
+                    if (headingCount > 1) break; // 2つ目の見出しに到達したら最新セクション分は終わり
+                    continue; // 見出し自体(バージョン番号)は本文に含めない
+                }
+
+                if (headingCount == 1 && !string.IsNullOrWhiteSpace(line))
+                {
+                    sb.AppendLine(line.TrimStart('-', ' '));
+                }
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private void ReportBugMenuItem_Click(object sender, RoutedEventArgs e)
