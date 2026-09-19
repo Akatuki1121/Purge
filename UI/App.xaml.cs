@@ -97,20 +97,32 @@ public partial class App : Application
             {
                 AvailableUpdateTag = latestTag;
 
-                // Releaseのassets一覧から、release.ymlが生成する ".msi" 拡張子のファイルを探す。
-                // 見つからない場合(assetsが空、命名規則が変わった等)はURLをnullのままにし、
-                // MainWindow側は「新バージョンがあります」の案内のみ出す(ダウンロードボタンは無効化)。
+                // Releaseのassets一覧から、release.ymlが生成する日本語版MSI(-ja.msi)を優先して探す。
+                // release.ymlはja/en2つのMSIを同じリリースに並べて公開するため、単純に
+                // 「拡張子が.msiの最初の1件」を採用すると、GitHub API側の返却順序次第で
+                // 英語版(-en.msi)を誤って選んでしまうことがあった(実際に発生した不具合)。
+                // アプリの表示文言・UIは日本語のみ対応のため、更新も常に日本語版を優先する。
+                string? fallbackMsiUrl = null;
                 if (doc.RootElement.TryGetProperty("assets", out var assets))
                 {
                     foreach (var asset in assets.EnumerateArray())
                     {
                         var name = asset.GetProperty("name").GetString();
-                        if (name != null && name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase))
+                        if (name == null || !name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        var url = asset.GetProperty("browser_download_url").GetString();
+                        if (name.Contains("-ja.msi", StringComparison.OrdinalIgnoreCase))
                         {
-                            AvailableUpdateMsiUrl = asset.GetProperty("browser_download_url").GetString();
+                            AvailableUpdateMsiUrl = url;
                             break;
                         }
+
+                        // 日本語版が見つからない場合(命名規則変更等)に備えて、最初に見つかった
+                        // .msiを控えておく。
+                        fallbackMsiUrl ??= url;
                     }
+
+                    AvailableUpdateMsiUrl ??= fallbackMsiUrl;
                 }
 
                 Current?.Dispatcher.Invoke(() => UpdateAvailable?.Invoke(AvailableUpdateTag, AvailableUpdateMsiUrl));
