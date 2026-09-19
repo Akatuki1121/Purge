@@ -15,6 +15,10 @@
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- Purgeはja/enのみ対応のため、.NETランタイム/WPFが同梱する他言語のsatellite
+         リソース(十数言語分のフォルダ)を除外する。Publish出力のファイル数・サイズを
+         削減し、MSI作成とインストール双方を高速化する(Issue #45)。 -->
+    <SatelliteResourceLanguages>ja;en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
