@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Core\Purge.Core.csproj" />
     <PackageReference Include="WPF-UI" Version="4.0.0" />
     <None Include="..\THIRD_PARTY_LICENSES.md" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="..\CHANGELOG.md" LogicalName="Purge.UI.CHANGELOG.md" />
   </ItemGroup>
 
   <PropertyGroup>
