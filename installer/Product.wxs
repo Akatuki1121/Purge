@@ -18,7 +18,7 @@
     <MajorUpgrade DowngradeErrorMessage="より新しいバージョンのPurgeが既にインストールされています。"
                   Schedule="afterInstallInitialize" />
 
-    <MediaTemplate EmbedCab="yes" CompressionLevel="low" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <Icon Id="AppIcon.ico" SourceFile="$(var.PublishDir)\..\..\UI\app.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
