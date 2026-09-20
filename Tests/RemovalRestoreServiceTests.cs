@@ -50,3 +50,58 @@ public class RemovalRestoreServiceTests
         }
     }
 }
+
+public class RemovalRestoreServiceParsingTests
+{
+    private const string SampleScQcOutput = @"[SC] QueryServiceConfig SUCCESS
+
+SERVICE_NAME: TestService
+        TYPE               : 10  WIN32_OWN_PROCESS
+        START_TYPE         : 2   AUTO_START
+        ERROR_CONTROL      : 1   NORMAL
+        BINARY_PATH_NAME   : C:\Program Files\Test\test.exe
+        LOAD_ORDER_GROUP   :
+        TAG                : 0
+        DISPLAY_NAME       : Test Service
+        DEPENDENCIES       : RPCSS
+                           : Tcpip
+        SERVICE_START_NAME : LocalSystem";
+
+    [Fact]
+    public void BINARY_PATH_NAMEを抽出できる()
+    {
+        var value = RemovalRestoreService.ExtractValue(SampleScQcOutput, "BINARY_PATH_NAME");
+        Assert.Equal(@"C:\Program Files\Test\test.exe", value);
+    }
+
+    [Fact]
+    public void DISPLAY_NAMEを抽出できる()
+    {
+        var value = RemovalRestoreService.ExtractValue(SampleScQcOutput, "DISPLAY_NAME");
+        Assert.Equal("Test Service", value);
+    }
+
+    [Fact]
+    public void 存在しないキーはnullを返す()
+    {
+        var value = RemovalRestoreService.ExtractValue(SampleScQcOutput, "NOT_A_KEY");
+        Assert.Null(value);
+    }
+
+    [Fact]
+    public void 複数行にまたがるDEPENDENCIESを抽出できる()
+    {
+        var dependencies = RemovalRestoreService.ExtractDependencies(SampleScQcOutput);
+        Assert.Equal(new List<string> { "RPCSS", "Tcpip" }, dependencies);
+    }
+
+    [Fact]
+    public void DEPENDENCIESが無い場合は空リストを返す()
+    {
+        const string noDeps = @"SERVICE_NAME: X
+        BINARY_PATH_NAME   : C:\x.exe
+        DISPLAY_NAME       : X";
+        var dependencies = RemovalRestoreService.ExtractDependencies(noDeps);
+        Assert.Empty(dependencies);
+    }
+}
