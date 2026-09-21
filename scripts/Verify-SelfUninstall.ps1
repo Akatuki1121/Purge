@@ -82,7 +82,7 @@ $harness = Join-Path $env:TEMP 'purge_selfuninstall_harness.ps1'
 @"
 `$ErrorActionPreference = 'Stop'
 Add-Type -Path '$InstallDir\Purge.Core.dll'
-`$log = New-Object Purge.OperationLog
+`$log = New-Object Purge.OperationLog -ArgumentList 500
 [Purge.SelfUninstaller]::BeginSelfUninstall(`$log, '$InstallDir\Purge.UI.exe')
 `$log.GetEntries() | ForEach-Object { Write-Output ('[log] ' + `$_) }
 "@ | Set-Content $harness -Encoding UTF8
