@@ -13,6 +13,14 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# msiexecはスラッシュ区切りや相対パスを解釈できず1619(パッケージを開けない)になるため、絶対のWindowsパスに正規化する。
+if (-not (Test-Path -LiteralPath $MsiPath)) {
+    Write-Host "MSIが見つかりません: $MsiPath"
+    exit 2
+}
+$MsiPath = (Resolve-Path -LiteralPath $MsiPath).ProviderPath
+
 $script:failures = New-Object System.Collections.Generic.List[string]
 
 function Check([string]$name, [bool]$ok, [string]$detail = '') {
@@ -55,6 +63,12 @@ Write-Host "=== 2. サイレントインストール ==="
 $installLog = Join-Path $env:TEMP 'purge_install.log'
 $code = Invoke-Msi "/i `"$MsiPath`"" $installLog
 Check 'msiexec /i が成功(終了コード0)' ($code -eq 0) "終了コード=$code ログ=$installLog"
+if ($code -ne 0) {
+    # インストールに失敗した状態で後続を進めると「消えている=消し残しなし」と誤って合格してしまうため、ここで打ち切る。
+    if (Test-Path $installLog) { Write-Host '--- msiexecログ(末尾) ---'; Get-Content $installLog -Tail 30 -ErrorAction SilentlyContinue }
+    Write-Host "インストールに失敗したため以降の検証を中止します。"
+    exit 1
+}
 
 Write-Host "=== 3. インストール結果の検証 ==="
 $exe = Join-Path $InstallDir 'Purge.UI.exe'
