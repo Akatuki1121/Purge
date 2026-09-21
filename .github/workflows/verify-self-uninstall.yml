@@ -9,6 +9,8 @@ name: Verify Self-Uninstall
 # SelfUninstaller や Verify-SelfUninstall.ps1 を変更したPRで自動実行し、手動実行もできる。
 
 on:
+  push:
+    branches: [test/self-uninstall-e2e]
   pull_request:
     paths:
       - "Core/SelfUninstaller.cs"
