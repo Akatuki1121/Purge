@@ -130,6 +130,10 @@ namespace Purge
                         }
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     _log.Warning("ResidueScan", "レジストリ検索でエラー", $"{hive.Name}\\{subKeyPath}: {ex.Message}");
@@ -165,6 +169,10 @@ namespace Purge
                         });
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -214,6 +222,10 @@ namespace Purge
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _log.Warning("ResidueScan", "タスクスケジューラ確認でエラー", ex.Message);
@@ -260,6 +272,10 @@ namespace Purge
                             });
                         }
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -309,6 +325,10 @@ namespace Purge
                         }
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     _log.Warning("ResidueScan", "スタートアップRunキー確認でエラー", ex.Message);
@@ -342,6 +362,10 @@ namespace Purge
                         }
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
