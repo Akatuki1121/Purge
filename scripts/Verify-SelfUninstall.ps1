@@ -84,7 +84,7 @@ $harness = Join-Path $env:TEMP 'purge_selfuninstall_harness.ps1'
 Add-Type -Path '$InstallDir\Purge.Core.dll'
 `$log = New-Object Purge.OperationLog -ArgumentList 500
 [Purge.SelfUninstaller]::BeginSelfUninstall(`$log, '$InstallDir\Purge.UI.exe')
-`$log.GetEntries() | ForEach-Object { Write-Output ('[log] ' + `$_) }
+`$log.GetRecent(30) | ForEach-Object { Write-Output ('[log] ' + `$_.ToString()) }
 "@ | Set-Content $harness -Encoding UTF8
 
 $h = Start-Process pwsh -ArgumentList '-NoProfile', '-File', $harness -Wait -PassThru -RedirectStandardOutput (Join-Path $env:TEMP 'purge_harness_out.txt') -RedirectStandardError (Join-Path $env:TEMP 'purge_harness_err.txt')
