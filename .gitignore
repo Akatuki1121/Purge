@@ -26,3 +26,8 @@ install-log.txt
 # 環境固有の癖(プロセスが詰まる対策等)が中心で、Purge自体のドキュメントではないため
 # リポジトリには含めない。
 docs/WORKFLOW_NOTES.md
+
+# 別アカウント/別セッション向けのローカル状態メモ(トークン節約用)。
+# ローカルにあれば足り、公開リポジトリの一部ではないため含めない。
+docs/CURRENT_STATE.md
+docs/PROGRESS_LOG_ARCHIVE.md
