@@ -1,0 +1,68 @@
+name: Verify Self-Uninstall
+
+# 自己アンインストール(SelfUninstaller)が実際に完了して消し残しがないことを、
+# クリーンなWindows環境で確認する(#16 の自動化版)。
+# MSIをインストールし、GUIを介さず BeginSelfUninstall を呼んで、削除の完了を検証する。
+# 単体テスト(BAT文字列の検証)では確認できない「本当に消えるか」を見るためのもの。
+#
+# タグのpushでは実行されない(リリースの妨げにしないため)。
+# SelfUninstaller や Verify-SelfUninstall.ps1 を変更したPRで自動実行し、手動実行もできる。
+
+on:
+  pull_request:
+    paths:
+      - "Core/SelfUninstaller.cs"
+      - "scripts/Verify-SelfUninstall.ps1"
+      - ".github/workflows/verify-self-uninstall.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "検証用MSIのバージョン(例: 0.0.1)。Uninstall登録のバージョン照合に使う"
+        default: "0.0.1"
+        required: true
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: |
+          dotnet restore UI/Purge.UI.csproj --runtime win-x64
+          dotnet restore installer/Purge.Installer.wixproj
+
+      - name: Publish self-contained package
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ inputs.version || '0.0.1' }} --no-restore
+
+      - name: Build WiX installer (ja-JP)
+        run: dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ inputs.version || '0.0.1' }} -p:Cultures=ja-JP --no-restore
+
+      - name: Verify self-uninstall
+        shell: pwsh
+        run: ./scripts/Verify-SelfUninstall.ps1 -MsiPath "$PWD/installer/bin/x64/Release/ja-JP/Purge.Installer.msi" -ExpectedVersion "${{ inputs.version || '0.0.1' }}"
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-uninstall-logs
+          path: |
+            ${{ runner.temp }}/purge_selfuninstall_install.log
+            ${{ runner.temp }}/purge_harness_out.txt
+            ${{ runner.temp }}/purge_harness_err.txt
+          if-no-files-found: ignore
