@@ -15,14 +15,14 @@
 |---|---|---|
 | `fix/scan-cancel-and-regression-tests` | PR #54 オープン | スキャン中止バグ(#53)の修正 + ResidueScanner/Remover の回帰テスト15件 |
 | `ci/msi-install-verification` | PR #56 オープン | リリース前にMSIをインストール・起動・アンインストールして検証するCI |
-| `test/self-uninstall-e2e` | 作業中(PRなし) | #16 の自動検証。別セッションの `SelfUninstaller` 未コミット変更(msiexec方式)を含む。検証CIの結果待ち |
-| `docs/split-progress-log` | 作業中(PRなし) | ROADMAPの進捗ログ分離 + このファイルの追加(トークン消費対策) |
+| `test/self-uninstall-e2e` | PR #57 オープン | #16 の自動検証。msiexec方式への切り替え + CI検証、全項目合格済み |
+| `docs/split-progress-log` | PR化予定 | ROADMAPの進捗ログ分離 + このファイルの追加(トークン消費対策) |
 
 ## オープンIssue
 
 | # | 内容 | 状態 |
 |---|---|---|
-| 16 | SelfUninstaller の実機削除テスト | `test/self-uninstall-e2e` でCI検証中。実機の最終確認(GUIの2段階ダイアログ)は人間が行う |
+| 16 | SelfUninstaller の実機削除テスト | PR #57 でCI検証済み(合格)。マージ待ち。実機の最終確認(GUIの2段階ダイアログ)は人間が行う |
 | 53 | スキャン中止が効かない | PR #54 で修正済み(マージ待ち) |
 | 55 | MSIのローカルビルドが遅い | CIでは65秒で問題なし。ローカルの開発機だけ13分以上。優先度低 |
 | 19 | サービス・タスクの自動復元 | 実装済み(f9feb8f)。実機での動作確認が残っている可能性あり |
@@ -32,9 +32,9 @@
 
 ## 次の一手
 
-1. `test/self-uninstall-e2e` のCI結果を確認(`gh run list --branch test/self-uninstall-e2e --limit 1`)。合格なら一時pushトリガーを除去してPR化し、#16 に結果を追記する。失敗ならログを読んで、製品コードとハーネスのどちらの問題かを切り分ける
-2. PR #54 と #56 は人間確認待ち(自動マージ対象外)
-3. #16 の実機での最終確認は、開発機の `dev_unlock.flag` を退避してから行う(`docs/WORKFLOW_NOTES.md` 参照)
+1. `docs/split-progress-log` をPR化する
+2. PR #54・#56・#57 は人間確認待ち(自動マージ対象外)。マージ後、`docs/CURRENT_STATE.md` を更新すること
+3. #16 の実機での最終確認は、開発機の `dev_unlock.flag` を退避してから行う(`docs/WORKFLOW_NOTES.md` 参照)。CI検証(#57)は合格済みだが、実機のGUIフローはまだ未確認
 
 ## 作業上の注意(要点のみ。詳細は docs/WORKFLOW_NOTES.md)
 
