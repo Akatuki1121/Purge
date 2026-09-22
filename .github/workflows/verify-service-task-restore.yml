@@ -1,0 +1,45 @@
+name: Verify Service/Task Restore
+
+# サービス・タスク定義の自動復元(#19)が実際にWindowsへ再登録できることを、
+# クリーンなWindows環境で確認する。
+# 単体テストはテキスト解析(ExtractValue等)までで、「本当に再登録されるか」は
+# 見ていなかったため、それをリリース前に確認するためのもの。
+#
+# タグのpushでは実行されない(リリースの妨げにしないため)。
+# RemovalRestoreService や検証スクリプトを変更したPRで自動実行し、手動実行もできる。
+
+on:
+  pull_request:
+    paths:
+      - "Core/RemovalRestoreService.cs"
+      - "Core/RemovalBackupWriter.cs"
+      - "scripts/Verify-ServiceTaskRestore.ps1"
+      - ".github/workflows/verify-service-task-restore.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Build Core
+        run: dotnet build Core/Purge.Core.csproj --configuration Release
+
+      - name: Verify service/task restore
+        shell: pwsh
+        run: ./scripts/Verify-ServiceTaskRestore.ps1 -CoreDllPath "Core/bin/Release/net10.0-windows/Purge.Core.dll"
