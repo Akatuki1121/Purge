@@ -5,19 +5,12 @@ namespace Purge.Tests;
 public class SelfUninstallerTests
 {
     [Fact]
-    public void 自己削除用batが対象プロセス終了後にexeとフォルダを削除する()
+    public void 自己削除用batが対象プロセス終了後にmsiexecでアンインストールする()
     {
-        var content = SelfUninstaller.BuildBatchContent(12345, @"C:\Deploy\Purge\Purge.exe");
+        var content = SelfUninstaller.BuildBatchContent(12345, "{4EB024C8-F520-48AE-A4EE-07BE753DA840}");
 
         Assert.Contains("tasklist /FI \"PID eq 12345\"", content);
-        Assert.Contains("del /f /q \"C:\\Deploy\\Purge\\Purge.exe\"", content);
-        Assert.Contains("rmdir \"C:\\Deploy\\Purge\"", content);
+        Assert.Contains("msiexec /x {4EB024C8-F520-48AE-A4EE-07BE753DA840} /qn /norestart", content);
         Assert.Contains("del /f /q \"%~f0\"", content);
-    }
-
-    [Fact]
-    public void 親フォルダのないexeパスは拒否する()
-    {
-        Assert.Throws<ArgumentException>(() => SelfUninstaller.BuildBatchContent(1, "tool.exe"));
     }
 }
