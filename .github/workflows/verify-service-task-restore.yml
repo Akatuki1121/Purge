@@ -9,6 +9,8 @@ name: Verify Service/Task Restore
 # RemovalRestoreService や検証スクリプトを変更したPRで自動実行し、手動実行もできる。
 
 on:
+  push:
+    branches: [ci/verify-service-task-restore]
   pull_request:
     paths:
       - "Core/RemovalRestoreService.cs"
