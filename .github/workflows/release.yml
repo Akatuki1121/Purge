@@ -112,8 +112,35 @@ jobs:
           path: Purge-${{ needs.version.outputs.version }}-win-x64-${{ matrix.shortname }}.msi
           retention-days: 1
 
-  release:
+  verify-msi:
+    # 配布前にMSIを実際にインストール→起動→アンインストールして、
+    # 「ビルドは通ったが入れてみたら動かない」状態のリリースを防ぐ。
+    # このジョブが失敗した場合、releaseジョブは実行されずGitHub Releasesに公開されない。
     needs: [version, build-msi]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download ja MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-ja
+
+      - name: Verify ja MSI (install, launch, uninstall)
+        shell: pwsh
+        run: ./scripts/Verify-Msi.ps1 -MsiPath "$PWD/Purge-${{ needs.version.outputs.version }}-win-x64-ja.msi" -ExpectedVersion "${{ needs.version.outputs.version }}"
+
+      - name: Download en MSI
+        uses: actions/download-artifact@v4
+        with:
+          name: msi-en
+
+      - name: Verify en MSI (install, launch, uninstall)
+        shell: pwsh
+        run: ./scripts/Verify-Msi.ps1 -MsiPath "$PWD/Purge-${{ needs.version.outputs.version }}-win-x64-en.msi" -ExpectedVersion "${{ needs.version.outputs.version }}"
+  release:
+    needs: [version, build-msi, verify-msi]
     runs-on: windows-latest
     steps:
       - name: Download ja MSI

@@ -1,0 +1,59 @@
+name: Verify MSI (manual)
+
+# release.yml の verify-msi ジョブと同じ検証を、タグをpushせずに単独で試すための手動実行用ワークフロー。
+# 検証スクリプト(scripts/Verify-Msi.ps1)自体を変更したときや、MSI周りの変更を
+# リリース前に確認したいときに、Actionsタブの "Run workflow" から実行する。
+# GitHub Releasesへの公開は行わない。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "検証用MSIのバージョン(例: 0.0.0-verify)。Uninstall登録のバージョン照合に使う"
+        default: "0.0.1"
+        required: true
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: |
+          dotnet restore UI/Purge.UI.csproj --runtime win-x64
+          dotnet restore installer/Purge.Installer.wixproj
+
+      - name: Publish self-contained package
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ inputs.version }} --no-restore
+
+      - name: Build WiX installer (ja-JP)
+        run: dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ inputs.version }} -p:Cultures=ja-JP --no-restore
+
+      - name: Verify MSI (install, launch, uninstall)
+        shell: pwsh
+        run: ./scripts/Verify-Msi.ps1 -MsiPath "$PWD/installer/bin/x64/Release/ja-JP/Purge.Installer.msi" -ExpectedVersion "${{ inputs.version }}"
+
+      - name: Upload msiexec logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: msi-logs
+          path: |
+            ${{ runner.temp }}/purge_install.log
+            ${{ runner.temp }}/purge_uninstall.log
+          if-no-files-found: ignore
