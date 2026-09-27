@@ -4,7 +4,11 @@
     <OutputType>Package</OutputType>
     <Platforms>x64</Platforms>
     <ProductVersion Condition="'$(ProductVersion)'==''">0.1.0</ProductVersion>
-    <DefineConstants>PublishDir=$(MSBuildProjectDirectory)\..\publish\Purge;ProductVersion=$(ProductVersion)</DefineConstants>
+    <!-- 配布用の既定値はhigh(#45)。ローカル検証時のビルド高速化用に
+         -p:MsiCompressionLevel=none 等で上書き可能(#55)。release.ymlは指定しないため
+         配布物への影響はない。 -->
+    <MsiCompressionLevel Condition="'$(MsiCompressionLevel)'==''">high</MsiCompressionLevel>
+    <DefineConstants>PublishDir=$(MSBuildProjectDirectory)\..\publish\Purge;ProductVersion=$(ProductVersion);MsiCompressionLevel=$(MsiCompressionLevel)</DefineConstants>
     <Cultures Condition="'$(Cultures)'==''">ja-JP;en-US</Cultures>
     <SuppressIces>ICE43;ICE57;ICE69</SuppressIces>
   </PropertyGroup>
