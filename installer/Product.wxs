@@ -18,7 +18,10 @@
     <MajorUpgrade DowngradeErrorMessage="より新しいバージョンのPurgeが既にインストールされています。"
                   Schedule="afterInstallInitialize" />
 
-    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <!-- CompressionLevelは既定でhigh(配布用、#45)。ローカル検証ビルドを高速化したい場合は
+         `dotnet build ... -p:MsiCompressionLevel=none` のように上書きできる(#55)。
+         release.ymlはこのプロパティを指定しないため、配布物の圧縮設定は変わらない。 -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="$(var.MsiCompressionLevel)" />
 
     <Icon Id="AppIcon.ico" SourceFile="$(var.PublishDir)\..\..\UI\app.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
