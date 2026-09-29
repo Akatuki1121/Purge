@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
@@ -95,7 +95,7 @@ namespace Purge
                     timeout /t 1 /nobreak >NUL
                     goto waitloop
                 )
-                msiexec /x {productCode} /qn /norestart
+                msiexec /x {productCode} /qb! /norestart
                 del /f /q "%~f0"
                 """;
         }
