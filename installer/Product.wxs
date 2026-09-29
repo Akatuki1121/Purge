@@ -75,7 +75,7 @@
       <ComponentRef Id="DesktopShortcutComponent" />
     </Feature>
 
-    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <ui:WixUI Id="PurgeInstallDir" InstallDirectory="INSTALLFOLDER" />
     <WixVariable Id="WixUILicenseRtf" Value="!(loc.LicenseRtfPath)" />
     <UIRef Id="WixUI_ErrorProgressText" />
 
