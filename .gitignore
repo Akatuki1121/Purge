@@ -4,7 +4,7 @@ obj/
 .artifacts/
 publish/
 
-# Velopackのパッケージング成果物(GitHub Releasesで配布するため、リポジトリには含めない)
+# 旧Velopack配布の成果物置き場(現在はWiXのMSIをGitHub Actionsで作るため不要だが、ローカルに残っていても除外する)
 releases/
 
 # デバッグ出力(スキャン結果の一時保存)
