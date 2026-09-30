@@ -7,7 +7,7 @@ namespace Purge
     /// 無料版/有料版(Pro)の機能ゲート。
     ///
     /// 判定の優先順位:
-    /// 1. 開発者専用のdev_unlock.flag(自分の開発機のみ)
+    /// 1. 開発者専用の解除手段(Debugビルドのみ。Releaseビルドには含まれない)
     /// 2. ユーザーが入力・保存したライセンスキー(LicenseKeyVerifierで署名検証)
     /// 3. どちらもなければ無料版
     ///
@@ -16,7 +16,9 @@ namespace Purge
     /// </summary>
     public static class LicenseState
     {
+#if DEBUG
         private const string DevUnlockFlagFileName = "dev_unlock.flag";
+#endif
         private const string LicenseKeyFileName = "license.key";
 
         // 本番Stripeアカウントの商品・Payment Link(2026-09-13、本人確認審査中に作成)。
@@ -157,6 +159,9 @@ namespace Purge
 
         private static bool HasDevUnlockFlag()
         {
+#if DEBUG
+            // 開発用の解除手段はDebugビルドにだけ含める。Releaseビルドには判定自体が存在しないため、
+            // 配布版ではファイルを置いてもPro機能は解除されない。
             try
             {
                 var exeDir = AppContext.BaseDirectory;
@@ -167,6 +172,9 @@ namespace Purge
             {
                 return false;
             }
+#else
+            return false;
+#endif
         }
     }
 }
