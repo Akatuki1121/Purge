@@ -145,7 +145,7 @@
 - [x] ライセンスキーの署名検証方式を実装(RSA、オフライン完結、サーバー不要)
   - LicenseKeyVerifier(Core): 公開鍵のみ埋め込み。秘密鍵は絶対に含めない設計
   - LicenseKeyIssuer(開発者専用、非配布プロジェクト): 鍵ペア生成・キー発行のコンソールツール
-  - LicenseState: dev_unlock.flagに加え、%LocalAppData%\Purge\license.keyへの保存・検証に対応
+  - LicenseState: 開発者用の解除手段(Debugビルドのみ)に加え、%LocalAppData%\Purge\license.keyへの保存・検証に対応
   - LicenseWindow(UI): メニューから入力・認証・解除・「購入はこちら」導線
   - 自動テスト6件追加(正常系、改ざん検知、不正形式)。全50件成功を確認
 - [x] 決済導線: Stripe(Managed Payments、3.5%/取引、税務・不正対策・サポートをStripe側に一任)+ Payment Link
