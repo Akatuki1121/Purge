@@ -5,4 +5,5 @@
   <String Id="ShortcutsDlgDescription" Value="Choose which shortcuts to create." />
   <String Id="ShortcutsDlgStartMenu" Value="Create a Start menu shortcut" />
   <String Id="ShortcutsDlgDesktop" Value="Create a desktop shortcut" />
+  <String Id="LaunchAppCheckbox" Value="Launch Purge" />
 </WixLocalization>

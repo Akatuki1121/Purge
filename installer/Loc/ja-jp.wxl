@@ -5,4 +5,5 @@
   <String Id="ShortcutsDlgDescription" Value="インストールするショートカットを選択してください。" />
   <String Id="ShortcutsDlgStartMenu" Value="スタートメニューにショートカットを作成する" />
   <String Id="ShortcutsDlgDesktop" Value="デスクトップにショートカットを作成する" />
+  <String Id="LaunchAppCheckbox" Value="Purgeを起動する" />
 </WixLocalization>
