@@ -5,6 +5,9 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <Application.Resources>
         <ResourceDictionary>
+            <!-- WPF-UIのTitleBarはウィンドウ最上端までHTCAPTIONを返し、WindowChromeの上辺リサイズ枠を覆ってしまう。
+                 TitleBarの上に隙間を空けて、上辺ドラッグでの高さ変更を可能にする。 -->
+            <Thickness x:Key="TitleBarResizeGapMargin">0,4,0,0</Thickness>
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Light"/>
                 <ui:ControlsDictionary/>

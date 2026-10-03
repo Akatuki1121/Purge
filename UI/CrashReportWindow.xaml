@@ -15,7 +15,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="エラーが発生しました"/>
+        <ui:TitleBar Grid.Row="0" Title="エラーが発生しました" Margin="{StaticResource TitleBarResizeGapMargin}"/>
 
         <ui:InfoBar Grid.Row="1" Margin="14,10,14,8" IsOpen="True" IsClosable="False" Severity="Error"
                     Title="ツールの動作中にエラーが発生しました"

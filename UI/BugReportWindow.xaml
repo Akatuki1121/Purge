@@ -14,7 +14,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="不具合を報告"/>
+        <ui:TitleBar Grid.Row="0" Title="不具合を報告" Margin="{StaticResource TitleBarResizeGapMargin}"/>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="14,10,14,10">

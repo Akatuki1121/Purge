@@ -15,7 +15,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="ライセンス認証"/>
+        <ui:TitleBar Grid.Row="0" Title="ライセンス認証" Margin="{StaticResource TitleBarResizeGapMargin}"/>
 
         <ui:InfoBar x:Name="StatusInfoBar" Grid.Row="1" Margin="14,10,14,8" IsOpen="True" IsClosable="False"
                     Severity="Informational" Title="無料版で利用中"
