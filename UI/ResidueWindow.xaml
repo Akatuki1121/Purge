@@ -23,7 +23,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="残存物スキャン結果"/>
+        <ui:TitleBar Grid.Row="0" Title="残存物スキャン結果" Margin="{StaticResource TitleBarResizeGapMargin}"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="14,10,14,8">
             <TextBlock x:Name="TitleText" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
