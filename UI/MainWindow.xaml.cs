@@ -447,7 +447,7 @@ public partial class MainWindow : FluentWindow
 
         if (!dryRun)
         {
-            var names = string.Join("\n", selectedApps.Select(a => $"・{a.DisplayName}"));
+            var names = string.Join("\n", selectedApps.Select(a => Loc.F("List_Bullet", a.DisplayName)));
             var confirm = MessageBox.Show(
                 $"以下の{selectedApps.Count}件を一括でアンインストールします。\n\n{names}\n\nよろしいですか？",
                 Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
