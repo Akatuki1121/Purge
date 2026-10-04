@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using Purge;
+using Purge.Localization;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
@@ -29,7 +30,7 @@ namespace Purge.UI
             if (string.IsNullOrEmpty(ReportText.Text)) return;
 
             Clipboard.SetText(ReportText.Text);
-            CopyButton.Content = "コピーしました";
+            CopyButton.Content = Loc.T("Common_Copied");
 
             var timer = new System.Windows.Threading.DispatcherTimer
             {
@@ -37,7 +38,7 @@ namespace Purge.UI
             };
             timer.Tick += (_, _) =>
             {
-                CopyButton.Content = "コピー";
+                CopyButton.Content = Loc.T("Common_Copy");
                 timer.Stop();
             };
             timer.Start();
@@ -62,7 +63,7 @@ namespace Purge.UI
             {
                 MessageBox.Show(
                     $"ブラウザを開けませんでした。お手数ですが「コピー」ボタンで内容をコピーし、\n{ex.Message}\n\n手動でGitHubのIssueページに貼り付けてください。",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Loc.T("Common_Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }

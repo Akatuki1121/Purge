@@ -31,6 +31,10 @@
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="Purge">
+        <Component Id="InstallLanguageComponent" Guid="e5c0a7f4-9a1d-4d3b-8f2c-6a1b7c9d2e4f">
+          <RegistryValue Root="HKLM" Key="Software\Purge" Name="InstallLanguage"
+                          Type="string" Value="!(loc.InstallLanguage)" KeyPath="yes" />
+        </Component>
         <Component Id="ApplicationFiles" Guid="b2f7c6b0-6b1a-4b1a-9b1a-6b1a4b1a9b1b">
           <File Id="MainExe" Source="$(var.PublishDir)\Purge.exe" KeyPath="yes" />
         </Component>
@@ -70,6 +74,7 @@
 
     <Feature Id="MainFeature" Title="Purge" Level="1">
       <ComponentRef Id="ApplicationFiles" />
+      <ComponentRef Id="InstallLanguageComponent" />
       <ComponentGroupRef Id="AppFilesGroup" />
       <ComponentRef Id="StartMenuShortcutComponent" />
       <ComponentRef Id="DesktopShortcutComponent" />
