@@ -1,9 +1,12 @@
 # Changelog
 
-## Unreleased
+## v1.1.0
 - アプリ本体を日本語/英語で切り替えられるようにし、「自動 / 日本語 / English」を追加
-- ユーザーの言語設定を `%LocalAppData%\\Purge\\settings.json` に保存し、更新・再インストール後も維持
+- ユーザーの言語設定を `%LocalAppData%\Purge\settings.json` に保存し、更新・再インストール後も維持
 - インストーラーの `InstallLanguage` をアプリ初回起動時の言語判定に利用
+
+## v1.0.0
+- 実行ファイル名を `Purge.UI.exe` から `Purge.exe` に変更
 
 ## v0.3.7
 - インストール時に、スタートメニュー・デスクトップのショートカットを作成するかを選べるように
