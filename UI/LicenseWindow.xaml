@@ -4,8 +4,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:loc="clr-namespace:Purge.UI.Localization"
         mc:Ignorable="d"
-        Title="ライセンス認証" Height="380" Width="560"
+        Title="{loc:Loc Win_License}" Height="380" Width="560"
         ExtendsContentIntoTitleBar="True" WindowStartupLocation="CenterOwner">
     <Grid>
         <Grid.RowDefinitions>
@@ -15,29 +16,29 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="ライセンス認証" Margin="{StaticResource TitleBarResizeGapMargin}"/>
+        <ui:TitleBar Grid.Row="0" Title="{loc:Loc Win_License}" Margin="{StaticResource TitleBarResizeGapMargin}"/>
 
         <ui:InfoBar x:Name="StatusInfoBar" Grid.Row="1" Margin="14,10,14,8" IsOpen="True" IsClosable="False"
-                    Severity="Informational" Title="無料版で利用中"
-                    Message="Pro版のライセンスキーをお持ちの場合は、下の欄に貼り付けて「認証する」を押してください。"/>
+                    Severity="Informational" Title="{loc:Loc Lic_FreeTitle}"
+                    Message="{loc:Loc Lic_FreeMessage}"/>
 
         <StackPanel Grid.Row="2" Margin="14,0,14,10">
-            <TextBlock Text="ライセンスキー" FontWeight="Bold" Margin="0,0,0,6"/>
+            <TextBlock Text="{loc:Loc Lic_KeyLabel}" FontWeight="Bold" Margin="0,0,0,6"/>
             <ui:TextBox x:Name="LicenseKeyTextBox" AcceptsReturn="True" TextWrapping="Wrap"
                         FontFamily="Cascadia Mono, Consolas" FontSize="11" Height="90"
-                        PlaceholderText="購入時にお送りしたライセンスキーを貼り付けてください"/>
+                        PlaceholderText="{loc:Loc Lic_KeyPlaceholder}"/>
 
             <TextBlock x:Name="LicenseDetailText" Margin="0,12,0,0" TextWrapping="Wrap"
                        Foreground="Gray" FontSize="12"/>
         </StackPanel>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="14,0,14,14">
-            <ui:Button x:Name="PurchaseButton" Content="購入はこちら" Icon="{ui:SymbolIcon Cart24}"
+            <ui:Button x:Name="PurchaseButton" Content="{loc:Loc Btn_Buy}" Icon="{ui:SymbolIcon Cart24}"
                        Click="PurchaseButton_Click" HorizontalAlignment="Left"/>
-            <ui:Button x:Name="DeactivateButton" Content="ライセンスを解除" Margin="16,0,0,0" Click="DeactivateButton_Click"/>
-            <ui:Button x:Name="ActivateButton" Content="認証する" Appearance="Primary"
+            <ui:Button x:Name="DeactivateButton" Content="{loc:Loc Btn_Deactivate}" Margin="16,0,0,0" Click="DeactivateButton_Click"/>
+            <ui:Button x:Name="ActivateButton" Content="{loc:Loc Btn_Activate}" Appearance="Primary"
                        Icon="{ui:SymbolIcon CheckmarkCircle24}" Margin="8,0,0,0" Click="ActivateButton_Click"/>
-            <ui:Button x:Name="CloseButton" Content="閉じる" Margin="8,0,0,0" Click="CloseButton_Click"/>
+            <ui:Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" Margin="8,0,0,0" Click="CloseButton_Click"/>
         </StackPanel>
     </Grid>
 </ui:FluentWindow>
