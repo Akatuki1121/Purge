@@ -98,7 +98,7 @@ dotnet build
 ビルド後、管理者権限のコマンドプロンプトから起動します:
 
 ```bat
-UI\bin\Debug\net10.0-windows\Purge.UI.exe
+UI\bin\Debug\net10.0-windows\Purge.exe
 ```
 
 管理者権限が必須です(レジストリの一部書き込み・高速ファイル検索アクセスのため)。
