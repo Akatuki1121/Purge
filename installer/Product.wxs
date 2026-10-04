@@ -32,7 +32,7 @@
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="Purge">
         <Component Id="ApplicationFiles" Guid="b2f7c6b0-6b1a-4b1a-9b1a-6b1a4b1a9b1b">
-          <File Id="MainExe" Source="$(var.PublishDir)\Purge.UI.exe" KeyPath="yes" />
+          <File Id="MainExe" Source="$(var.PublishDir)\Purge.exe" KeyPath="yes" />
         </Component>
         <Component Id="StartMenuShortcutComponent" Guid="c3a8d7c1-7c2b-4c2b-ac2b-7c2b5c2bac2c" Condition="INSTALLSTARTMENUSHORTCUT">
           <RegistryValue Root="HKLM" Key="Software\Purge" Name="StartMenuShortcutInstalled"
@@ -64,7 +64,7 @@
 
     <ComponentGroup Id="AppFilesGroup" Directory="INSTALLFOLDER">
       <Files Include="$(var.PublishDir)\**">
-        <Exclude Files="$(var.PublishDir)\Purge.UI.exe" />
+        <Exclude Files="$(var.PublishDir)\Purge.exe" />
       </Files>
     </ComponentGroup>
 
@@ -85,7 +85,7 @@
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <CustomAction Id="LaunchApplication"
                   Directory="INSTALLFOLDER"
-                  ExeCommand="&quot;[WindowsFolder]explorer.exe&quot; &quot;[INSTALLFOLDER]Purge.UI.exe&quot;"
+                  ExeCommand="&quot;[WindowsFolder]explorer.exe&quot; &quot;[INSTALLFOLDER]Purge.exe&quot;"
                   Return="asyncNoWait"
                   Impersonate="yes" />
 

@@ -71,9 +71,9 @@ if ($code -ne 0) {
 }
 
 Write-Host "=== 3. インストール結果の検証 ==="
-$exe = Join-Path $InstallDir 'Purge.UI.exe'
+$exe = Join-Path $InstallDir 'Purge.exe'
 $entry = Get-PurgeUninstallEntry
-Check 'Purge.UI.exe が配置された' (Test-Path $exe)
+Check 'Purge.exe が配置された' (Test-Path $exe)
 Check 'Purge.Core.dll が配置された' (Test-Path (Join-Path $InstallDir 'Purge.Core.dll'))
 Check 'Uninstall登録(プログラムと機能)がある' ($null -ne $entry)
 Check "登録バージョンが $ExpectedVersion" ($entry -and $entry.Version -eq $ExpectedVersion) "実際=$($entry.Version)"

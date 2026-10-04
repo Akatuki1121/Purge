@@ -9,6 +9,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <!-- 実行ファイル名を Purge.exe にする(ファイル名・ショートカット・タスクマネージャ上の表示を製品名に揃える)。
+         RootNamespace は Purge.UI のまま(プロジェクトファイル名から決まるため変わらない)。 -->
+    <AssemblyName>Purge</AssemblyName>
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
