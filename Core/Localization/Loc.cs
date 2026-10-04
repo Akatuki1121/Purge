@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using Microsoft.Win32;
 
 namespace Purge.Localization
 {
@@ -46,8 +47,16 @@ namespace Purge.Localization
         public static void Initialize()
         {
             EnsureLoaded();
-            Preference = LanguageSettingsStore.Load();
-            Current = ResolveCurrent(Preference);
+            if (LanguageSettingsStore.TryLoad(out var savedPreference))
+            {
+                Preference = savedPreference;
+                Current = ResolveCurrent(Preference);
+            }
+            else
+            {
+                Preference = AppLanguage.Auto;
+                Current = ResolveInstallLanguage() ?? ResolveCurrent(AppLanguage.Auto);
+            }
         }
 
         /// <summary>
@@ -105,6 +114,25 @@ namespace Purge.Localization
                 AppLanguage.English => s_english,
                 _ => throw new ArgumentException("Auto は文言表を持たない。Japanese か English を指定すること。", nameof(language)),
             };
+        }
+
+        private static AppLanguage? ResolveInstallLanguage()
+        {
+            try
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Purge");
+                var value = key?.GetValue("InstallLanguage")?.ToString();
+                return value?.ToLowerInvariant() switch
+                {
+                    "ja" => AppLanguage.Japanese,
+                    "en" => AppLanguage.English,
+                    _ => null,
+                };
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static AppLanguage ResolveCurrent(AppLanguage preference)
