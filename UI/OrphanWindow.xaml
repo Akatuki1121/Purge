@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:loc="clr-namespace:Purge.UI.Localization"
         mc:Ignorable="d"
-        Title="不明フォルダの検索結果" Height="660" Width="960" MinWidth="620" MinHeight="420"
+        Title="{loc:Loc Win_Orphan}" Height="660" Width="960" MinWidth="620" MinHeight="420"
         Icon="app.ico"
         ExtendsContentIntoTitleBar="True">
     <Window.Resources>
@@ -23,11 +24,11 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="不明フォルダの検索結果" Margin="{StaticResource TitleBarResizeGapMargin}"/>
+        <ui:TitleBar Grid.Row="0" Title="{loc:Loc Win_Orphan}" Margin="{StaticResource TitleBarResizeGapMargin}"/>
 
         <ui:InfoBar Grid.Row="1" Margin="14,10,14,8" IsOpen="True" IsClosable="False" Severity="Warning"
-                    Title="削除前に必ず確認してください"
-                    Message="どのアプリが作ったものか分からなくなったフォルダの候補一覧です。「最終更新」が最近のものは、まだ使われている可能性があるため特に注意してください。行をクリックすると選択できます(Ctrl/Shiftで複数選択可)。"/>
+                    Title="{loc:Loc Orphan_InfoTitle}"
+                    Message="{loc:Loc Orphan_InfoMessage}"/>
 
         <ui:Card Grid.Row="2" Margin="14,0,14,10" Padding="0">
             <ListView x:Name="OrphanListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
@@ -36,13 +37,13 @@
                       ScrollViewer.HorizontalScrollBarVisibility="Auto">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="フォルダ名" Width="180" DisplayMemberBinding="{Binding FolderName}"/>
-                        <GridViewColumn Header="場所" Width="180" DisplayMemberBinding="{Binding LocationDescription}"/>
-                        <GridViewColumn Header="サイズ" Width="80" DisplayMemberBinding="{Binding SizeDisplay}"/>
-                        <GridViewColumn Header="ファイル数" Width="80" DisplayMemberBinding="{Binding FileCountDisplay}"/>
+                        <GridViewColumn Header="{loc:Loc Col_FolderName}" Width="180" DisplayMemberBinding="{Binding FolderName}"/>
+                        <GridViewColumn Header="{loc:Loc Col_Location}" Width="180" DisplayMemberBinding="{Binding LocationDescription}"/>
+                        <GridViewColumn Header="{loc:Loc Col_Size}" Width="80" DisplayMemberBinding="{Binding SizeDisplay}"/>
+                        <GridViewColumn Header="{loc:Loc Col_FileCount}" Width="80" DisplayMemberBinding="{Binding FileCountDisplay}"/>
                         <GridViewColumn Width="200">
                             <GridViewColumn.Header>
-                                <TextBlock Text="最終更新"/>
+                                <TextBlock Text="{loc:Loc Col_LastModified}"/>
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -61,7 +62,7 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="フルパス" Width="260" DisplayMemberBinding="{Binding FullPath}"/>
+                        <GridViewColumn Header="{loc:Loc Col_FullPath}" Width="260" DisplayMemberBinding="{Binding FullPath}"/>
                     </GridView>
                 </ListView.View>
             </ListView>
@@ -69,21 +70,21 @@
 
         <ui:Card Grid.Row="3" Margin="14,0,14,14" Padding="14,10">
             <WrapPanel Orientation="Horizontal">
-                <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="安全モード(削除しない)" OffContent="削除を実行(本番)" IsChecked="True"
+                <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="{loc:Loc Safe_On}" OffContent="{loc:Loc Safe_Off}" IsChecked="True"
                                   VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"
-                                  ToolTip="オンの間はボタンを押しても実際には何も削除されません。何が削除されるか安心して確認できます"/>
+                                  ToolTip="{loc:Loc Safe_Tooltip}"/>
                 <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
                         Background="#E6F4EA" VerticalAlignment="Center">
-                    <TextBlock x:Name="DryRunStatusText" Text="✓ 安全モード(実際には削除されません)"
+                    <TextBlock x:Name="DryRunStatusText" Text="{loc:Loc Badge_Safe}"
                                FontSize="11" FontWeight="Bold" Foreground="#1E7B34"/>
                 </Border>
-                <ui:Button x:Name="OpenFolderButton" Content="選択項目をエクスプローラーで開く"
+                <ui:Button x:Name="OpenFolderButton" Content="{loc:Loc Btn_OpenInExplorer}"
                            Icon="{ui:SymbolIcon FolderOpen24}" Margin="16,0,0,0" Click="OpenFolderButton_Click"/>
-                <ui:Button x:Name="ExcludeButton" Content="今後表示しない"
+                <ui:Button x:Name="ExcludeButton" Content="{loc:Loc Btn_ExcludeForever}"
                            Icon="{ui:SymbolIcon EyeOff24}" Margin="8,0,0,0" Click="ExcludeButton_Click"/>
-                <ui:Button x:Name="DeleteButton" Content="選択した項目を削除" Style="{StaticResource DangerButtonReadable}"
+                <ui:Button x:Name="DeleteButton" Content="{loc:Loc Btn_DeleteSelected}" Style="{StaticResource DangerButtonReadable}"
                            Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0" Click="DeleteButton_Click"/>
-                <ui:Button x:Name="ExportButton" Content="エクスポート(Pro)" Icon="{ui:SymbolIcon ArrowDownload24}"
+                <ui:Button x:Name="ExportButton" Content="{loc:Loc Btn_ExportPro}" Icon="{ui:SymbolIcon ArrowDownload24}"
                            Margin="8,0,0,0" Click="ExportButton_Click"/>
             </WrapPanel>
         </ui:Card>

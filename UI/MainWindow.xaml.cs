@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.ComponentModel;
 using System.Threading;
 using Purge;
+using Purge.Localization;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
@@ -36,9 +37,61 @@ public partial class MainWindow : FluentWindow
     private int _totalAppCount;
     private CancellationTokenSource? _scanCts;
 
+    private void ApplyLanguageMenuState()
+    {
+        LanguageAutoMenuItem.IsChecked = Loc.Preference == AppLanguage.Auto;
+        LanguageJapaneseMenuItem.IsChecked = Loc.Preference == AppLanguage.Japanese;
+        LanguageEnglishMenuItem.IsChecked = Loc.Preference == AppLanguage.English;
+    }
+
+    private void OnLanguageChanged()
+    {
+        ApplyLanguageMenuState();
+
+        // XAML の {loc:Loc ...} は LocalizationSource が更新するが、
+        // コードから直接 Text/Content を設定している箇所はここで再描画する。
+        if (_appView != null)
+        {
+            UpdateAppCount();
+            UpdateEmptyState();
+        }
+
+        DryRunToggle_Changed(this, new RoutedEventArgs());
+
+        if (LicenseState.IsProUnlocked)
+        {
+            BatchUninstallButton.Content = Loc.T("Btn_BatchUninstall");
+        }
+
+        if (UpdateAvailableBorder.Visibility == Visibility.Visible && _pendingUpdateTag != null)
+        {
+            ShowUpdateBanner(_pendingUpdateTag, _pendingUpdateMsiUrl);
+        }
+    }
+
+    private void LanguageAutoMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Loc.SetPreference(AppLanguage.Auto);
+        ApplyLanguageMenuState();
+    }
+
+    private void LanguageJapaneseMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Loc.SetPreference(AppLanguage.Japanese);
+        ApplyLanguageMenuState();
+    }
+
+    private void LanguageEnglishMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Loc.SetPreference(AppLanguage.English);
+        ApplyLanguageMenuState();
+    }
+
     public MainWindow()
     {
         InitializeComponent();
+        Loc.LanguageChanged += OnLanguageChanged;
+        ApplyLanguageMenuState();
         _inventory = new AppInventory(_log);
         _uninstaller = new AppUninstaller(_log);
         _scanner = new ResidueScanner(_log);
@@ -53,7 +106,7 @@ public partial class MainWindow : FluentWindow
 
         if (LicenseState.IsProUnlocked)
         {
-            BatchUninstallButton.Content = "選択した複数アプリを一括アンインストール";
+            BatchUninstallButton.Content = Loc.T("Btn_BatchUninstall");
             ProUpgradeButton.Visibility = Visibility.Collapsed;
         }
 
@@ -101,7 +154,7 @@ public partial class MainWindow : FluentWindow
         {
             DryRunStatusBadge.Background = new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#E6F4EA"));
-            DryRunStatusText.Text = "✓ 安全モード(実際には削除されません)";
+            DryRunStatusText.Text = Loc.T("Badge_Safe");
             DryRunStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1E7B34"));
         }
@@ -109,7 +162,7 @@ public partial class MainWindow : FluentWindow
         {
             DryRunStatusBadge.Background = new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FDECEA"));
-            DryRunStatusText.Text = "⚠ 実行モード(本当に削除されます)";
+            DryRunStatusText.Text = Loc.T("Badge_Live");
             DryRunStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#C62828"));
         }
@@ -130,8 +183,8 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     private async void LoadApps()
     {
-        CountText.Text = "読み込み中...";
-        EmptyStateText.Text = "アプリ一覧を読み込み中...";
+        CountText.Text = Loc.T("Count_Loading");
+        EmptyStateText.Text = Loc.T("Empty_Loading");
         EmptyStatePanel.Visibility = Visibility.Visible;
 
         var apps = await Task.Run(() => _inventory.GetInstalledApps());
@@ -187,8 +240,8 @@ public partial class MainWindow : FluentWindow
 
         var visibleCount = _appView.Cast<object>().Count();
         CountText.Text = visibleCount == _totalAppCount
-            ? $"{_totalAppCount}件"
-            : $"{visibleCount} / {_totalAppCount}件";
+            ? Loc.F("Count_Total", _totalAppCount)
+            : Loc.F("Count_Filtered", visibleCount, _totalAppCount);
         UpdateEmptyState();
     }
 
@@ -202,8 +255,8 @@ public partial class MainWindow : FluentWindow
         var visibleCount = _appView.Cast<object>().Count();
         EmptyStatePanel.Visibility = visibleCount == 0 ? Visibility.Visible : Visibility.Collapsed;
         EmptyStateText.Text = _totalAppCount == 0
-            ? "インストール済みアプリは見つかりませんでした"
-            : "検索条件に一致するアプリはありません";
+            ? Loc.T("Empty_None")
+            : Loc.T("Empty_NoMatch");
     }
 
     /// <summary>
@@ -221,7 +274,7 @@ public partial class MainWindow : FluentWindow
     {
         if (AppListView.SelectedItem is not AppListItem selectedItem)
         {
-            MessageBox.Show("アンインストールするアプリを一覧から選択してください。", "未選択",
+            MessageBox.Show(Loc.T("Msg_SelectApp"), Loc.T("Common_NotSelected"),
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
@@ -232,8 +285,8 @@ public partial class MainWindow : FluentWindow
         if (!dryRun)
         {
             var confirm = MessageBox.Show(
-                $"「{selectedApp.DisplayName}」を実際にアンインストールします。よろしいですか？",
-                "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                Loc.F("Msg_ConfirmUninstall", selectedApp.DisplayName),
+                Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes)
             {
                 RefreshLogView();
@@ -244,7 +297,7 @@ public partial class MainWindow : FluentWindow
         var result = _uninstaller.ExecuteUninstall(selectedApp, dryRun);
         RefreshLogView();
 
-        MessageBox.Show($"結果: {result}", "アンインストール", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(Loc.F("Msg_UninstallResult", result), Loc.T("Title_Uninstall"), MessageBoxButton.OK, MessageBoxImage.Information);
 
         if (!dryRun)
         {
@@ -266,7 +319,7 @@ public partial class MainWindow : FluentWindow
         _scanCts?.Dispose();
         _scanCts = new CancellationTokenSource();
         CancelScanButton.Visibility = Visibility.Visible;
-        ScanStatusText.Text = "スキャン準備中";
+        ScanStatusText.Text = Loc.T("Scan_Preparing");
 
         try
         {
@@ -284,7 +337,7 @@ public partial class MainWindow : FluentWindow
             {
                 if (!silentIfEmpty)
                 {
-                    MessageBox.Show("残存物は見つかりませんでした。", "スキャン結果",
+                    MessageBox.Show(Loc.T("Msg_NoResidue"), Loc.T("Title_ScanResult"),
                         MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 return;
@@ -311,14 +364,14 @@ public partial class MainWindow : FluentWindow
             _scanCts?.Dispose();
             _scanCts = null;
             CancelScanButton.Visibility = Visibility.Collapsed;
-            ScanStatusText.Text = "スキャン: 待機中";
+            ScanStatusText.Text = Loc.T("Scan_Idle");
         }
     }
 
     private void CancelScanButton_Click(object sender, RoutedEventArgs e)
     {
         _scanCts?.Cancel();
-        ScanStatusText.Text = "キャンセル中...";
+        ScanStatusText.Text = Loc.T("Scan_Cancelling");
     }
 
     /// <summary>
@@ -336,8 +389,8 @@ public partial class MainWindow : FluentWindow
             // スキャンはMFT検索を含み数十秒かかることがあるため、進行中であることを
             // 明示してボタンの二重押しを防ぐ(押せたかどうか分からない、という指摘への対応)。
             button.IsEnabled = false;
-            button.Content = "検索中...";
-            ScanStatusText.Text = "不明フォルダを検索中...";
+            button.Content = Loc.T("Btn_FindOrphansBusy");
+            ScanStatusText.Text = Loc.T("Scan_Searching");
             Mouse.OverrideCursor = Cursors.Wait;
 
             var apps = _inventory.GetInstalledApps();
@@ -349,13 +402,13 @@ public partial class MainWindow : FluentWindow
 
             if (orphans.Count == 0)
             {
-                ScanStatusText.Text = "検索完了(該当なし)";
-                MessageBox.Show("不明フォルダは見つかりませんでした。", "検索結果",
+                ScanStatusText.Text = Loc.T("Scan_SearchDoneNone");
+                MessageBox.Show(Loc.T("Msg_NoOrphans"), Loc.T("Title_SearchResult"),
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            ScanStatusText.Text = $"検索完了({orphans.Count}件)";
+            ScanStatusText.Text = Loc.F("Scan_SearchDone", orphans.Count);
 
             var orphanWindow = new OrphanWindow(orphans, _log, _orphanExclusions)
             {
@@ -366,7 +419,7 @@ public partial class MainWindow : FluentWindow
         }
         catch (System.Exception ex)
         {
-            ScanStatusText.Text = "検索に失敗しました";
+            ScanStatusText.Text = Loc.T("Scan_SearchFailed");
             new CrashReportWindow(_log.BuildErrorReport(ex)) { Owner = this }.ShowDialog();
         }
         finally
@@ -387,8 +440,8 @@ public partial class MainWindow : FluentWindow
         if (!LicenseState.IsProUnlocked)
         {
             var purchaseConfirm = MessageBox.Show(
-                "複数アプリの一括アンインストールはPro版の機能です。\n\n購入ページを開きますか？",
-                "Pro機能", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                Loc.T("Msg_BatchProPrompt"),
+                Loc.T("Common_ProFeature"), MessageBoxButton.YesNo, MessageBoxImage.Information);
 
             if (purchaseConfirm == MessageBoxResult.Yes)
             {
@@ -414,16 +467,16 @@ public partial class MainWindow : FluentWindow
 
         if (!dryRun)
         {
-            var names = string.Join("\n", selectedApps.Select(a => $"・{a.DisplayName}"));
+            var names = string.Join("\n", selectedApps.Select(a => Loc.F("List_Bullet", a.DisplayName)));
             var confirm = MessageBox.Show(
                 $"以下の{selectedApps.Count}件を一括でアンインストールします。\n\n{names}\n\nよろしいですか？",
-                "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
         }
 
         BatchUninstallButton.IsEnabled = false;
         var originalContent = BatchUninstallButton.Content;
-        BatchUninstallButton.Content = "一括アンインストール中...";
+        BatchUninstallButton.Content = Loc.T("Btn_BatchUninstalling");
 
         try
         {
@@ -450,9 +503,9 @@ public partial class MainWindow : FluentWindow
             }
 
             var summary = dryRun
-                ? $"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)"
-                : $"完了: 成功 {successCount}件 / 失敗 {failCount}件";
-            MessageBox.Show(summary, "一括アンインストール結果", MessageBoxButton.OK, MessageBoxImage.Information);
+                ? Loc.F("Msg_CheckDone", dryRunCount)
+                : Loc.F("Msg_BatchDone", successCount, failCount);
+            MessageBox.Show(summary, Loc.T("Title_BatchResult"), MessageBoxButton.OK, MessageBoxImage.Information);
 
             if (!dryRun)
             {
@@ -479,13 +532,13 @@ public partial class MainWindow : FluentWindow
     private void SelfUninstallButton_Click(object sender, RoutedEventArgs e)
     {
         var confirm1 = MessageBox.Show(
-            "このツール自身をアンインストールします。\n実行ファイルと関連ファイルがすべて削除されます。\n\nよろしいですか？",
-            "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            Loc.T("Msg_SelfUninstallConfirm1"),
+            Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm1 != MessageBoxResult.Yes) return;
 
         var confirm2 = MessageBox.Show(
-            "本当に実行しますか？この操作は取り消せません。",
-            "最終確認", MessageBoxButton.YesNo, MessageBoxImage.Stop);
+            Loc.T("Msg_SelfUninstallConfirm2"),
+            Loc.T("Title_FinalConfirm"), MessageBoxButton.YesNo, MessageBoxImage.Stop);
         if (confirm2 != MessageBoxResult.Yes) return;
 
         SelfUninstaller.BeginSelfUninstall(_log);
@@ -513,7 +566,7 @@ public partial class MainWindow : FluentWindow
         }
 
         Clipboard.SetText(LogText.Text);
-        button.Content = "コピーしました";
+        button.Content = Loc.T("Common_Copied");
 
         var timer = new System.Windows.Threading.DispatcherTimer
         {
@@ -521,7 +574,7 @@ public partial class MainWindow : FluentWindow
         };
         timer.Tick += (_, _) =>
         {
-            button.Content = "コピー";
+            button.Content = Loc.T("Common_Copy");
             timer.Stop();
         };
         timer.Start();
@@ -547,15 +600,14 @@ public partial class MainWindow : FluentWindow
         var versionText = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
         var latestChangelogEntry = GetLatestChangelogEntry();
 
-        var message = $"Purge v{versionText}\n\n" +
-            "残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。";
+        var message = Loc.F("Msg_About", versionText);
 
         if (!string.IsNullOrWhiteSpace(latestChangelogEntry))
         {
-            message += $"\n\n【更新内容】\n{latestChangelogEntry}";
+            message += Loc.F("Msg_AboutChangelog", latestChangelogEntry);
         }
 
-        MessageBox.Show(message, "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(message, Loc.T("Title_About"), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     /// <summary>
@@ -613,8 +665,8 @@ public partial class MainWindow : FluentWindow
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "削除前バックアップを選択",
-            Filter = "JSONマニフェスト (*.json)|*.json",
+            Title = Loc.T("Dlg_RestoreTitle"),
+            Filter = Loc.T("Dlg_RestoreFilter"),
             InitialDirectory = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Purge", "RemovalBackups"),
@@ -628,7 +680,7 @@ public partial class MainWindow : FluentWindow
         var confirm = MessageBox.Show(
             "選択したバックアップからファイル・フォルダ・レジストリを復元します。\n" +
             "既存のファイルやレジストリ値は上書きされる場合があります。\n\n実行しますか？",
-            "バックアップから復元", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            Loc.T("Title_Restore"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes)
         {
             return;
@@ -637,7 +689,7 @@ public partial class MainWindow : FluentWindow
         try
         {
             var restored = new RemovalRestoreService(_log).Restore(dialog.FileName);
-            MessageBox.Show($"復元処理が完了しました。復元件数: {restored}件", "復元完了",
+            MessageBox.Show(Loc.F("Msg_RestoreDone", restored), Loc.T("Title_RestoreDone"),
                 MessageBoxButton.OK, MessageBoxImage.Information);
             RefreshLogView();
         }
@@ -671,8 +723,8 @@ public partial class MainWindow : FluentWindow
 
         // ライセンス状態が変わった可能性があるため、関連するUIの表示を更新する
         BatchUninstallButton.Content = LicenseState.IsProUnlocked
-            ? "選択した複数アプリを一括アンインストール"
-            : "選択した複数アプリを一括アンインストール (Pro)";
+            ? Loc.T("Btn_BatchUninstall")
+            : Loc.T("Btn_BatchUninstallPro");
         ProUpgradeButton.Visibility = LicenseState.IsProUnlocked
             ? Visibility.Collapsed
             : Visibility.Visible;
@@ -695,13 +747,13 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     private void ShowUpdateBanner(string tag, string? msiUrl)
     {
-        UpdateAvailableText.Text = $"🔔 新しいバージョン({tag})があります。";
+        UpdateAvailableText.Text = Loc.F("Upd_Available", tag);
         _pendingUpdateTag = tag;
         _pendingUpdateMsiUrl = msiUrl;
 
         // assetsからMSIが見つからなかった場合(命名規則変更等)は、ダウンロードではなく
         // Releasesページを開くボタンに切り替える(URLが完全に無いよりは救済になる)。
-        UpdateDownloadButton.Content = msiUrl != null ? "ダウンロード" : "Releasesページを開く";
+        UpdateDownloadButton.Content = msiUrl != null ? Loc.T("Btn_Download") : Loc.T("Btn_OpenReleases");
 
         UpdateAvailableBorder.Visibility = Visibility.Visible;
     }
@@ -731,8 +783,8 @@ public partial class MainWindow : FluentWindow
             var progress = new Progress<double?>(p =>
             {
                 UpdateDownloadButton.Content = p.HasValue
-                    ? $"ダウンロード中... {p.Value:P0}"
-                    : "ダウンロード中...";
+                    ? Loc.F("Upd_DownloadingPercent", p.Value)
+                    : Loc.T("Upd_Downloading");
             });
 
             var msiPath = await UpdateDownloader.DownloadAsync(_pendingUpdateMsiUrl, progress);
@@ -741,7 +793,7 @@ public partial class MainWindow : FluentWindow
                 $"バージョン {_pendingUpdateTag} のダウンロードが完了しました。\n\n" +
                 "今すぐインストーラーを起動しますか?\n" +
                 "(インストール中はPurgeを終了する必要があります。管理者権限の確認が表示されます)",
-                "ダウンロード完了", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                Loc.T("Title_DownloadDone"), MessageBoxButton.YesNo, MessageBoxImage.Information);
 
             if (result == MessageBoxResult.Yes)
             {
@@ -753,7 +805,7 @@ public partial class MainWindow : FluentWindow
                 // 「後で」を選んだ場合、次回もダウンロードから促せるようバナーは維持しつつ
                 // ボタンだけ元に戻す(再ダウンロードは避けたいが、パスを覚えておく必要はない。
                 // 次回ダウンロード実行時はUpdateDownloader側で同名ファイルの再利用に任せる)。
-                UpdateDownloadButton.Content = "インストーラーを起動";
+                UpdateDownloadButton.Content = Loc.T("Btn_LaunchInstaller");
                 UpdateDownloadButton.IsEnabled = true;
                 UpdateDismissButton.IsEnabled = true;
                 _downloadedMsiPath = msiPath;
@@ -767,7 +819,7 @@ public partial class MainWindow : FluentWindow
             MessageBox.Show(
                 $"アップデートのダウンロードに失敗しました。\n\n{ex.Message}\n\n" +
                 "手動でRelasesページからダウンロードしてください。",
-                "ダウンロード失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Loc.T("Title_DownloadFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
             UpdateDownloadButton.Content = originalContent;
         }
         finally

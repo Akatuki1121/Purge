@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Purge.UI"
+        xmlns:loc="clr-namespace:Purge.UI.Localization"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="Purge" Height="700" Width="1040" MinWidth="640" MinHeight="480"
@@ -67,36 +68,42 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <WrapPanel Grid.Column="0" Orientation="Horizontal">
-                    <ui:Button Content="再読み込み" Icon="{ui:SymbolIcon ArrowSync24}"
+                    <ui:Button Content="{loc:Loc Btn_Reload}" Icon="{ui:SymbolIcon ArrowSync24}"
                                Click="RefreshButton_Click"/>
-                    <ui:Button Content="不具合・要望" Icon="{ui:SymbolIcon Bug24}"
+                    <ui:Button Content="{loc:Loc Btn_Feedback}" Icon="{ui:SymbolIcon Bug24}"
                                Margin="8,0,0,0" Click="ReportBugMenuItem_Click"/>
-                    <ui:Button Content="不明フォルダを探す" Icon="{ui:SymbolIcon Search24}"
+                    <ui:Button Content="{loc:Loc Btn_FindOrphans}" Icon="{ui:SymbolIcon Search24}"
                                Margin="8,0,0,0" Click="ScanOrphanButton_Click"
-                               ToolTip="どのアプリのものか分からなくなったフォルダを探して一覧表示します"/>
+                               ToolTip="{loc:Loc Tip_FindOrphans}"/>
                 </WrapPanel>
                 <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0"
-                           ToolTip="スキャンの進み具合(不明フォルダ探し・消し残しチェックなど)">
+                           ToolTip="{loc:Loc Tip_ScanStatus}">
                     <ui:SymbolIcon Symbol="ArrowSync24" FontSize="15" Foreground="#6B7785"/>
-                    <TextBlock x:Name="ScanStatusText" Text="スキャン: 待機中" Margin="6,0,8,0" Foreground="#6B7785"
+                    <TextBlock x:Name="ScanStatusText" Text="{loc:Loc Scan_Idle}" Margin="6,0,8,0" Foreground="#6B7785"
                                FontSize="11" VerticalAlignment="Center"/>
-                    <ui:Button x:Name="CancelScanButton" Content="キャンセル" Appearance="Secondary"
+                    <ui:Button x:Name="CancelScanButton" Content="{loc:Loc Btn_Cancel}" Appearance="Secondary"
                                Visibility="Collapsed" Click="CancelScanButton_Click"/>
-                    <ui:Button x:Name="ProUpgradeButton" Content="Proにアップグレード" Appearance="Primary"
+                    <ui:Button x:Name="ProUpgradeButton" Content="{loc:Loc Btn_UpgradePro}" Appearance="Primary"
                                Icon="{ui:SymbolIcon Star24}" Margin="8,0,0,0" Click="ProUpgradeButton_Click"/>
                 </WrapPanel>
                 <Menu Grid.Column="2" Background="Transparent" Padding="4,0" VerticalAlignment="Center">
-                    <MenuItem Header="その他(_M)">
-                        <MenuItem x:Name="ShowLogMenuItem" Header="操作ログを表示" IsCheckable="True" IsChecked="False"
+                    <MenuItem Header="{loc:Loc Menu_More}">
+                        <MenuItem x:Name="ShowLogMenuItem" Header="{loc:Loc Menu_ShowLog}" IsCheckable="True" IsChecked="False"
                                   Click="ShowLogMenuItem_Click"/>
-                        <MenuItem Header="削除前バックアップから復元" Click="RestoreBackupMenuItem_Click"/>
+                        <MenuItem Header="{loc:Loc Menu_Restore}" Click="RestoreBackupMenuItem_Click"/>
                         <Separator/>
-                        <MenuItem Header="ライセンス認証(Pro)" Click="LicenseMenuItem_Click"/>
+                        <MenuItem Header="{loc:Loc Menu_License}" Click="LicenseMenuItem_Click"/>
                         <Separator/>
-                        <MenuItem Header="このツール自身をアンインストール" Click="SelfUninstallButton_Click"/>
-                        <MenuItem Header="バージョン情報" Click="AboutMenuItem_Click"/>
+                        <MenuItem Header="{loc:Loc Menu_Language}">
+                            <MenuItem x:Name="LanguageAutoMenuItem" Header="{loc:Loc Menu_LanguageAuto}" IsCheckable="True" Click="LanguageAutoMenuItem_Click"/>
+                            <MenuItem x:Name="LanguageJapaneseMenuItem" Header="日本語" IsCheckable="True" Click="LanguageJapaneseMenuItem_Click"/>
+                            <MenuItem x:Name="LanguageEnglishMenuItem" Header="English" IsCheckable="True" Click="LanguageEnglishMenuItem_Click"/>
+                        </MenuItem>
                         <Separator/>
-                        <MenuItem Header="終了" Click="ExitMenuItem_Click"/>
+                        <MenuItem Header="{loc:Loc Menu_SelfUninstall}" Click="SelfUninstallButton_Click"/>
+                        <MenuItem Header="{loc:Loc Title_About}" Click="AboutMenuItem_Click"/>
+                        <Separator/>
+                        <MenuItem Header="{loc:Loc Menu_Exit}" Click="ExitMenuItem_Click"/>
                     </MenuItem>
                 </Menu>
             </Grid>
@@ -105,7 +112,7 @@
         <Border x:Name="ElevationWarningBorder" Grid.Row="2" Background="#FFF3CD" BorderBrush="#FFECB5"
                 BorderThickness="1" Padding="8" Margin="10,4,10,0" Visibility="Collapsed">
             <TextBlock TextWrapping="Wrap" Foreground="#664D03"
-                       Text="⚠ 管理者として実行されていません。この状態だと「消し残しの全体チェック」や「不明フォルダ探し」の高速検索が動かず、結果が0件のまま何も見つからないことがあります。exeを右クリックして「管理者として実行」で開き直してください。"/>
+                       Text="{loc:Loc Warn_NotAdmin}"/>
         </Border>
 
         <Border x:Name="UpdateAvailableBorder" Grid.Row="2" Background="#E7F1FF" BorderBrush="#B6D4FE"
@@ -119,9 +126,9 @@
                 <TextBlock x:Name="UpdateAvailableText" Grid.Column="0" TextWrapping="Wrap" Foreground="#0B3D91"
                            VerticalAlignment="Center"
                            Text="🔔 新しいバージョンがあります。"/>
-                <ui:Button x:Name="UpdateDownloadButton" Grid.Column="1" Content="ダウンロード" Appearance="Primary"
+                <ui:Button x:Name="UpdateDownloadButton" Grid.Column="1" Content="{loc:Loc Btn_Download}" Appearance="Primary"
                            Margin="8,0,0,0" Click="UpdateDownloadButton_Click"/>
-                <ui:Button x:Name="UpdateDismissButton" Grid.Column="2" Content="後で" Appearance="Secondary"
+                <ui:Button x:Name="UpdateDismissButton" Grid.Column="2" Content="{loc:Loc Btn_Later}" Appearance="Secondary"
                            Margin="8,0,0,0" Click="UpdateDismissButton_Click"/>
             </Grid>
         </Border>
@@ -132,7 +139,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="インストール済みアプリ" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="{loc:Loc Hdr_InstalledApps}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
                 <TextBlock x:Name="CountText" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="#6B7785"/>
             </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -141,12 +148,12 @@
                     <Grid>
                         <TextBox x:Name="SearchTextBox" BorderThickness="0" Background="Transparent"
                                  VerticalContentAlignment="Center" Padding="22,0,0,0"
-                                 TextChanged="SearchTextBox_TextChanged" ToolTip="アプリ名、発行元、場所で検索"/>
+                                 TextChanged="SearchTextBox_TextChanged" ToolTip="{loc:Loc Tip_Search}"/>
                         <ui:SymbolIcon Symbol="Search24" FontSize="16" Foreground="#7A8795"
                                        HorizontalAlignment="Left" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
-                <ui:Button x:Name="RefreshButton" Content="再読み込み" Icon="{ui:SymbolIcon ArrowSync24}"
+                <ui:Button x:Name="RefreshButton" Content="{loc:Loc Btn_Reload}" Icon="{ui:SymbolIcon ArrowSync24}"
                            Margin="8,0,0,0" Click="RefreshButton_Click"/>
             </StackPanel>
         </Grid>
@@ -166,10 +173,10 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="アプリ名" Width="300" DisplayMemberBinding="{Binding DisplayName}"/>
-                                    <GridViewColumn Header="バージョン" Width="110" DisplayMemberBinding="{Binding DisplayVersion}"/>
-                                    <GridViewColumn Header="発行元" Width="210" DisplayMemberBinding="{Binding PublisherDisplay}"/>
-                                    <GridViewColumn Header="インストール場所" Width="220" DisplayMemberBinding="{Binding InstallLocation}"/>
+                                    <GridViewColumn Header="{loc:Loc Col_AppName}" Width="300" DisplayMemberBinding="{Binding DisplayName}"/>
+                                    <GridViewColumn Header="{loc:Loc Col_Version}" Width="110" DisplayMemberBinding="{Binding DisplayVersion}"/>
+                                    <GridViewColumn Header="{loc:Loc Col_Publisher}" Width="210" DisplayMemberBinding="{Binding PublisherDisplay}"/>
+                                    <GridViewColumn Header="{loc:Loc Col_InstallLocation}" Width="220" DisplayMemberBinding="{Binding InstallLocation}"/>
                                 </GridView>
                             </ListView.View>
                         </ListView>
@@ -189,18 +196,18 @@
                 <!-- 通常操作: アンインストール(単体が基本、複数選択時のみ一括ボタンが現れる) -->
                 <WrapPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Delete24" FontSize="16" Margin="0,0,8,0" Foreground="#666"/>
-                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="安全モード(削除しない)" OffContent="削除を実行(本番)" IsChecked="True"
+                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="{loc:Loc Safe_On}" OffContent="{loc:Loc Safe_Off}" IsChecked="True"
                                       VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"
-                                      ToolTip="オンの間はボタンを押しても実際には何も削除されません。何が削除されるか安心して確認できます"/>
+                                      ToolTip="{loc:Loc Safe_Tooltip}"/>
                     <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
                             Background="#E6F4EA" VerticalAlignment="Center">
-                        <TextBlock x:Name="DryRunStatusText" Text="✓ 安全モード(実際には削除されません)"
+                        <TextBlock x:Name="DryRunStatusText" Text="{loc:Loc Badge_Safe}"
                                    FontSize="11" FontWeight="Bold" Foreground="#1E7B34"/>
                     </Border>
-                    <ui:Button x:Name="UninstallButton" Content="選択したアプリをアンインストール"
+                    <ui:Button x:Name="UninstallButton" Content="{loc:Loc Btn_Uninstall}"
                                Appearance="Primary" Icon="{ui:SymbolIcon Delete24}"
                                Margin="16,0,0,0" Click="UninstallButton_Click"/>
-                    <ui:Button x:Name="BatchUninstallButton" Content="選択した複数アプリを一括アンインストール (Pro)"
+                    <ui:Button x:Name="BatchUninstallButton" Content="{loc:Loc Btn_BatchUninstallPro}"
                                Icon="{ui:SymbolIcon Apps24}" Margin="8,0,0,0" Click="BatchUninstallButton_Click"
                                Visibility="Collapsed"/>
                 </WrapPanel>
@@ -224,11 +231,11 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="DocumentBulletList24" FontSize="16" Foreground="#657487"
                                        Margin="0,0,8,0"/>
-                        <TextBlock Text="操作ログ" Style="{StaticResource SectionLabel}"/>
-                        <TextBlock Text="診断情報と直近の操作履歴" Margin="10,0,0,0" Foreground="#8793A1"
+                        <TextBlock Text="{loc:Loc Log_Title}" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="{loc:Loc Log_Subtitle}" Margin="10,0,0,0" Foreground="#8793A1"
                                    FontSize="11"/>
                     </StackPanel>
-                    <ui:Button Grid.Column="1" x:Name="CopyLogButton" Content="コピー" Icon="{ui:SymbolIcon Copy24}"
+                    <ui:Button Grid.Column="1" x:Name="CopyLogButton" Content="{loc:Loc Common_Copy}" Icon="{ui:SymbolIcon Copy24}"
                                FontSize="11" Padding="8,2" Click="CopyLogButton_Click"/>
                     </Grid>
                 </DataTemplate>
