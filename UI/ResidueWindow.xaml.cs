@@ -38,7 +38,7 @@ namespace Purge.UI
                 new double?[] { 13, 7, 48, 32 });
             HorizontalScrollSupport.AttachToWindow(this);
             HorizontalScrollSupport.AttachShiftWheel(ResidueListView);
-            TitleText.Text = $"「{appName}」の残存物: {_items.Count}件";
+            TitleText.Text = Loc.F("Residue_Title", appName, _items.Count);
         }
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
@@ -142,12 +142,12 @@ namespace Purge.UI
 
             if (dryRun)
             {
-                MessageBox.Show($"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)",
+                MessageBox.Show(Loc.F("Msg_CheckDone", dryRunCount),
                     Loc.T("Common_Result"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show($"削除完了: 成功 {successCount}件 / 失敗 {failCount}件",
+                MessageBox.Show(Loc.F("Msg_DeleteDone", successCount, failCount),
                     Loc.T("Common_Result"), MessageBoxButton.OK, MessageBoxImage.Information);
 
                 foreach (var succeeded in succeededItems)
