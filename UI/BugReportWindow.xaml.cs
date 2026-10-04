@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using Purge;
+using Purge.Localization;
 using Wpf.Ui.Controls;
 using Clipboard = System.Windows.Clipboard;
 using MessageBox = System.Windows.MessageBox;
@@ -28,8 +29,8 @@ public partial class BugReportWindow : FluentWindow
     {
         var dialog = new OpenFileDialog
         {
-            Title = "スクリーンショット画像を選択",
-            Filter = "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.gif",
+            Title = Loc.T("Dlg_ScreenshotTitle"),
+            Filter = Loc.T("Dlg_ImageFilter"),
         };
         if (dialog.ShowDialog() != true) return;
 
@@ -47,7 +48,7 @@ public partial class BugReportWindow : FluentWindow
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"画像を読み込めませんでした。\n{ex.Message}", "エラー",
+            MessageBox.Show($"画像を読み込めませんでした。\n{ex.Message}", Loc.T("Common_Error"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -57,7 +58,7 @@ public partial class BugReportWindow : FluentWindow
         var summary = SummaryText.Text.Trim();
         if (string.IsNullOrEmpty(summary))
         {
-            MessageBox.Show("概要を入力してください。", "入力不足", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Loc.T("Msg_SummaryRequired"), Loc.T("Title_InputRequired"), MessageBoxButton.OK, MessageBoxImage.Information);
             SummaryText.Focus();
             return;
         }
@@ -65,22 +66,22 @@ public partial class BugReportWindow : FluentWindow
         try
         {
             var isFeatureRequest = ReportTypeComboBox.SelectedIndex == 1;
-            var prefix = isFeatureRequest ? "[要望]" : "[不具合]";
+            var prefix = isFeatureRequest ? Loc.T("Report_PrefixFeature") : Loc.T("Report_PrefixBug");
             var labels = isFeatureRequest ? "enhancement,user-request" : "bug,user-report";
             GitHubIssueReporter.OpenIssue($"{prefix} {summary}", BuildReport(), labels);
 
             if (_attachedScreenshotFileName != null)
             {
                 MessageBox.Show(
-                    "画像はクリップボードにコピーされています。\n開いたGitHubのIssue作成画面の本文欄に貼り付け(Ctrl+V)てください。",
-                    "スクリーンショットの貼り付け", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Loc.T("Msg_PasteScreenshot"),
+                    Loc.T("Title_PasteScreenshot"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             Close();
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"ブラウザを開けませんでした。\n{ex.Message}", "エラー",
+            MessageBox.Show($"ブラウザを開けませんでした。\n{ex.Message}", Loc.T("Common_Error"),
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
@@ -93,13 +94,13 @@ public partial class BugReportWindow : FluentWindow
         report.AppendLine(SummaryText.Text.Trim());
         report.AppendLine();
         report.AppendLine(isFeatureRequest ? "## 解決したい課題・利用場面" : "## 再現手順");
-        report.AppendLine(string.IsNullOrWhiteSpace(StepsText.Text) ? "(未記入)" : StepsText.Text.Trim());
+        report.AppendLine(string.IsNullOrWhiteSpace(StepsText.Text) ? Loc.T("Report_NotFilled") : StepsText.Text.Trim());
         report.AppendLine();
         report.AppendLine(isFeatureRequest ? "## 希望する動作・機能" : "## 期待する動作");
-        report.AppendLine(string.IsNullOrWhiteSpace(ExpectedText.Text) ? "(未記入)" : ExpectedText.Text.Trim());
+        report.AppendLine(string.IsNullOrWhiteSpace(ExpectedText.Text) ? Loc.T("Report_NotFilled") : ExpectedText.Text.Trim());
         report.AppendLine();
         report.AppendLine("## 実際の動作・エラーメッセージ");
-        report.AppendLine(string.IsNullOrWhiteSpace(ActualText.Text) ? "(未記入)" : ActualText.Text.Trim());
+        report.AppendLine(string.IsNullOrWhiteSpace(ActualText.Text) ? Loc.T("Report_NotFilled") : ActualText.Text.Trim());
         report.AppendLine();
         report.AppendLine("## 環境");
         report.AppendLine($"- OS: {Environment.OSVersion}");
