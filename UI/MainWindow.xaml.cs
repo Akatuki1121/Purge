@@ -580,12 +580,11 @@ public partial class MainWindow : FluentWindow
         var versionText = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
         var latestChangelogEntry = GetLatestChangelogEntry();
 
-        var message = $"Purge v{versionText}\n\n" +
-            "残存ファイル・レジストリ・サービス・タスクスケジューラまで横断的にスキャンできる\nアンインストーラーです。";
+        var message = Loc.F("Msg_About", versionText);
 
         if (!string.IsNullOrWhiteSpace(latestChangelogEntry))
         {
-            message += $"\n\n【更新内容】\n{latestChangelogEntry}";
+            message += Loc.F("Msg_AboutChangelog", latestChangelogEntry);
         }
 
         MessageBox.Show(message, Loc.T("Title_About"), MessageBoxButton.OK, MessageBoxImage.Information);
