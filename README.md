@@ -1,5 +1,7 @@
 # Purge
 
+**日本語** | [English](./README.en.md)
+
 [![Release](https://img.shields.io/github/v/release/Akatuki1121/Purge)](../../releases)
 
 **Windows のアプリを、消し残しゼロでアンインストールするツールです。**
