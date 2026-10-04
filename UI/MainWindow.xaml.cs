@@ -47,6 +47,26 @@ public partial class MainWindow : FluentWindow
     private void OnLanguageChanged()
     {
         ApplyLanguageMenuState();
+
+        // XAML の {loc:Loc ...} は LocalizationSource が更新するが、
+        // コードから直接 Text/Content を設定している箇所はここで再描画する。
+        if (_appView != null)
+        {
+            UpdateAppCount();
+            UpdateEmptyState();
+        }
+
+        DryRunToggle_Changed(this, new RoutedEventArgs());
+
+        if (LicenseState.IsProUnlocked)
+        {
+            BatchUninstallButton.Content = Loc.T("Btn_BatchUninstall");
+        }
+
+        if (UpdateAvailableBorder.Visibility == Visibility.Visible && _pendingUpdateTag != null)
+        {
+            ShowUpdateBanner(_pendingUpdateTag, _pendingUpdateMsiUrl);
+        }
     }
 
     private void LanguageAutoMenuItem_Click(object sender, RoutedEventArgs e)
