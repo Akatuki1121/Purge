@@ -19,6 +19,32 @@ namespace Purge.Localization
 
         private static readonly JsonSerializerOptions s_writeOptions = new() { WriteIndented = true };
 
+        public static bool TryLoad(out AppLanguage language)
+        {
+            language = AppLanguage.Auto;
+            try
+            {
+                var path = GetSettingsPath();
+                if (!File.Exists(path))
+                {
+                    return false;
+                }
+
+                var text = ReadRootOrEmpty(path)[LanguageKey]?.GetValue<string>();
+                if (!Enum.TryParse<AppLanguage>(text, ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed))
+                {
+                    return false;
+                }
+
+                language = parsed;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static AppLanguage Load()
         {
             try
