@@ -10,4 +10,16 @@
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 表示文言(日本語/英語)。キー過不足のテストをUI参照なしで書けるよう、Coreに埋め込む。
+         ファイル名が Strings.ja.json のように「.言語コード.」を含むため、そのままだとMSBuildが
+         言語別のsatelliteリソースとして扱い、本体のdllに入らない。WithCulture="false" で本体に埋め込む。 -->
+    <EmbeddedResource Include="Localization\Strings.ja.json" LogicalName="Purge.Strings.ja.json" WithCulture="false" />
+    <EmbeddedResource Include="Localization\Strings.en.json" LogicalName="Purge.Strings.en.json" WithCulture="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Purge.Tests" />
+  </ItemGroup>
+
 </Project>
