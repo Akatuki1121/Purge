@@ -37,9 +37,41 @@ public partial class MainWindow : FluentWindow
     private int _totalAppCount;
     private CancellationTokenSource? _scanCts;
 
+    private void ApplyLanguageMenuState()
+    {
+        LanguageAutoMenuItem.IsChecked = Loc.Preference == AppLanguage.Auto;
+        LanguageJapaneseMenuItem.IsChecked = Loc.Preference == AppLanguage.Japanese;
+        LanguageEnglishMenuItem.IsChecked = Loc.Preference == AppLanguage.English;
+    }
+
+    private void OnLanguageChanged()
+    {
+        ApplyLanguageMenuState();
+    }
+
+    private void LanguageAutoMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Loc.SetPreference(AppLanguage.Auto);
+        ApplyLanguageMenuState();
+    }
+
+    private void LanguageJapaneseMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Loc.SetPreference(AppLanguage.Japanese);
+        ApplyLanguageMenuState();
+    }
+
+    private void LanguageEnglishMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        Loc.SetPreference(AppLanguage.English);
+        ApplyLanguageMenuState();
+    }
+
     public MainWindow()
     {
         InitializeComponent();
+        Loc.LanguageChanged += OnLanguageChanged;
+        ApplyLanguageMenuState();
         _inventory = new AppInventory(_log);
         _uninstaller = new AppUninstaller(_log);
         _scanner = new ResidueScanner(_log);
