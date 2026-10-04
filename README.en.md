@@ -39,6 +39,10 @@ The first time you use Purge, "Safe mode" is turned on.
 While it is on, pressing the buttons does not actually delete anything,
 so you can check what would be found before moving on to real deletion.
 
+| Safe mode (default) | Execute mode (really deletes) |
+|---|---|
+| ![Safe mode screen](./assets/screenshots/main-safe-mode-en.png) | ![Execute mode screen](./assets/screenshots/main-execute-mode-en.png) |
+
 ## Features
 
 - Lists installed apps and runs their uninstallers
