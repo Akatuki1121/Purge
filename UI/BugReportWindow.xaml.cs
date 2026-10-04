@@ -90,26 +90,26 @@ public partial class BugReportWindow : FluentWindow
     {
         var report = new StringBuilder();
         var isFeatureRequest = ReportTypeComboBox.SelectedIndex == 1;
-        report.AppendLine(isFeatureRequest ? "## 要望の概要" : "## 不具合の概要");
+        report.AppendLine(isFeatureRequest ? Loc.T("Report_FeatureSummary") : Loc.T("Report_BugSummary"));
         report.AppendLine(SummaryText.Text.Trim());
         report.AppendLine();
-        report.AppendLine(isFeatureRequest ? "## 解決したい課題・利用場面" : "## 再現手順");
+        report.AppendLine(isFeatureRequest ? Loc.T("Report_FeatureContext") : Loc.T("Report_Steps"));
         report.AppendLine(string.IsNullOrWhiteSpace(StepsText.Text) ? Loc.T("Report_NotFilled") : StepsText.Text.Trim());
         report.AppendLine();
-        report.AppendLine(isFeatureRequest ? "## 希望する動作・機能" : "## 期待する動作");
+        report.AppendLine(isFeatureRequest ? Loc.T("Report_FeatureWanted") : Loc.T("Report_Expected"));
         report.AppendLine(string.IsNullOrWhiteSpace(ExpectedText.Text) ? Loc.T("Report_NotFilled") : ExpectedText.Text.Trim());
         report.AppendLine();
-        report.AppendLine("## 実際の動作・エラーメッセージ");
+        report.AppendLine(Loc.T("Report_Actual"));
         report.AppendLine(string.IsNullOrWhiteSpace(ActualText.Text) ? Loc.T("Report_NotFilled") : ActualText.Text.Trim());
         report.AppendLine();
-        report.AppendLine("## 環境");
+        report.AppendLine(Loc.T("Report_Environment"));
         report.AppendLine($"- OS: {Environment.OSVersion}");
         report.AppendLine($"- .NET: {Environment.Version}");
 
         if (IncludeLogCheckBox.IsChecked == true)
         {
             report.AppendLine();
-            report.AppendLine("## 直近の操作ログ");
+            report.AppendLine(Loc.T("Report_RecentLog"));
             report.AppendLine("```");
             report.AppendLine(string.Join(Environment.NewLine, _log.GetRecent(30)));
             report.AppendLine("```");
