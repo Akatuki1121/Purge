@@ -70,7 +70,7 @@ namespace Purge.UI
             {
                 DryRunStatusBadge.Background = new System.Windows.Media.SolidColorBrush(
                     (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#E6F4EA"));
-                DryRunStatusText.Text = "✓ 安全モード(実際には削除されません)";
+                DryRunStatusText.Text = Loc.T("Badge_Safe");
                 DryRunStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
                     (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1E7B34"));
             }
@@ -78,7 +78,7 @@ namespace Purge.UI
             {
                 DryRunStatusBadge.Background = new System.Windows.Media.SolidColorBrush(
                     (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FDECEA"));
-                DryRunStatusText.Text = "⚠ 実行モード(本当に削除されます)";
+                DryRunStatusText.Text = Loc.T("Badge_Live");
                 DryRunStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
                     (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#C62828"));
             }
@@ -89,7 +89,7 @@ namespace Purge.UI
             var selected = ResidueListView.SelectedItems.Cast<SelectableResidueItem>().ToList();
             if (selected.Count == 0)
             {
-                MessageBox.Show("削除する項目を選択してください(行をクリックして選択できます)。", "未選択",
+                MessageBox.Show(Loc.T("Msg_SelectToDelete"), Loc.T("Common_NotSelected"),
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
@@ -100,7 +100,7 @@ namespace Purge.UI
             {
                 var confirm = MessageBox.Show(
                     $"選択した{selected.Count}件を実際に削除します。よろしいですか？\n\nこの操作は取り消せません。",
-                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (confirm != MessageBoxResult.Yes) return;
 
                 string manifestPath;
@@ -112,7 +112,7 @@ namespace Purge.UI
                 {
                     MessageBox.Show(
                         $"削除前バックアップを作成できなかったため、削除を中止しました。\n{ex.Message}",
-                        "バックアップ失敗", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Loc.T("Common_BackupFailed"), MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -143,12 +143,12 @@ namespace Purge.UI
             if (dryRun)
             {
                 MessageBox.Show($"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)",
-                    "結果", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Loc.T("Common_Result"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
                 MessageBox.Show($"削除完了: 成功 {successCount}件 / 失敗 {failCount}件",
-                    "結果", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Loc.T("Common_Result"), MessageBoxButton.OK, MessageBoxImage.Information);
 
                 foreach (var succeeded in succeededItems)
                 {
@@ -163,8 +163,8 @@ namespace Purge.UI
             if (!LicenseState.IsProUnlocked)
             {
                 var purchaseConfirm = MessageBox.Show(
-                    "スキャン結果のエクスポート(CSV保存)はPro版の機能です。\n\n購入ページを開きますか？",
-                    "Pro機能", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    Loc.T("Msg_ExportProPrompt"),
+                    Loc.T("Common_ProFeature"), MessageBoxButton.YesNo, MessageBoxImage.Information);
 
                 if (purchaseConfirm == MessageBoxResult.Yes)
                 {
@@ -182,8 +182,8 @@ namespace Purge.UI
 
             var dialog = new Microsoft.Win32.SaveFileDialog
             {
-                Title = "スキャン結果をCSVエクスポート",
-                Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*",
+                Title = Loc.T("Dlg_ExportResidueTitle"),
+                Filter = Loc.T("Dlg_CsvFilter"),
                 FileName = $"ResidueScan_{_appName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
             };
 
@@ -192,7 +192,7 @@ namespace Purge.UI
             try
             {
                 var sb = new System.Text.StringBuilder();
-                sb.AppendLine("種別,場所,詳細");
+                sb.AppendLine(Loc.T("Csv_ResidueHeader"));
                 foreach (var item in _items)
                 {
                     sb.AppendLine($"{EscapeCsv(item.CategoryText)},{EscapeCsv(item.LocationText)},{EscapeCsv(item.DetailText)}");
@@ -200,12 +200,12 @@ namespace Purge.UI
 
                 System.IO.File.WriteAllText(dialog.FileName, sb.ToString(), System.Text.Encoding.UTF8);
                 MessageBox.Show($"スキャン結果({_items.Count}件)をCSV出力しました:\n{dialog.FileName}",
-                    "エクスポート完了", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Loc.T("Common_ExportDone"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"エクスポート中にエラーが発生しました:\n{ex.Message}",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Loc.T("Common_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
