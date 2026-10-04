@@ -191,12 +191,12 @@ namespace Purge.UI
 
             if (dryRun)
             {
-                MessageBox.Show($"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)",
+                MessageBox.Show(Loc.F("Msg_CheckDone", dryRunCount),
                     Loc.T("Common_Result"), MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show($"削除完了: 成功 {successCount}件 / 失敗 {failCount}件",
+                MessageBox.Show(Loc.F("Msg_DeleteDone", successCount, failCount),
                     Loc.T("Common_Result"), MessageBoxButton.OK, MessageBoxImage.Information);
 
                 foreach (var succeeded in succeededItems)
@@ -228,7 +228,7 @@ namespace Purge.UI
                 _items.Remove(item);
             }
             _log.Info("OrphanDetect", "対応アプリ不明フォルダを除外リストに追加", $"{selected.Count}件");
-            MessageBox.Show($"{selected.Count}件を除外しました。ファイルは削除されていません。",
+            MessageBox.Show(Loc.F("Msg_ExcludeDone", selected.Count),
                 Loc.T("Title_Exclude"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
