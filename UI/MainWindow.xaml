@@ -94,6 +94,12 @@
                         <Separator/>
                         <MenuItem Header="{loc:Loc Menu_License}" Click="LicenseMenuItem_Click"/>
                         <Separator/>
+                        <MenuItem Header="{loc:Loc Menu_Language}">
+                            <MenuItem x:Name="LanguageAutoMenuItem" Header="{loc:Loc Menu_LanguageAuto}" IsCheckable="True" Click="LanguageAutoMenuItem_Click"/>
+                            <MenuItem x:Name="LanguageJapaneseMenuItem" Header="日本語" IsCheckable="True" Click="LanguageJapaneseMenuItem_Click"/>
+                            <MenuItem x:Name="LanguageEnglishMenuItem" Header="English" IsCheckable="True" Click="LanguageEnglishMenuItem_Click"/>
+                        </MenuItem>
+                        <Separator/>
                         <MenuItem Header="{loc:Loc Menu_SelfUninstall}" Click="SelfUninstallButton_Click"/>
                         <MenuItem Header="{loc:Loc Title_About}" Click="AboutMenuItem_Click"/>
                         <Separator/>
