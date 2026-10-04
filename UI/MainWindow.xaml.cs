@@ -220,8 +220,8 @@ public partial class MainWindow : FluentWindow
 
         var visibleCount = _appView.Cast<object>().Count();
         CountText.Text = visibleCount == _totalAppCount
-            ? $"{_totalAppCount}件"
-            : $"{visibleCount} / {_totalAppCount}件";
+            ? Loc.F("Count_Total", _totalAppCount)
+            : Loc.F("Count_Filtered", visibleCount, _totalAppCount);
         UpdateEmptyState();
     }
 
@@ -265,7 +265,7 @@ public partial class MainWindow : FluentWindow
         if (!dryRun)
         {
             var confirm = MessageBox.Show(
-                $"「{selectedApp.DisplayName}」を実際にアンインストールします。よろしいですか？",
+                Loc.F("Msg_ConfirmUninstall", selectedApp.DisplayName),
                 Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes)
             {
@@ -277,7 +277,7 @@ public partial class MainWindow : FluentWindow
         var result = _uninstaller.ExecuteUninstall(selectedApp, dryRun);
         RefreshLogView();
 
-        MessageBox.Show($"結果: {result}", Loc.T("Title_Uninstall"), MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(Loc.F("Msg_UninstallResult", result), Loc.T("Title_Uninstall"), MessageBoxButton.OK, MessageBoxImage.Information);
 
         if (!dryRun)
         {
@@ -388,7 +388,7 @@ public partial class MainWindow : FluentWindow
                 return;
             }
 
-            ScanStatusText.Text = $"検索完了({orphans.Count}件)";
+            ScanStatusText.Text = Loc.F("Scan_SearchDone", orphans.Count);
 
             var orphanWindow = new OrphanWindow(orphans, _log, _orphanExclusions)
             {
@@ -483,8 +483,8 @@ public partial class MainWindow : FluentWindow
             }
 
             var summary = dryRun
-                ? $"確認完了: {dryRunCount}件(安全モードのため実際の削除は行っていません)"
-                : $"完了: 成功 {successCount}件 / 失敗 {failCount}件";
+                ? Loc.F("Msg_CheckDone", dryRunCount)
+                : Loc.F("Msg_BatchDone", successCount, failCount);
             MessageBox.Show(summary, Loc.T("Title_BatchResult"), MessageBoxButton.OK, MessageBoxImage.Information);
 
             if (!dryRun)
@@ -670,7 +670,7 @@ public partial class MainWindow : FluentWindow
         try
         {
             var restored = new RemovalRestoreService(_log).Restore(dialog.FileName);
-            MessageBox.Show($"復元処理が完了しました。復元件数: {restored}件", Loc.T("Title_RestoreDone"),
+            MessageBox.Show(Loc.F("Msg_RestoreDone", restored), Loc.T("Title_RestoreDone"),
                 MessageBoxButton.OK, MessageBoxImage.Information);
             RefreshLogView();
         }
@@ -728,7 +728,7 @@ public partial class MainWindow : FluentWindow
     /// </summary>
     private void ShowUpdateBanner(string tag, string? msiUrl)
     {
-        UpdateAvailableText.Text = $"🔔 新しいバージョン({tag})があります。";
+        UpdateAvailableText.Text = Loc.F("Upd_Available", tag);
         _pendingUpdateTag = tag;
         _pendingUpdateMsiUrl = msiUrl;
 
@@ -764,7 +764,7 @@ public partial class MainWindow : FluentWindow
             var progress = new Progress<double?>(p =>
             {
                 UpdateDownloadButton.Content = p.HasValue
-                    ? $"ダウンロード中... {p.Value:P0}"
+                    ? Loc.F("Upd_DownloadingPercent", p.Value)
                     : Loc.T("Upd_Downloading");
             });
 
