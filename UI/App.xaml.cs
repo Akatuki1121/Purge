@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 using Purge;
+using Purge.Localization;
 
 namespace Purge.UI;
 
@@ -54,6 +55,9 @@ public partial class App : Application
         // UIスレッド以外(Task.Runのバックグラウンド処理等)で発生し、どこにもcatchされなかった例外。
         // こちらはプロセスを止められないため、記録してから通常通りクラッシュさせる。
         AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
+
+        // 表示言語を最初のウィンドウより前に確定させる(保存済みの設定、なければOSの言語に従う)。
+        Loc.Initialize();
 
         var mainWindow = new MainWindow();
         MainWindow = mainWindow;
