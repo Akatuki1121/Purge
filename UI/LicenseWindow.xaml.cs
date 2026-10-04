@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using Purge;
+using Purge.Localization;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
@@ -25,8 +26,8 @@ namespace Purge.UI
             if (LicenseState.IsProUnlocked && LicenseState.CurrentLicense is { } license)
             {
                 StatusInfoBar.Severity = InfoBarSeverity.Success;
-                StatusInfoBar.Title = "Pro版が有効です";
-                StatusInfoBar.Message = "すべてのPro機能をご利用いただけます。";
+                StatusInfoBar.Title = Loc.T("Lic_ProTitle");
+                StatusInfoBar.Message = Loc.T("Lic_ProMessage");
                 LicenseDetailText.Text =
                     $"登録メールアドレス: {license.Email}\n発行日: {license.IssuedAtUtc.ToLocalTime():yyyy/MM/dd}\nプラン: {license.Edition}(無期限)";
                 DeactivateButton.Visibility = Visibility.Visible;
@@ -34,8 +35,8 @@ namespace Purge.UI
             else
             {
                 StatusInfoBar.Severity = InfoBarSeverity.Informational;
-                StatusInfoBar.Title = "無料版で利用中";
-                StatusInfoBar.Message = "Pro版のライセンスキーをお持ちの場合は、下の欄に貼り付けて「認証する」を押してください。";
+                StatusInfoBar.Title = Loc.T("Lic_FreeTitle");
+                StatusInfoBar.Message = Loc.T("Lic_FreeMessage");
                 LicenseDetailText.Text = "";
                 DeactivateButton.Visibility = Visibility.Collapsed;
             }
@@ -46,7 +47,7 @@ namespace Purge.UI
             var key = LicenseKeyTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(key))
             {
-                MessageBox.Show("ライセンスキーを入力してください。", "未入力",
+                MessageBox.Show(Loc.T("Msg_EnterKey"), Loc.T("Common_MissingInput"),
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
@@ -56,25 +57,25 @@ namespace Purge.UI
             switch (result)
             {
                 case LicenseValidationResult.Valid:
-                    MessageBox.Show("Pro版が有効になりました。ありがとうございます。", "認証成功",
+                    MessageBox.Show(Loc.T("Msg_Activated"), Loc.T("Title_Activated"),
                         MessageBoxButton.OK, MessageBoxImage.Information);
                     LicenseKeyTextBox.Text = "";
                     RefreshStatusDisplay();
                     break;
 
                 case LicenseValidationResult.InvalidFormat:
-                    MessageBox.Show("ライセンスキーの形式が正しくありません。コピー時に一部が欠けていないか確認してください。",
-                        "認証失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(Loc.T("Msg_KeyBadFormat"),
+                        Loc.T("Title_ActivationFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     break;
 
                 case LicenseValidationResult.SignatureMismatch:
-                    MessageBox.Show("このライセンスキーは有効なものとして確認できませんでした。購入時のメールを確認するか、サポートにお問い合わせください。",
-                        "認証失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(Loc.T("Msg_KeyInvalid"),
+                        Loc.T("Title_ActivationFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     break;
 
                 case LicenseValidationResult.Expired:
-                    MessageBox.Show("このライセンスキーは有効期限が切れています。",
-                        "認証失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(Loc.T("Msg_KeyExpired"),
+                        Loc.T("Title_ActivationFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
                     break;
             }
         }
@@ -82,8 +83,8 @@ namespace Purge.UI
         private void DeactivateButton_Click(object sender, RoutedEventArgs e)
         {
             var confirm = MessageBox.Show(
-                "ライセンスを解除し、無料版に戻します。よろしいですか？",
-                "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                Loc.T("Msg_ConfirmDeactivate"),
+                Loc.T("Common_Confirm"), MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (confirm != MessageBoxResult.Yes) return;
 
@@ -108,7 +109,7 @@ namespace Purge.UI
             catch (System.Exception ex)
             {
                 MessageBox.Show($"購入ページを開けませんでした。\n{ex.Message}",
-                    "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Loc.T("Common_Error"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
     }
