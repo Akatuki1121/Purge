@@ -44,7 +44,7 @@ public partial class BugReportWindow : FluentWindow
 
             Clipboard.SetImage(bitmap);
             _attachedScreenshotFileName = Path.GetFileName(dialog.FileName);
-            AttachedFileText.Text = $"「{_attachedScreenshotFileName}」をクリップボードにコピーしました";
+            AttachedFileText.Text = Loc.F("Bug_Attached", _attachedScreenshotFileName);
         }
         catch (Exception ex)
         {
