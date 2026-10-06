@@ -24,17 +24,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
@@ -53,7 +53,7 @@ jobs:
         run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ needs.version.outputs.version }} --no-restore
 
       - name: Upload publish artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-output
           path: publish/Purge
@@ -71,17 +71,17 @@ jobs:
             shortname: en
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
@@ -92,7 +92,7 @@ jobs:
         run: dotnet restore installer/Purge.Installer.wixproj
 
       - name: Download publish artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: publish-output
           path: publish/Purge
@@ -106,7 +106,7 @@ jobs:
           Copy-Item "installer/bin/x64/Release/${{ matrix.culture }}/Purge.Installer.msi" "Purge-${{ needs.version.outputs.version }}-win-x64-${{ matrix.shortname }}.msi"
 
       - name: Upload MSI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: msi-${{ matrix.shortname }}
           path: Purge-${{ needs.version.outputs.version }}-win-x64-${{ matrix.shortname }}.msi
@@ -120,10 +120,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download ja MSI
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: msi-ja
 
@@ -132,7 +132,7 @@ jobs:
         run: ./scripts/Verify-Msi.ps1 -MsiPath "$PWD/Purge-${{ needs.version.outputs.version }}-win-x64-ja.msi" -ExpectedVersion "${{ needs.version.outputs.version }}"
 
       - name: Download en MSI
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: msi-en
 
@@ -144,17 +144,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download ja MSI
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: msi-ja
 
       - name: Download en MSI
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: msi-en
 
       - name: Upload to GitHub Releases
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             Purge-${{ needs.version.outputs.version }}-win-x64-ja.msi
