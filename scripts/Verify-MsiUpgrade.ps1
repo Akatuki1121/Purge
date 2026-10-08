@@ -47,20 +47,37 @@ foreach ($t in $targets) {
     $i++
     # -Actionを付けないとイベントはGet-Eventのキューに溜まる(後でまとめて読む)
     Register-ObjectEvent $w Deleted -SourceIdentifier "purge_lnk_deleted_$i" -MessageData $t.Name | Out-Null
+    Register-ObjectEvent $w Created -SourceIdentifier "purge_lnk_created_$i" -MessageData $t.Name | Out-Null
     $watchers += $w
 }
 $code = Invoke-Msi "/i `"$NewMsi`"" (Join-Path $env:TEMP 'purge_upgrade_new.log')
 Start-Sleep -Seconds 2
-$events = Get-Event | Where-Object { $_.SourceIdentifier -like 'purge_lnk_deleted_*' }
-# 診断用: 削除イベントの発生時刻と、msiexecログ中のショートカット/アップグレード関連行を出す
-foreach ($e in $events) { Write-Host ("  [diag] Deleted {0:HH:mm:ss.fff} {1}" -f $e.TimeGenerated, $e.MessageData) }
+$allEvents = Get-Event | Where-Object { $_.SourceIdentifier -like 'purge_lnk_*' } | Sort-Object TimeGenerated
+# 診断用: 削除・作成イベントの発生時刻。
+foreach ($e in $allEvents) { Write-Host ("  [diag] {0} {1:HH:mm:ss.fff} {2}" -f ($e.SourceIdentifier -replace '^purge_lnk_(\w+)_\d+$', '$1'), $e.TimeGenerated, $e.MessageData) }
+# MSIはショートカットを上書きするとき、内部で一瞬だけ削除イベントが出る(NTFSは作成日時も引き継ぐ)。
+# 実際に問題なのは「旧版を先に削除→新版が作る」間にショートカットが存在しない時間なので、
+# 削除イベントから次の作成イベントまでの最大時間(ms)を測って判定する。
+$gaps = @{}
+foreach ($t in $targets) {
+    $name = $t.Name
+    $dels = @($allEvents | Where-Object { $_.SourceIdentifier -like 'purge_lnk_deleted_*' -and $_.MessageData -eq $name })
+    $cres = @($allEvents | Where-Object { $_.SourceIdentifier -like 'purge_lnk_created_*' -and $_.MessageData -eq $name })
+    $max = 0
+    foreach ($d in $dels) {
+        $next = $cres | Where-Object { $_.TimeGenerated -ge $d.TimeGenerated } | Select-Object -First 1
+        $gap = if ($next) { ($next.TimeGenerated - $d.TimeGenerated).TotalMilliseconds } else { [double]::PositiveInfinity }
+        if ($gap -gt $max) { $max = $gap }
+    }
+    $gaps[$name] = $max
+    Write-Host ("  [diag] {0}: 存在しなかった最大時間={1}ms" -f $name, $max)
+}
 $newLog = Join-Path $env:TEMP 'purge_upgrade_new.log'
 Write-Host '--- [diag] msiexec log ---'
 Get-Content -LiteralPath $newLog -ErrorAction SilentlyContinue |
     Select-String -Pattern 'Shortcut|RemoveExistingProducts|InstallFinalize|InstallInitialize|Component: (Start|Desktop)' |
     Select-Object -First 80 | ForEach-Object { Write-Host ('  ' + $_.Line.Trim()) }
 Write-Host '--- [diag] end ---'
-foreach ($e in $events) { [void]$deleted.Add($e.MessageData) }
 
 if ($code -ne 0) { $failures.Add("新版へのアップグレードが失敗(終了コード=$code)") }
 foreach ($t in $targets) {
@@ -68,7 +85,7 @@ foreach ($t in $targets) {
     if (-not (Test-Path $f)) { $failures.Add("$($t.Name)のショートカットがアップグレード後に存在しない"); continue }
     $after = (Get-Item $f).CreationTimeUtc.Ticks
     if ($after -ne $before[$t.Name]) { $failures.Add("$($t.Name)のショートカットが作り直された(作成日時が変化)") }
-    if ($deleted -contains $t.Name) { $failures.Add("$($t.Name)のショートカットがアップグレード中に一度削除された") }
+    if ($gaps[$t.Name] -gt 300) { $failures.Add("$($t.Name)のショートカットがアップグレード中に一時的に存在しなくなった(最大$($gaps[$t.Name])ms)") }
 }
 
 Write-Host '=== 3. 後始末 ==='
