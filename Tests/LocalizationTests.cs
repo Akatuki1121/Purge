@@ -22,11 +22,14 @@ public class LocalizationTests : IDisposable
         _settingsPath = Path.Combine(_tempDir, "settings.json");
         _originalUiCulture = CultureInfo.CurrentUICulture;
         LanguageSettingsStore.PathOverride = _settingsPath;
+        // 実行PCのMSI版のレジストリ(InstallLanguage)に左右されないよう、既定では「無し」にする。
+        Loc.InstallLanguageReader = () => null;
     }
 
     public void Dispose()
     {
         LanguageSettingsStore.PathOverride = null;
+        Loc.ResetInstallLanguageReader();
         CultureInfo.CurrentUICulture = _originalUiCulture;
         try
         {
@@ -133,6 +136,19 @@ public class LocalizationTests : IDisposable
         Loc.Initialize();
 
         Assert.Equal(AppLanguage.Auto, Loc.Preference);
+        Assert.Equal(expected, Loc.Current);
+    }
+
+    [Theory]
+    [InlineData("ja-JP", AppLanguage.English, AppLanguage.English)]
+    [InlineData("en-US", AppLanguage.Japanese, AppLanguage.Japanese)]
+    public void 設定が無いときはインストール時の言語がOSの表示言語より優先される(string culture, AppLanguage installed, AppLanguage expected)
+    {
+        CultureInfo.CurrentUICulture = new CultureInfo(culture);
+        Loc.InstallLanguageReader = () => installed;
+
+        Loc.Initialize();
+
         Assert.Equal(expected, Loc.Current);
     }
 

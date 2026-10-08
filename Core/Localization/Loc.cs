@@ -55,7 +55,7 @@ namespace Purge.Localization
             else
             {
                 Preference = AppLanguage.Auto;
-                Current = ResolveInstallLanguage() ?? ResolveCurrent(AppLanguage.Auto);
+                Current = InstallLanguageReader() ?? ResolveCurrent(AppLanguage.Auto);
             }
         }
 
@@ -116,7 +116,15 @@ namespace Purge.Localization
             };
         }
 
-        private static AppLanguage? ResolveInstallLanguage()
+        /// <summary>
+        /// MSIが書いたインストール時の言語を読む処理。既定はレジストリ(HKLM)。
+        /// テストが実行PCにMSI版が入っているかどうかに左右されないよう、差し替えられるようにしている。
+        /// </summary>
+        internal static Func<AppLanguage?> InstallLanguageReader { get; set; } = ReadInstallLanguageFromRegistry;
+
+        internal static void ResetInstallLanguageReader() => InstallLanguageReader = ReadInstallLanguageFromRegistry;
+
+        private static AppLanguage? ReadInstallLanguageFromRegistry()
         {
             try
             {
