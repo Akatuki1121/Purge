@@ -93,6 +93,7 @@
                         <MenuItem Header="{loc:Loc Menu_Restore}" Click="RestoreBackupMenuItem_Click"/>
                         <Separator/>
                         <MenuItem Header="{loc:Loc Menu_License}" Click="LicenseMenuItem_Click"/>
+                        <MenuItem Header="{loc:Loc Menu_PinToStart}" Click="PinToStartMenuItem_Click"/>
                         <Separator/>
                         <MenuItem Header="{loc:Loc Menu_Language}">
                             <MenuItem x:Name="LanguageAutoMenuItem" Header="{loc:Loc Menu_LanguageAuto}" IsCheckable="True" Click="LanguageAutoMenuItem_Click"/>

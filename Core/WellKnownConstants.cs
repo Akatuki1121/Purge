@@ -47,6 +47,29 @@ namespace Purge
             public const string TaskSchedulerDeleteArgsFormat = "/Delete /TN \"{0}\" /F";
         }
 
+        /// <summary>スタートメニュー(アプリ一覧)への自動登録で使う名前・場所。</summary>
+        public static class StartMenu
+        {
+            /// <summary>Programs直下に作るフォルダー名(#84)。</summary>
+            public const string ShortcutFolderName = "Purge";
+
+            public const string ShortcutFileName = "Purge.lnk";
+
+            public const string ShortcutDescription = "Purge";
+
+            /// <summary>
+            /// MSIが書き込むレジストリキー(HKLM)。このキーがあれば、この PC には MSI 版がインストール済みで、
+            /// スタートメニューのショートカットを作るかどうかはインストーラー側の選択に従う。
+            /// </summary>
+            public const string MsiInstallRegistryKey = @"SOFTWARE\Purge";
+
+            public const string MsiInstallRegistryValue = "InstallLanguage";
+
+            public const string Explorer = "explorer.exe";
+
+            public const string ExplorerSelectArgsFormat = "/select,\"{0}\"";
+        }
+
         public const string PathEnvironmentVariableName = "PATH";
 
         /// <summary>MFT検索でドライブレターを省略した場合の既定ドライブ。</summary>

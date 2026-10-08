@@ -699,6 +699,26 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    private void PinToStartMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var exePath = Environment.ProcessPath;
+        var revealed = !string.IsNullOrEmpty(exePath)
+            && new StartMenuShortcutRegistrar(_log).RevealShortcutForPinning(exePath);
+
+        if (revealed)
+        {
+            MessageBox.Show(this, Loc.T("Msg_PinToStartGuide"), Loc.T("Title_PinToStart"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show(this, Loc.T("Msg_PinToStartFailed"), Loc.T("Title_PinToStart"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        RefreshLogView();
+    }
+
     private void LicenseMenuItem_Click(object sender, RoutedEventArgs e)
     {
         OpenLicenseWindowAndRefresh();
