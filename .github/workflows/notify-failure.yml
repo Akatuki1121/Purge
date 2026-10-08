@@ -9,6 +9,11 @@ name: Notify Workflow Failure
 #
 # 通知対象: conclusion が failure / startup_failure の実行
 # (成功・スキップ・キャンセルは通知しない)
+#
+# 既知の挙動: workflow_runのみをトリガーとするワークフローは、pushごとに
+# 「workflow file issue」の失敗ラン(ジョブ0件)がActions履歴に表示されることが
+# ある。この失敗ランは通知を発火せず、マージにも影響しないため無害。
+# 本ワークフローが通知するのは、他ワークフローの実行が失敗したときのみ。
 
 on:
   workflow_run:
