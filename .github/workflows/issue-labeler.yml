@@ -1,0 +1,53 @@
+name: Issue Labeler
+
+# Issueフォームの選択値・本文に応じてラベルを自動設定する(#111)。
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          BODY=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json body --jq .body)
+          TITLE=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json title --jq .title)
+
+          LABELS=()
+
+          # 配布形式・本文からカテゴリを推定
+          if echo "$BODY $TITLE" | grep -qiE 'インストーラ|MSI|\.wxs|WiX|ショートカット|アンインストール|uninstall'; then
+            LABELS+=(installer)
+          fi
+          if echo "$BODY $TITLE" | grep -qiE '更新|アップデート|アップグレード|update|upgrade'; then
+            LABELS+=(update)
+          fi
+          if echo "$BODY $TITLE" | grep -qiE '\bUI\b|画面|表示|ボタン|デザイン|ウィンドウ'; then
+            LABELS+=(ui)
+          fi
+
+          # 再現情報が不足している場合
+          # - フォームの必須項目が未回答(_No response_)
+          # - 再現手順の欄が空
+          if echo "$BODY" | grep -qiE '_no response_'; then
+            LABELS+=(needs-repro)
+          elif ! echo "$BODY" | grep -qiE '再現手順|steps to reproduce'; then
+            LABELS+=(needs-repro)
+          fi
+
+          if [ ${#LABELS[@]} -gt 0 ]; then
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label "$(IFS=,; echo "${LABELS[*]}")"
+            echo "ラベルを設定しました: ${LABELS[*]}"
+          else
+            echo "該当するラベルはありませんでした。"
+          fi
