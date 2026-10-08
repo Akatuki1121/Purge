@@ -1,4 +1,14 @@
 name: Verify MSI Upgrade Matrix
+
+# 公開済みリリースのMSIから、PRでビルドしたMSIへのアップグレードを検証する(#110)。
+# 検証する更新経路:
+#   - 最新の公開済みリリース → リリース候補(RC)
+#   - ひとつ前の公開済みリリース → RC
+#   - 同一バージョンのMSI再実行
+# インストーラー・更新機能・検証スクリプト・ワークフロー自体の変更があるPRでのみ
+# 実行し、Windowsランナーの利用時間を抑える。
+# 依存関係のbumpのみを行うDependabotのPRでは実行しない。
+
 on:
   pull_request:
     branches: ["main"]
@@ -7,6 +17,7 @@ on:
       - 'Core/UpdateDownloader.cs'
       - 'scripts/Verify-MsiUpgrade.ps1'
       - '.github/workflows/**'
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
@@ -23,23 +34,113 @@ jobs:
               - 'Core/UpdateDownloader.cs'
               - 'scripts/Verify-MsiUpgrade.ps1'
               - '.github/workflows/**'
+
   verify-matrix:
     needs: detect-changes
-    if: needs.detect-changes.outputs.installer == 'true'
+    if: needs.detect-changes.outputs.installer == 'true' && github.actor != 'dependabot[bot]'
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
-        upgrade-path:
-          - { from: 'latest', to: 'rc' }
-          - { from: 'previous', to: 'rc' }
-          - { from: 'same', to: 'same' }
+        include:
+          - upgrade-path: 'latest -> rc'
+            baseline: 'latest'
+          - upgrade-path: 'previous -> rc'
+            baseline: 'previous'
+          - upgrade-path: 'same -> same'
+            baseline: 'none'
+    env:
+      RC_VERSION: '9.9.9'
     steps:
-      - uses: actions/checkout@v7
-      - name: Verify upgrade path
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
         run: |
-          Write-Host "Verifying upgrade path"
-          Write-Host "- Check Purge.exe is replaced correctly"
-          Write-Host "- Check shortcuts do not disappear or duplicate"
-          Write-Host "- Check settings, license, registry values are maintained"
-          Write-Host "- Check service and scheduled task restoration"
+          dotnet restore UI/Purge.UI.csproj --runtime win-x64
+          dotnet restore installer/Purge.Installer.wixproj
+
+      - name: Build RC MSI
+        run: |
+          dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=$env:RC_VERSION --no-restore
+          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=$env:RC_VERSION -p:Cultures=ja-JP --no-restore
         shell: pwsh
+
+      - name: Determine baseline releases
+        id: baseline
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAGS=$(gh api "repos/$REPO/releases" --paginate --jq '[.[] | select(.draft == false and .prerelease == false) | .tag_name] | .[0:2] | join(" ")')
+          LATEST=$(echo "$TAGS" | awk '{print $1}')
+          PREV=$(echo "$TAGS" | awk '{print $2}')
+          {
+            echo "latest=${LATEST:-}"
+            echo "previous=${PREV:-}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Latest: ${LATEST:-none} / Previous: ${PREV:-none}"
+
+      - name: Download baseline MSI
+        id: download
+        if: matrix.baseline != 'none'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "${{ matrix.baseline }}" in
+            latest)   TAG="${{ steps.baseline.outputs.latest }}" ;;
+            previous) TAG="${{ steps.baseline.outputs.previous }}" ;;
+          esac
+          if [ -z "$TAG" ]; then
+            echo "ベースラインとなる公開済みリリースがまだ存在しないため、この経路はスキップします。"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          gh release download "$TAG" --repo "$REPO" --pattern '*-ja.msi' --dir baseline --clobber
+          mv baseline/*-ja.msi baseline/baseline.msi
+          echo "ベースライン: $TAG"
+
+      - name: Verify upgrade path (${{ matrix.upgrade-path }})
+        if: steps.download.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          $rc = "$PWD/installer/bin/x64/Release/ja-JP/Purge.Installer.msi"
+          if ('${{ matrix.baseline }}' -eq 'none') {
+            # 同一バージョンの再実行: RCをインストールしてから同じMSIを再実行する
+            ./scripts/Verify-MsiUpgrade.ps1 -FromMsi $rc -ToMsi $rc -FromVersion $env:RC_VERSION -ToVersion $env:RC_VERSION
+          } else {
+            $tag = '${{ steps.baseline.outputs.latest }}'
+            if ('${{ matrix.baseline }}' -eq 'previous') { $tag = '${{ steps.baseline.outputs.previous }}' }
+            $fromVersion = $tag.TrimStart('v')
+            ./scripts/Verify-MsiUpgrade.ps1 -FromMsi "$PWD/baseline/baseline.msi" -ToMsi $rc -FromVersion $fromVersion -ToVersion $env:RC_VERSION
+          }
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: msi-upgrade-logs-${{ matrix.baseline }}
+          path: |
+            ${{ runner.temp }}/purge_upgrade_from.log
+            ${{ runner.temp }}/purge_upgrade_to.log
+            ${{ runner.temp }}/purge_upgrade_uninstall.log
+          if-no-files-found: ignore
