@@ -109,8 +109,11 @@ $entry = Get-PurgeUninstallEntry
 Check "Uninstall登録バージョンが $ToVersion" ($entry -and $entry.Version -eq $ToVersion) "実際=$($entry.Version)"
 
 if (Test-Path $exe) {
+    # dotnetビルドはProductVersionに「9.9.9+<コミットSHA>」のようにソースリビジョンを付けるため、
+    # 「+」より前の部分で比較する。
     $exeVersion = (Get-Item $exe).VersionInfo.ProductVersion
-    Check "Purge.exe が $ToVersion に置き換えられた" ($exeVersion -eq $ToVersion) "実際=$exeVersion"
+    $exeVersionShort = if ($exeVersion) { $exeVersion.Split('+')[0] } else { '' }
+    Check "Purge.exe が $ToVersion に置き換えられた" ($exeVersionShort -eq $ToVersion) "実際=$exeVersion"
 } else {
     Check 'Purge.exe が配置された' $false
 }
