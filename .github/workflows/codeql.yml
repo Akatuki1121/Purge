@@ -8,6 +8,11 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    # WPF(net10.0-windows)プロジェクトはLinux上では既定でビルド不可(NETSDK1100)。
+    # CodeQLの解析はビルドだけできればよいため、EnableWindowsTargeting=trueで
+    # Windowsターゲットの参照アセンブリを解決させてビルドを通す。
+    env:
+      EnableWindowsTargeting: 'true'
     permissions:
       actions: read
       contents: read
@@ -18,7 +23,7 @@ jobs:
         language: ["csharp"]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
