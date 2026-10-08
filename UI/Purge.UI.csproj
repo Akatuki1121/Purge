@@ -24,8 +24,56 @@
     <SatelliteResourceLanguages>ja;en</SatelliteResourceLanguages>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' != 'Debug'">
     <Resource Include="app.ico" />
   </ItemGroup>
+
+  <!-- 開発版(Debugビルド)の識別: インストール版と見分けられるよう、アイコンを「DEV」帯付きに差し替える。
+       ウィンドウ側は Icon="app.ico" のままで、Linkによりapp-dev.icoがapp.icoとして埋め込まれる。
+       app-dev.ico は scripts/New-DevIcon.ps1 で app.ico から生成する。 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <ApplicationIcon>app-dev.ico</ApplicationIcon>
+    <!-- SDKが自動で付けるソースリビジョン(+フルハッシュ)を止め、下のPurgeSetDevVersionの短いハッシュだけにする。 -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <Resource Include="app-dev.ico" Link="app.ico" />
+  </ItemGroup>
+
+  <!-- 開発版のバージョン: 直近のリリースタグ(vX.Y.Z)+ -dev + コミットハッシュ(例: 1.2.1-dev+abc1234)。
+       タグを手で更新しなくても、常に最新リリース以上のバージョンになる。
+       リリース(Release)ビルドはCIが -p:Version を渡すため対象外。gitが使えない環境では 0.0.0-dev になる。 -->
+  <Target Name="PurgeSetDevVersion"
+          BeforeTargets="GetAssemblyVersion;CreateGeneratedAssemblyInfoInputsCacheFile;GetAssemblyAttributes"
+          Condition="'$(Configuration)' == 'Debug'">
+    <Exec Command="git describe --tags --abbrev=0 --match v*" ConsoleToMSBuild="true" StandardOutputImportance="low"
+          IgnoreExitCode="true" ContinueOnError="true" WorkingDirectory="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_PurgeLatestTag" />
+    </Exec>
+    <Exec Command="git rev-parse --short HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low"
+          IgnoreExitCode="true" ContinueOnError="true" WorkingDirectory="$(MSBuildProjectDirectory)">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_PurgeCommit" />
+    </Exec>
+    <PropertyGroup>
+      <_PurgeBaseVersion>$([System.Text.RegularExpressions.Regex]::Match('$(_PurgeLatestTag)', '\d+\.\d+\.\d+').Value)</_PurgeBaseVersion>
+      <_PurgeBaseVersion Condition="'$(_PurgeBaseVersion)' == ''">0.0.0</_PurgeBaseVersion>
+      <_PurgeCommitSuffix Condition="'$(_PurgeCommit)' != '' And !$(_PurgeCommit.Contains(' '))">+$(_PurgeCommit)</_PurgeCommitSuffix>
+      <AssemblyVersion>$(_PurgeBaseVersion).0</AssemblyVersion>
+      <FileVersion>$(_PurgeBaseVersion).0</FileVersion>
+      <InformationalVersion>$(_PurgeBaseVersion)-dev$(_PurgeCommitSuffix)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <!-- 開発版の出力先をわかりやすくする: ビルド後に <リポジトリ>/dist/dev/ へ一式をコピーする。
+       そこの Purge.exe が開発版の実行ファイル(dist/ は .gitignore 対象)。 -->
+  <Target Name="PurgeCopyDevOutput" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <ItemGroup>
+      <_PurgeDevFiles Include="$(OutDir)**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PurgeDevFiles)"
+          DestinationFiles="@(_PurgeDevFiles->'$(MSBuildThisFileDirectory)..\dist\dev\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" ContinueOnError="true" />
+    <Message Importance="high" Text="開発版: $([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\dist\dev\'))$(AssemblyName).exe" />
+  </Target>
 
 </Project>

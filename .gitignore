@@ -31,3 +31,6 @@ docs/WORKFLOW_NOTES.md
 # ローカルにあれば足り、公開リポジトリの一部ではないため含めない。
 docs/CURRENT_STATE.md
 docs/PROGRESS_LOG_ARCHIVE.md
+
+# 開発版(Debugビルド)のコピー先(UI/Purge.UI.csprojが dist/dev/ へ出力する)
+dist/
