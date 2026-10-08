@@ -1,0 +1,69 @@
+name: Branch Audit
+
+# PR未作成ブランチとmainからの乖離をJob Summaryで可視化する(#111)。
+# 週次(月曜 09:00 JST)と手動実行。
+# 監査結果をもとにIssueやPRコメントは自動作成しない(通知を増やさない)。
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # 月曜 09:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Audit branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
+
+          {
+            echo "## ブランチ監査"
+            echo ""
+            echo "- 実行日時: $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo ""
+
+            echo "### PR未作成ブランチ"
+            echo ""
+            echo "| ブランチ | mainからの先行コミット数 | 最終更新日時 |"
+            echo "| --- | --- | --- |"
+            found=0
+            for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin/main$'); do
+              branch="${ref#origin/}"
+              # そのブランチをheadとするPRが存在するか(作成済み・クローズ済み両方)
+              pr_count=$(gh pr list --repo "$REPO" --head "$branch" --state all --json number --jq 'length' 2>/dev/null || echo 1)
+              [ "$pr_count" != "0" ] && continue
+              ahead=$(git rev-list --count "origin/main..refs/remotes/origin/$branch" 2>/dev/null || echo '?')
+              last=$(git log -1 --format='%ci' "refs/remotes/origin/$branch" | cut -d' ' -f1)
+              echo "| \`$branch\` | $ahead | $last |"
+              found=1
+            done
+            if [ "$found" -eq 0 ]; then
+              echo "| (PR未作成ブランチはありません) | | |"
+            fi
+            echo ""
+
+            echo "### 全ブランチの乖離状況"
+            echo ""
+            echo "| ブランチ | mainからの先行コミット数 | 最終更新日時 |"
+            echo "| --- | --- | --- |"
+            for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin/main$'); do
+              branch="${ref#origin/}"
+              ahead=$(git rev-list --count "origin/main..refs/remotes/origin/$branch" 2>/dev/null || echo '-')
+              last=$(git log -1 --format='%ci' "refs/remotes/origin/$branch" | cut -d' ' -f1)
+              echo "| \`$branch\` | $ahead | $last |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
