@@ -23,7 +23,7 @@
                     Message="{loc:Loc Lic_FreeMessage}"/>
 
         <StackPanel Grid.Row="2" Margin="14,0,14,10">
-            <TextBlock Text="{loc:Loc Lic_KeyLabel}" FontWeight="Bold" Margin="0,0,0,6"/>
+            <TextBlock x:Name="LicenseKeyLabel" Text="{loc:Loc Lic_KeyLabel}" FontWeight="Bold" Margin="0,0,0,6"/>
             <ui:TextBox x:Name="LicenseKeyTextBox" AcceptsReturn="True" TextWrapping="Wrap"
                         FontFamily="Cascadia Mono, Consolas" FontSize="11" Height="90"
                         PlaceholderText="{loc:Loc Lic_KeyPlaceholder}"/>

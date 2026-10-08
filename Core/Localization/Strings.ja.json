@@ -198,7 +198,7 @@
   "Msg_KeyBadFormat": "ライセンスキーの形式が正しくありません。コピー時に一部が欠けていないか確認してください。",
   "Msg_KeyInvalid": "このライセンスキーは有効なものとして確認できませんでした。購入時のメールを確認するか、サポートにお問い合わせください。",
   "Msg_KeyExpired": "このライセンスキーは有効期限が切れています。",
-  "Msg_ConfirmDeactivate": "ライセンスを解除し、無料版に戻します。よろしいですか？",
+  "Msg_ConfirmDeactivate": "このPCのライセンスを解除し、無料版に戻します。\n購入済みの権利や課金には影響せず、メールでお届けしたライセンスキーを再入力すればいつでもProに戻せます。\n解除しますか？",
   "Msg_PurchaseOpenFailed": "購入ページを開けませんでした。\n{0}",
   "Win_BugReport": "不具合を報告",
   "Bug_InfoTitle": "GitHub Issueとして報告",
