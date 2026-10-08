@@ -5,7 +5,7 @@ jobs:
   verify-msi:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run MSI upgrade verification
         run: |
           Write-Host "MSI upgrade verification placeholder"

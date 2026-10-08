@@ -9,7 +9,7 @@ jobs:
     outputs:
       msi-path: ${{ steps.build.outputs.msi-path }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -23,7 +23,7 @@ jobs:
     needs: build-msi
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Final MSI verification
         run: |
           Write-Host "Final MSI verification:"
@@ -39,7 +39,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -52,7 +52,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Update CURRENT_STATE.md
         run: |
           TAG="${{ github.ref_name }}"
