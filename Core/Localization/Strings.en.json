@@ -241,5 +241,9 @@
   "Crash_InfoMessage": "The text below contains a record of what Purge was doing just before the error (operation log) and the error details. Click \"Report on GitHub\" to open the GitHub issue page with this content pre-filled (a GitHub account is required).",
   "Msg_CrashBrowserFailed": "Could not open the browser.\n{0}\n\nPlease use the \"Copy\" button and paste the content into a GitHub issue manually.",
   "Issue_AutoTitle": "[Auto-generated] Error report",
-  "Issue_Truncation": "\n\n(The report was truncated because it is too long. Use the in-app \"Copy\" button if you need the full text.)"
+  "Issue_Truncation": "\n\n(The report was truncated because it is too long. Use the in-app \"Copy\" button if you need the full text.)",
+  "Menu_PinToStart": "Pin to Start...",
+  "Title_PinToStart": "Pin to Start",
+  "Msg_PinToStartGuide": "Purge's shortcut is now selected in File Explorer.\nRight-click it and choose \"Pin to Start\".",
+  "Msg_PinToStartFailed": "Could not prepare the Purge shortcut.\nPlease check the operation log for details."
 }

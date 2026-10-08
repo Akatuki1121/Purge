@@ -59,6 +59,8 @@ public partial class App : Application
         // 表示言語を最初のウィンドウより前に確定させる(保存済みの設定、なければOSの言語に従う)。
         Loc.Initialize();
 
+        RegisterStartMenuShortcutInBackground();
+
         var mainWindow = new MainWindow();
         MainWindow = mainWindow;
         mainWindow.Show();
@@ -69,6 +71,38 @@ public partial class App : Application
         // 確認し、あればMainWindow側で控えめに知らせ、実際の更新はユーザーが
         // Releasesページからダウンロード・手動実行する形にする。
         _ = CheckForUpdatesInBackgroundAsync();
+    }
+
+    /// <summary>
+    /// ZIP版を直接起動した場合に備え、スタートメニュー(アプリ一覧)へPurge.lnkを自動登録する(#84)。
+    /// 起動を遅らせないようバックグラウンドで行い、失敗しても起動は妨げない(失敗は操作ログに残す)。
+    /// ショートカット操作(IShellLink)はSTAスレッドで行う必要があるため専用スレッドを使う。
+    /// </summary>
+    private static void RegisterStartMenuShortcutInBackground()
+    {
+        var exePath = Environment.ProcessPath;
+        if (string.IsNullOrEmpty(exePath))
+        {
+            return;
+        }
+
+        var thread = new System.Threading.Thread(() =>
+        {
+            try
+            {
+                new StartMenuShortcutRegistrar(SharedLog).EnsureRegistered(exePath);
+            }
+            catch (Exception ex)
+            {
+                SharedLog.Warning("StartMenu", "スタートメニューへの自動登録に失敗しました(起動には影響しません)", ex.Message);
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "StartMenuRegistration",
+        };
+        thread.SetApartmentState(System.Threading.ApartmentState.STA);
+        thread.Start();
     }
 
     /// <summary>
