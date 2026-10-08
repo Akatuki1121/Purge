@@ -13,8 +13,8 @@ jobs:
     outputs:
       installer: ${{ steps.changes.outputs.installer }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
@@ -34,7 +34,7 @@ jobs:
           - { from: 'previous', to: 'rc' }
           - { from: 'same', to: 'same' }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify upgrade path
         run: |
           Write-Host "Verifying upgrade path"
