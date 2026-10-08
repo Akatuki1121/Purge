@@ -106,11 +106,8 @@ dotnet build
 ビルド後、管理者権限のコマンドプロンプトから起動します:
 
 ```bat
-dist\dev\Purge.exe
+UI\bin\Debug\net10.0-windows\Purge.exe
 ```
-
-`dotnet build`(Debug)は、ビルド結果を `dist\dev\` にもコピーします。ここにある `Purge.exe` が開発版です(`UI\bin\Debug\net10.0-windows\Purge.exe` と同じもの)。
-開発版はインストール版と見分けられるよう、アイコンに「DEV」の帯が付き、ウィンドウタイトルが「Purge (Dev)」になり、バージョンが `1.2.1-dev+abc1234` の形式(直近のリリースタグ + コミットハッシュ)で表示されます。起動時の自動更新確認は行いません。
 
 管理者権限が必須です(レジストリの一部書き込み・高速ファイル検索アクセスのため)。
 
