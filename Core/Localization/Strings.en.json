@@ -194,7 +194,7 @@
   "Msg_KeyBadFormat": "The license key format is invalid. Check that no part of it was cut off when you copied it.",
   "Msg_KeyInvalid": "This license key could not be verified. Please check your purchase email or contact support.",
   "Msg_KeyExpired": "This license key has expired.",
-  "Msg_ConfirmDeactivate": "This will deactivate your license and return to the free edition. Continue?",
+  "Msg_ConfirmDeactivate": "This removes the license from this PC and returns to the free edition.\nYour purchase and billing are not affected; you can re-enter the license key from your email at any time to restore Pro.\nRemove it?",
   "Msg_PurchaseOpenFailed": "Could not open the purchase page.\n{0}",
   "Win_BugReport": "Report a bug",
   "Bug_InfoTitle": "Report as a GitHub issue",

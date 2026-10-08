@@ -31,6 +31,7 @@ namespace Purge.UI
                 LicenseDetailText.Text =
                     $"登録メールアドレス: {license.Email}\n発行日: {license.IssuedAtUtc.ToLocalTime():yyyy/MM/dd}\nプラン: {license.Edition}(無期限)";
                 DeactivateButton.Visibility = Visibility.Visible;
+                SetKeyEntryVisible(false);
             }
             else
             {
@@ -39,7 +40,21 @@ namespace Purge.UI
                 StatusInfoBar.Message = Loc.T("Lic_FreeMessage");
                 LicenseDetailText.Text = "";
                 DeactivateButton.Visibility = Visibility.Collapsed;
+                SetKeyEntryVisible(true);
             }
+        }
+
+        /// <summary>
+        /// キー入力欄・有効化・購入ボタンは無料版のときだけ表示する(#95)。
+        /// Pro有効時は状態表示と「ライセンスを解除」だけにする。
+        /// </summary>
+        private void SetKeyEntryVisible(bool visible)
+        {
+            var v = visible ? Visibility.Visible : Visibility.Collapsed;
+            LicenseKeyLabel.Visibility = v;
+            LicenseKeyTextBox.Visibility = v;
+            ActivateButton.Visibility = v;
+            PurchaseButton.Visibility = v;
         }
 
         private void ActivateButton_Click(object sender, RoutedEventArgs e)
