@@ -12,6 +12,15 @@ namespace Purge.UI;
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
+/// <summary>更新確認の結果。</summary>
+public enum UpdateCheckResult
+{
+    UpdateAvailable,
+    UpToDate,
+    Failed,
+    AlreadyRunning,
+}
+
 public partial class App : Application
 {
     /// <summary>
@@ -70,7 +79,7 @@ public partial class App : Application
         // (UACダイアログを勝手に出すことはできないため)。新バージョンの有無だけを
         // 確認し、あればMainWindow側で控えめに知らせ、実際の更新はユーザーが
         // Releasesページからダウンロード・手動実行する形にする。
-        _ = CheckForUpdatesInBackgroundAsync();
+        _ = CheckForUpdatesAsync();
     }
 
     /// <summary>
@@ -109,8 +118,14 @@ public partial class App : Application
     /// GitHub Releasesの最新版タグを取得し、現在の実行中バージョンと比較する。
     /// UIは一切ブロックせず、失敗しても(オフライン等)アプリの動作に影響を与えない。
     /// </summary>
-    private static async System.Threading.Tasks.Task CheckForUpdatesInBackgroundAsync()
+    public static async System.Threading.Tasks.Task<UpdateCheckResult> CheckForUpdatesAsync()
     {
+        // 起動時チェックと手動チェックが重なったときの二重実行を避ける。
+        if (System.Threading.Interlocked.Exchange(ref s_updateCheckRunning, 1) == 1)
+        {
+            return UpdateCheckResult.AlreadyRunning;
+        }
+
         try
         {
             using var client = new HttpClient();
@@ -123,7 +138,7 @@ public partial class App : Application
             var latestTag = doc.RootElement.GetProperty("tag_name").GetString();
             if (string.IsNullOrEmpty(latestTag))
             {
-                return;
+                return UpdateCheckResult.Failed;
             }
 
             var latestVersionText = latestTag.TrimStart('v', 'V');
@@ -164,14 +179,24 @@ public partial class App : Application
                 }
 
                 Current?.Dispatcher.Invoke(() => UpdateAvailable?.Invoke(AvailableUpdateTag, AvailableUpdateMsiUrl));
+                return UpdateCheckResult.UpdateAvailable;
             }
+
+            return UpdateCheckResult.UpToDate;
         }
         catch
         {
-            // 更新確認自体の失敗(オフライン、GitHub障害など)は静かに無視する。
-            // 次回起動時にまた試みればよく、ユーザー操作を妨げるべきではない。
+            // 更新確認自体の失敗(オフライン、GitHub障害など)は例外にせず結果として返す。
+            // 起動時チェックでは無視し、手動チェックでは呼び出し側が失敗を表示する。
+            return UpdateCheckResult.Failed;
+        }
+        finally
+        {
+            System.Threading.Volatile.Write(ref s_updateCheckRunning, 0);
         }
     }
+
+    private static int s_updateCheckRunning;
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {

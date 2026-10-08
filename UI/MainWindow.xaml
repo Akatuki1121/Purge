@@ -102,6 +102,7 @@
                         </MenuItem>
                         <Separator/>
                         <MenuItem Header="{loc:Loc Menu_SelfUninstall}" Click="SelfUninstallButton_Click"/>
+                        <MenuItem Header="{loc:Loc Menu_CheckUpdate}" Click="CheckUpdateMenuItem_Click"/>
                         <MenuItem Header="{loc:Loc Title_About}" Click="AboutMenuItem_Click"/>
                         <Separator/>
                         <MenuItem Header="{loc:Loc Menu_Exit}" Click="ExitMenuItem_Click"/>
