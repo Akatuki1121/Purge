@@ -79,7 +79,12 @@ public partial class App : Application
         // (UACダイアログを勝手に出すことはできないため)。新バージョンの有無だけを
         // 確認し、あればMainWindow側で控えめに知らせ、実際の更新はユーザーが
         // Releasesページからダウンロード・手動実行する形にする。
-        _ = CheckForUpdatesAsync();
+        // 開発版(Debugビルド)は自動では確認しない(常に最新タグ以上のバージョンを名乗るうえ、
+        // 開発中に更新バナーが出ても意味がないため)。確認したいときはメニューから手動で行える。
+        if (!BuildInfo.IsDevBuild)
+        {
+            _ = CheckForUpdatesAsync();
+        }
     }
 
     /// <summary>

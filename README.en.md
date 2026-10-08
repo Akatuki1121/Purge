@@ -107,8 +107,11 @@ dotnet build
 After building, launch it from a command prompt running as administrator:
 
 ```bat
-UI\bin\Debug\net10.0-windows\Purge.exe
+dist\dev\Purge.exe
 ```
+
+A Debug `dotnet build` also copies the output to `dist\dev\`; the `Purge.exe` there is the development build (identical to `UI\bin\Debug\net10.0-windows\Purge.exe`).
+So that it can be told apart from the installed version, the development build has a "DEV" band on its icon, shows "Purge (Dev)" in the window title, displays its version as `1.2.1-dev+abc1234` (latest release tag + commit hash), and does not check for updates automatically at startup.
 
 Administrator rights are required (for some registry writes and fast file search access).
 

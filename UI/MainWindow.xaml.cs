@@ -90,6 +90,8 @@ public partial class MainWindow : FluentWindow
     public MainWindow()
     {
         InitializeComponent();
+        Title = BuildInfo.AppTitle;
+        MainTitleBar.Title = BuildInfo.AppTitle;
         Loc.LanguageChanged += OnLanguageChanged;
         ApplyLanguageMenuState();
         _inventory = new AppInventory(_log);
@@ -597,7 +599,7 @@ public partial class MainWindow : FluentWindow
 
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        var versionText = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
+        var versionText = BuildInfo.VersionText;
         var latestChangelogEntry = GetLatestChangelogEntry();
 
         var message = Loc.F("Msg_About", versionText);
