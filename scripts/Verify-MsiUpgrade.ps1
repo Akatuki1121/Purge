@@ -52,6 +52,14 @@ foreach ($t in $targets) {
 $code = Invoke-Msi "/i `"$NewMsi`"" (Join-Path $env:TEMP 'purge_upgrade_new.log')
 Start-Sleep -Seconds 2
 $events = Get-Event | Where-Object { $_.SourceIdentifier -like 'purge_lnk_deleted_*' }
+# 診断用: 削除イベントの発生時刻と、msiexecログ中のショートカット/アップグレード関連行を出す
+foreach ($e in $events) { Write-Host ("  [diag] Deleted {0:HH:mm:ss.fff} {1}" -f $e.TimeGenerated, $e.MessageData) }
+$newLog = Join-Path $env:TEMP 'purge_upgrade_new.log'
+Write-Host '--- [diag] msiexec log ---'
+Get-Content -LiteralPath $newLog -ErrorAction SilentlyContinue |
+    Select-String -Pattern 'Shortcut|RemoveExistingProducts|InstallFinalize|InstallInitialize|Component: (Start|Desktop)' |
+    Select-Object -First 80 | ForEach-Object { Write-Host ('  ' + $_.Line.Trim()) }
+Write-Host '--- [diag] end ---'
 foreach ($e in $events) { [void]$deleted.Add($e.MessageData) }
 
 if ($code -ne 0) { $failures.Add("新版へのアップグレードが失敗(終了コード=$code)") }
