@@ -1,0 +1,18 @@
+title = "gitleaks config"
+[extend]
+useDefault = true
+[[rules]]
+description = "Private Key"
+id = "private-key"
+regex = '''(?i)-----BEGIN (?:\w+ )?PRIVATE KEY(?: BLOCK)?-----'''
+tags = ["key", "private"]
+[[rules]]
+description = "GitHub Token"
+id = "github-token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["github", "token"]
+[[rules]]
+description = "Generic API Key"
+id = "generic-api-key"
+regex = '''(?i)(?:api[_-]?key|apikey|api_secret)["']?\s*[:=]\s*["']?[0-9a-zA-Z]{20,}["']?'''
+tags = ["api", "key"]
