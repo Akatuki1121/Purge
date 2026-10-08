@@ -1,77 +1,181 @@
 name: Release
+
+# タグ(v*)のpushで配布用MSI(ja/en)をビルドし、公開前の最終検証(#107)を経て
+# GitHub Releaseを公開する。検証に失敗した場合は公開しない。
+# 公開成功後は CURRENT_STATE.md を更新する(#108)。
+
 on:
   push:
     tags:
       - 'v*'
+
+permissions:
+  contents: write
+
 jobs:
   build-msi:
     runs-on: windows-latest
     outputs:
-      msi-path: ${{ steps.build.outputs.msi-path }}
+      version: ${{ steps.ver.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Determine version from tag
+        id: ver
+        shell: pwsh
+        run: 'echo "version=$($env:GITHUB_REF_NAME.TrimStart(''v''))" >> $env:GITHUB_OUTPUT'
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
-      - name: Build MSI
-        id: build
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.wixproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
         run: |
-          Write-Host "Building MSI..."
-          echo "msi-path=installer/Purge.msi" >> $env:GITHUB_OUTPUT
+          dotnet restore UI/Purge.UI.csproj --runtime win-x64
+          dotnet restore installer/Purge.Installer.wixproj
+
+      - name: Publish self-contained package
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=${{ steps.ver.outputs.version }} --no-restore
+
+      - name: Build WiX installer (ja-JP / en-US)
+        run: |
+          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ steps.ver.outputs.version }} -p:Cultures=ja-JP --no-restore
+          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=${{ steps.ver.outputs.version }} -p:Cultures=en-US --no-restore
+
+      - name: Stage artifacts
+        shell: pwsh
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          New-Item dist -ItemType Directory -Force | Out-Null
+          Copy-Item 'installer/bin/x64/Release/ja-JP/Purge.Installer.msi' "dist/Purge-$v-win-x64-ja.msi"
+          Copy-Item 'installer/bin/x64/Release/en-US/Purge.Installer.msi' "dist/Purge-$v-win-x64-en.msi"
+          Get-ChildItem dist
+
+      - name: Upload MSI artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-msi
+          path: dist/
+
   final-verify:
     needs: build-msi
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
-      - name: Final MSI verification
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download MSI artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: release-msi
+          path: dist
+
+      - name: Download latest released MSI (upgrade baseline)
+        id: baseline
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          Write-Host "Final MSI verification:"
-          Write-Host "- Check MSI contains required files"
-          Write-Host "- Check MSI version matches tag"
-          Write-Host "- Test install, launch, uninstall"
-          Write-Host "- Check shortcuts are cleaned up"
-          Write-Host "- Check ProductCode/UpgradeCode"
+          set -euo pipefail
+          TAG=$(gh api "repos/$REPO/releases" --jq '[.[] | select(.draft == false and .prerelease == false)][0].tag_name' || true)
+          if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
+            gh release download "$TAG" --repo "$REPO" --pattern '*-ja.msi' --dir baseline --clobber
+            mv baseline/*-ja.msi baseline/baseline.msi
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "ベースライン(直前の公開済みリリース): $TAG"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "公開済みリリースがないため、ベースライン比較をスキップします。"
+          fi
+
+      - name: Final MSI verification
         shell: pwsh
+        run: |
+          $v = '${{ needs.build-msi.outputs.version }}'
+          $msi = "$PWD/dist/Purge-$v-win-x64-ja.msi"
+          $params = @{ MsiPath = $msi; ExpectedVersion = $v }
+          if (Test-Path "$PWD/baseline/baseline.msi") { $params.BaselineMsiPath = "$PWD/baseline/baseline.msi" }
+          ./scripts/Verify-ReleaseMsi.ps1 @params
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-verify-logs
+          path: |
+            ${{ runner.temp }}/purge_install.log
+            ${{ runner.temp }}/purge_uninstall.log
+          if-no-files-found: ignore
+
   create-release:
     needs: [build-msi, final-verify]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v7
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Download MSI artifacts
+        uses: actions/download-artifact@v8
         with:
-          files: installer/Purge.msi
-          draft: false
-          prerelease: false
+          name: release-msi
+          path: dist
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" dist/*.msi \
+            --repo "$REPO" \
+            --title "Purge $VERSION" \
+            --generate-notes
+
   update-state:
     needs: create-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
       - name: Update CURRENT_STATE.md
         run: |
-          TAG="${{ github.ref_name }}"
-          SHA="${{ github.sha }}"
-          URL="${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}"
-          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          cat > CURRENT_STATE.md << EOF
-          # Release State
-          - Version: ${TAG}
-          - Published: ${DATE}
-          - Commit: ${SHA}
-          - URL: ${URL}
-          EOF
-      - name: Commit CURRENT_STATE.md
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          SHA="${GITHUB_SHA}"
+          URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          {
+            echo "# リリース状態 (CURRENT_STATE)"
+            echo ""
+            echo "| 項目 | 値 |"
+            echo "| --- | --- |"
+            echo "| 最新公開バージョン | ${VERSION} |"
+            echo "| 公開日時 | ${DATE} |"
+            echo "| コミット | \`${SHA}\` |"
+            echo "| Release URL | ${URL} |"
+            echo ""
+            echo "- このファイルはGitHub Release公開成功時にのみ自動更新されます(#108)。"
+          } > CURRENT_STATE.md
+
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add CURRENT_STATE.md
-          git commit -m "Update CURRENT_STATE.md for ${TAG}" || echo "No changes to commit"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git commit -m "chore: CURRENT_STATE.md を ${GITHUB_REF_NAME} に更新 [skip ci]" || echo "変更なし"
+          git push origin main
