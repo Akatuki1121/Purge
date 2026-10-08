@@ -68,7 +68,7 @@ jobs:
             CHECKS="${CHECKS}- ドキュメントのみのため、重い検証はスキップされます
           "
           fi
-          [ -z "$CHECKS" ] && CHECKS="- (対象なし)
+          [ -z "$CHECKS" ] && CHECKS="- (対象なし)"
 
           {
             echo "## PRサマリー (#${PR_NUMBER})"
