@@ -94,6 +94,15 @@
                   Return="asyncNoWait"
                   Impersonate="yes" />
 
+    <!-- #91: 昇格済みのPurgeがmsiexecを直接起動したアップデート(PURGE_ELEVATED_UPDATE=1)では、
+         MSIクライアントが昇格済みのため、Purge.exeを直接起動してもUACは出ずに管理者権限で起動する。
+         それ以外(ダブルクリックでの新規インストール等)は上のexplorer経由(UACあり)を使う。 -->
+    <CustomAction Id="LaunchApplicationDirect"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]Purge.exe&quot;"
+                  Return="asyncNoWait"
+                  Impersonate="yes" />
+
     <ui:WixUI Id="PurgeInstallDir" InstallDirectory="INSTALLFOLDER" />
     <WixVariable Id="WixUILicenseRtf" Value="!(loc.LicenseRtfPath)" />
     <UIRef Id="WixUI_ErrorProgressText" />
