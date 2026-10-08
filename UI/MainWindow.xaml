@@ -83,31 +83,30 @@
                                FontSize="11" VerticalAlignment="Center"/>
                     <ui:Button x:Name="CancelScanButton" Content="{loc:Loc Btn_Cancel}" Appearance="Secondary"
                                Visibility="Collapsed" Click="CancelScanButton_Click"/>
+                    <ui:Button x:Name="CheckUpdateButton" Content="{loc:Loc Btn_CheckUpdate}" Icon="{ui:SymbolIcon ArrowDownload24}"
+                               Margin="8,0,0,0" Click="CheckUpdateButton_Click"/>
                     <ui:Button x:Name="ProUpgradeButton" Content="{loc:Loc Btn_UpgradePro}" Appearance="Primary"
                                Icon="{ui:SymbolIcon Star24}" Margin="8,0,0,0" Click="ProUpgradeButton_Click"/>
                 </WrapPanel>
-                <Menu Grid.Column="2" Background="Transparent" Padding="4,0" VerticalAlignment="Center">
-                    <MenuItem Header="{loc:Loc Menu_More}">
-                        <MenuItem x:Name="ShowLogMenuItem" Header="{loc:Loc Menu_ShowLog}" IsCheckable="True" IsChecked="False"
-                                  Click="ShowLogMenuItem_Click"/>
-                        <MenuItem Header="{loc:Loc Menu_Restore}" Click="RestoreBackupMenuItem_Click"/>
-                        <Separator/>
-                        <MenuItem Header="{loc:Loc Menu_License}" Click="LicenseMenuItem_Click"/>
-                        <MenuItem Header="{loc:Loc Menu_PinToStart}" Click="PinToStartMenuItem_Click"/>
-                        <Separator/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Menu Background="Transparent" Padding="4,0" VerticalAlignment="Center">
                         <MenuItem Header="{loc:Loc Menu_Language}">
                             <MenuItem x:Name="LanguageAutoMenuItem" Header="{loc:Loc Menu_LanguageAuto}" IsCheckable="True" Click="LanguageAutoMenuItem_Click"/>
                             <MenuItem x:Name="LanguageJapaneseMenuItem" Header="日本語" IsCheckable="True" Click="LanguageJapaneseMenuItem_Click"/>
                             <MenuItem x:Name="LanguageEnglishMenuItem" Header="English" IsCheckable="True" Click="LanguageEnglishMenuItem_Click"/>
                         </MenuItem>
-                        <Separator/>
-                        <MenuItem Header="{loc:Loc Menu_SelfUninstall}" Click="SelfUninstallButton_Click"/>
-                        <MenuItem Header="{loc:Loc Menu_CheckUpdate}" Click="CheckUpdateMenuItem_Click"/>
-                        <MenuItem Header="{loc:Loc Title_About}" Click="AboutMenuItem_Click"/>
-                        <Separator/>
-                        <MenuItem Header="{loc:Loc Menu_Exit}" Click="ExitMenuItem_Click"/>
-                    </MenuItem>
-                </Menu>
+                    </Menu>
+                    <Menu Background="Transparent" Padding="4,0" VerticalAlignment="Center">
+                        <MenuItem Header="{loc:Loc Menu_More}">
+                            <MenuItem Header="{loc:Loc Menu_Restore}" Click="RestoreBackupMenuItem_Click"/>
+                            <MenuItem Header="{loc:Loc Title_About}" Click="AboutMenuItem_Click"/>
+                            <Separator/>
+                            <MenuItem Header="{loc:Loc Menu_SelfUninstall}" Click="SelfUninstallButton_Click"/>
+                            <Separator/>
+                            <MenuItem Header="{loc:Loc Menu_Exit}" Click="ExitMenuItem_Click"/>
+                        </MenuItem>
+                    </Menu>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -155,8 +154,6 @@
                                        HorizontalAlignment="Left" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
-                <ui:Button x:Name="RefreshButton" Content="{loc:Loc Btn_Reload}" Icon="{ui:SymbolIcon ArrowSync24}"
-                           Margin="8,0,0,0" Click="RefreshButton_Click"/>
             </StackPanel>
         </Grid>
 
@@ -198,7 +195,7 @@
                 <!-- 通常操作: アンインストール(単体が基本、複数選択時のみ一括ボタンが現れる) -->
                 <WrapPanel Orientation="Horizontal">
                     <ui:SymbolIcon Symbol="Delete24" FontSize="16" Margin="0,0,8,0" Foreground="#666"/>
-                    <ui:ToggleSwitch x:Name="DryRunToggle" OnContent="{loc:Loc Safe_On}" OffContent="{loc:Loc Safe_Off}" IsChecked="True"
+                    <ui:ToggleSwitch x:Name="DryRunToggle" IsChecked="True"
                                       VerticalAlignment="Center" Checked="DryRunToggle_Changed" Unchecked="DryRunToggle_Changed"
                                       ToolTip="{loc:Loc Safe_Tooltip}"/>
                     <Border x:Name="DryRunStatusBadge" Margin="10,0,0,0" Padding="8,3" CornerRadius="4"
@@ -218,8 +215,7 @@
         </ui:Card>
 
         <Expander x:Name="LogExpander" Grid.Row="6" Margin="14,0,14,10" IsExpanded="False"
-                  Background="#F7F9FC" BorderBrush="#DCE3EB" BorderThickness="1"
-                  Expanded="LogExpander_Changed" Collapsed="LogExpander_Changed">
+                  Background="#F7F9FC" BorderBrush="#DCE3EB" BorderThickness="1">
             <Expander.HeaderTemplate>
                 <!-- HeaderTemplateの直下はExpanderの内部ContentPresenterがHorizontalContentAlignment=Stretch
                      で幅を渡してくれるため、旧実装(固定幅980や自己参照のWidthバインド)と違い

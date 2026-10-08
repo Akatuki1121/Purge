@@ -57,6 +57,7 @@ public partial class MainWindow : FluentWindow
         }
 
         DryRunToggle_Changed(this, new RoutedEventArgs());
+        UpdateProButton();
 
         if (LicenseState.IsProUnlocked)
         {
@@ -107,8 +108,9 @@ public partial class MainWindow : FluentWindow
         if (LicenseState.IsProUnlocked)
         {
             BatchUninstallButton.Content = Loc.T("Btn_BatchUninstall");
-            ProUpgradeButton.Visibility = Visibility.Collapsed;
         }
+
+        UpdateProButton();
 
         AppListView.SelectionChanged += AppListView_SelectionChanged;
 
@@ -585,16 +587,6 @@ public partial class MainWindow : FluentWindow
         Application.Current.Shutdown();
     }
 
-    private void ShowLogMenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        LogExpander.IsExpanded = ShowLogMenuItem.IsChecked;
-    }
-
-    private void LogExpander_Changed(object sender, RoutedEventArgs e)
-    {
-        ShowLogMenuItem.IsChecked = LogExpander.IsExpanded;
-    }
-
     private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
     {
         var versionText = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
@@ -703,7 +695,7 @@ public partial class MainWindow : FluentWindow
     /// 起動中に手動で更新を確認する(#86)。新バージョンが見つかった場合は、起動時チェックと同じく
     /// App.UpdateAvailable経由で更新バナーが(閉じていても再度)表示されるため、ここでは表示しない。
     /// </summary>
-    private async void CheckUpdateMenuItem_Click(object sender, RoutedEventArgs e)
+    private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         var result = await App.CheckForUpdatesAsync();
         _log.Info("UpdateCheck", $"手動の更新確認: {result}");
@@ -724,31 +716,6 @@ public partial class MainWindow : FluentWindow
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 break;
         }
-    }
-
-    private void PinToStartMenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        var exePath = Environment.ProcessPath;
-        var revealed = !string.IsNullOrEmpty(exePath)
-            && new StartMenuShortcutRegistrar(_log).RevealShortcutForPinning(exePath);
-
-        if (revealed)
-        {
-            MessageBox.Show(this, Loc.T("Msg_PinToStartGuide"), Loc.T("Title_PinToStart"),
-                MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        else
-        {
-            MessageBox.Show(this, Loc.T("Msg_PinToStartFailed"), Loc.T("Title_PinToStart"),
-                MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-
-        RefreshLogView();
-    }
-
-    private void LicenseMenuItem_Click(object sender, RoutedEventArgs e)
-    {
-        OpenLicenseWindowAndRefresh();
     }
 
     /// <summary>
@@ -772,9 +739,19 @@ public partial class MainWindow : FluentWindow
         BatchUninstallButton.Content = LicenseState.IsProUnlocked
             ? Loc.T("Btn_BatchUninstall")
             : Loc.T("Btn_BatchUninstallPro");
-        ProUpgradeButton.Visibility = LicenseState.IsProUnlocked
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        UpdateProButton();
+    }
+
+    /// <summary>
+    /// 右上のライセンスボタン(#94)。無料版は「Proにアップグレード」、Pro版は「Pro ✓」(押すとライセンス画面)。
+    /// </summary>
+    private void UpdateProButton()
+    {
+        bool pro = LicenseState.IsProUnlocked;
+        ProUpgradeButton.Content = Loc.T(pro ? "Btn_LicensePro" : "Btn_UpgradePro");
+        ProUpgradeButton.Appearance = pro
+            ? Wpf.Ui.Controls.ControlAppearance.Secondary
+            : Wpf.Ui.Controls.ControlAppearance.Primary;
     }
 
     /// <summary>
