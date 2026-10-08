@@ -35,12 +35,12 @@ jobs:
           dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=0.0.1 -p:Cultures=ja-JP -p:MsiCompressionLevel=none --no-restore
           New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/msi" | Out-Null
           Copy-Item installer/bin/x64/Release/ja-JP/Purge.Installer.msi "$env:RUNNER_TEMP/msi/old.msi"
-          Remove-Item installer/obj, installer/bin -Recurse -Force
+          Remove-Item installer/bin -Recurse -Force
 
       - name: Build new MSI (0.0.2)
         shell: pwsh
         run: |
-          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=0.0.2 -p:Cultures=ja-JP -p:MsiCompressionLevel=none --no-restore
+          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=0.0.2 -p:Cultures=ja-JP -p:MsiCompressionLevel=none --no-restore --no-incremental
           Copy-Item installer/bin/x64/Release/ja-JP/Purge.Installer.msi "$env:RUNNER_TEMP/msi/new.msi"
 
       - name: Verify upgrade keeps shortcuts
