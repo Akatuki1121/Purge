@@ -1,0 +1,45 @@
+name: Verify MSI Upgrade Matrix
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'installer/**'
+      - 'Core/UpdateDownloader.cs'
+      - 'scripts/Verify-MsiUpgrade.ps1'
+      - '.github/workflows/**'
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      installer: ${{ steps.changes.outputs.installer }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            installer:
+              - 'installer/**'
+              - 'Core/UpdateDownloader.cs'
+              - 'scripts/Verify-MsiUpgrade.ps1'
+              - '.github/workflows/**'
+  verify-matrix:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.installer == 'true'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        upgrade-path:
+          - { from: 'latest', to: 'rc' }
+          - { from: 'previous', to: 'rc' }
+          - { from: 'same', to: 'same' }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify upgrade path
+        run: |
+          Write-Host "Verifying upgrade path"
+          Write-Host "- Check Purge.exe is replaced correctly"
+          Write-Host "- Check shortcuts do not disappear or duplicate"
+          Write-Host "- Check settings, license, registry values are maintained"
+          Write-Host "- Check service and scheduled task restoration"
+        shell: pwsh

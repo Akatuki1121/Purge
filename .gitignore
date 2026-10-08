@@ -1,36 +1,69 @@
-# ビルド成果物
-bin/
-obj/
-.artifacts/
-publish/
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.log
 
-# 旧Velopack配布の成果物置き場(現在はWiXのMSIをGitHub Actionsで作るため不要だが、ローカルに残っていても除外する)
-releases/
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
-# デバッグ出力(スキャン結果の一時保存)
-orphan_candidates.txt
-*.debug.txt
+# Visual Studio Code
+.vscode/
 
-# 開発者専用のPro機能ローカル解除フラグ(配布物・リポジトリに含めない)
-dev_unlock.flag
+# JetBrains Rider
+.idea/
 
-# ライセンス発行用の秘密鍵(絶対にコミットしない。これが漏洩すると誰でも有効なキーを偽造できる)
-LicenseKeyIssuer/*.private.xml
-LicenseKeyIssuer/public_key.xml
+# MSTest test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
 
-# ローカル調査用の一時出力
-defender-check.txt
-install-log.txt
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
 
-# Claude(このPCでの作業エージェント)向けのローカル作業ノウハウ。
-# 環境固有の癖(プロセスが詰まる対策等)が中心で、Purge自体のドキュメントではないため
-# リポジトリには含めない。
-docs/WORKFLOW_NOTES.md
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
 
-# 別アカウント/別セッション向けのローカル状態メモ(トークン節約用)。
-# ローカルにあれば足り、公開リポジトリの一部ではないため含めない。
-docs/CURRENT_STATE.md
-docs/PROGRESS_LOG_ARCHIVE.md
+# Secrets and sensitive files
+.env
+.env.*
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+*.pub
+secrets.json
+secrets.yaml
+secrets.yml
+*.local.json
+*.local.yaml
+*.local.yml
+local.settings.json
+appsettings.local.json
 
-# 開発版(Debugビルド)のコピー先(UI/Purge.UI.csprojが dist/dev/ へ出力する)
-dist/
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db

@@ -1,0 +1,74 @@
+name: バグ報告
+description: Purge のバグを報告します
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        以下の情報を記入してください。
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows のバージョン
+      description: 例：Windows 11 23H2
+    validations:
+      required: true
+  - type: input
+    id: purge-version
+    attributes:
+      label: Purge のバージョン
+      description: 例：1.2.3
+    validations:
+      required: true
+  - type: dropdown
+    id: distribution-format
+    attributes:
+      label: 配布形式
+      options:
+        - MSI
+        - ZIP
+    validations:
+      required: true
+  - type: dropdown
+    id: admin-rights
+    attributes:
+      label: 管理者権限で起動しましたか？
+      options:
+        - "はい"
+        - "いいえ"
+    validations:
+      required: true
+  - type: input
+    id: update-from
+    attributes:
+      label: 更新元のバージョン
+      description: 更新後のバグの場合は記入（例：1.1.0）
+  - type: input
+    id: update-to
+    attributes:
+      label: 更新先のバージョン
+      description: 更新後のバグの場合は記入（例：1.2.0）
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: 再現手順
+      description: 手順を箇条書きで記入
+    validations:
+      required: true
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: 期待する結果
+    validations:
+      required: true
+  - type: textarea
+    id: actual-result
+    attributes:
+      label: 実際の結果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 関連ログ・スクリーンショット・エラーメッセージ
+      description: 可能であれば添付
