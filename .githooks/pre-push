@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refreshes docs/CURRENT_STATE.md (see update-current-state.sh). Ignores args and stdin.
+"$(dirname "$0")/update-current-state.sh"
+exit 0
