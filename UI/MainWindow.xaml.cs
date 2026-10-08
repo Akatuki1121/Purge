@@ -699,6 +699,33 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    /// <summary>
+    /// 起動中に手動で更新を確認する(#86)。新バージョンが見つかった場合は、起動時チェックと同じく
+    /// App.UpdateAvailable経由で更新バナーが(閉じていても再度)表示されるため、ここでは表示しない。
+    /// </summary>
+    private async void CheckUpdateMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var result = await App.CheckForUpdatesAsync();
+        _log.Info("UpdateCheck", $"手動の更新確認: {result}");
+
+        switch (result)
+        {
+            case UpdateCheckResult.UpToDate:
+                var current = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
+                MessageBox.Show(this, Loc.F("Msg_UpToDate", current), Loc.T("Title_CheckUpdate"),
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                break;
+            case UpdateCheckResult.Failed:
+                MessageBox.Show(this, Loc.T("Msg_UpdateCheckFailed"), Loc.T("Title_CheckUpdate"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                break;
+            case UpdateCheckResult.AlreadyRunning:
+                MessageBox.Show(this, Loc.T("Msg_UpdateChecking"), Loc.T("Title_CheckUpdate"),
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                break;
+        }
+    }
+
     private void PinToStartMenuItem_Click(object sender, RoutedEventArgs e)
     {
         var exePath = Environment.ProcessPath;

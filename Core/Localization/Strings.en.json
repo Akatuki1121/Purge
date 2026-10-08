@@ -245,5 +245,10 @@
   "Menu_PinToStart": "Pin to Start...",
   "Title_PinToStart": "Pin to Start",
   "Msg_PinToStartGuide": "Purge's shortcut is now selected in File Explorer.\nRight-click it and choose \"Pin to Start\".",
-  "Msg_PinToStartFailed": "Could not prepare the Purge shortcut.\nPlease check the operation log for details."
+  "Msg_PinToStartFailed": "Could not prepare the Purge shortcut.\nPlease check the operation log for details.",
+  "Menu_CheckUpdate": "Check for updates",
+  "Title_CheckUpdate": "Check for updates",
+  "Msg_UpToDate": "You are using the latest version. (current: {0})",
+  "Msg_UpdateCheckFailed": "Could not check for updates.\nPlease check your internet connection and try again.",
+  "Msg_UpdateChecking": "Checking for updates. Please wait."
 }

@@ -245,5 +245,10 @@
   "Menu_PinToStart": "スタートにピン留め...",
   "Title_PinToStart": "スタートにピン留め",
   "Msg_PinToStartGuide": "エクスプローラーでPurgeのショートカットを選択表示しました。\n右クリックして「スタートにピン留めする」を選んでください。",
-  "Msg_PinToStartFailed": "Purgeのショートカットを用意できませんでした。\n詳細は操作ログを確認してください。"
+  "Msg_PinToStartFailed": "Purgeのショートカットを用意できませんでした。\n詳細は操作ログを確認してください。",
+  "Menu_CheckUpdate": "更新を確認",
+  "Title_CheckUpdate": "更新を確認",
+  "Msg_UpToDate": "最新のバージョンです。(現在 {0})",
+  "Msg_UpdateCheckFailed": "更新を確認できませんでした。\nインターネットへの接続を確認して、もう一度お試しください。",
+  "Msg_UpdateChecking": "更新を確認しています。しばらくお待ちください。"
 }
