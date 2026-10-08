@@ -1,0 +1,28 @@
+# PR のファイル変更に基づいてラベルを自動付与
+installer:
+  - changed-files:
+      - any-glob-to-any-file: 'installer/**/*'
+      - any-glob-to-any-file: '*.wxs'
+      - any-glob-to-any-file: '*.wxi'
+
+update:
+  - changed-files:
+      - any-glob-to-any-file: 'Core/UpdateDownloader.cs'
+      - any-glob-to-any-file: 'Core/Update*.cs'
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file: 'UI/**/*'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: '.github/dependabot.yml'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/workflows/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: '*.md'
+      - any-glob-to-any-file: 'docs/**/*'
