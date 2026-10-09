@@ -22,7 +22,9 @@ jobs:
           persist-credentials: false
 
       - name: Install git-filter-repo
-        run: python -m pip install --user git-filter-repo
+        run: |
+          python -m pip install --user git-filter-repo
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Rewrite known English commit messages on a preview branch
         env:
