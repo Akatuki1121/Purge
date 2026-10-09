@@ -31,6 +31,52 @@ namespace Purge
         {
             _log.Info("AppUninstall", "対象アプリを選択", app.DisplayName);
 
+            if (app.IsStorePackage)
+            {
+                if (string.IsNullOrWhiteSpace(app.PackageFullName))
+                {
+                    _log.Warning("AppUninstall", "MSIX/AppXパッケージ名が存在しない", app.DisplayName);
+                    return UninstallResult.NoUninstallString;
+                }
+
+                var packageCommand = $"Remove-AppxPackage -Package '{app.PackageFullName.Replace("'", "''")}' -ErrorAction Stop";
+                _log.Info("AppUninstall", "Storeアプリのアンインストールコマンドを組み立て", packageCommand);
+                if (dryRun)
+                {
+                    _log.Info("AppUninstall", "ドライランのため実行はスキップ", app.DisplayName);
+                    return UninstallResult.DryRun;
+                }
+
+                try
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = "powershell.exe",
+                        UseShellExecute = false,
+                    };
+                    psi.ArgumentList.Add("-NoProfile");
+                    psi.ArgumentList.Add("-NonInteractive");
+                    psi.ArgumentList.Add("-ExecutionPolicy");
+                    psi.ArgumentList.Add("Bypass");
+                    psi.ArgumentList.Add("-Command");
+                    psi.ArgumentList.Add(packageCommand);
+
+                    _log.Info("AppUninstall", "Storeアプリのアンインストーラーを起動", app.DisplayName);
+                    using var process = Process.Start(psi);
+                    if (process == null) return UninstallResult.Failed;
+                    process.WaitForExit();
+                    _log.Info("AppUninstall", "Storeアプリのアンインストーラーが終了", $"ExitCode={process.ExitCode}");
+                    return process.ExitCode == WellKnownConstants.ProcessExitCodeSuccess
+                        ? UninstallResult.Success
+                        : UninstallResult.Failed;
+                }
+                catch (Exception ex)
+                {
+                    _log.Error("AppUninstall", "Storeアプリのアンインストール実行中にエラー", ex.Message);
+                    return UninstallResult.Failed;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(app.UninstallString))
             {
                 _log.Warning("AppUninstall", "UninstallStringが存在しない", app.DisplayName);

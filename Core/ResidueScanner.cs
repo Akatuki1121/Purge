@@ -71,7 +71,7 @@ namespace Purge
         public List<ResidueItem> ScanAll(string appName, bool includeMftSearch = false,
             string mftDrive = WellKnownConstants.DefaultMftSearchDrive,
             CancellationToken cancellationToken = default, IProgress<ScanProgress>? progress = null,
-            IReadOnlyCollection<string>? mftPathPrefixes = null)
+            IReadOnlyCollection<string>? mftPathPrefixes = null, string? packageFamilyName = null)
         {
             _log.Info("ResidueScan", "横断残存物スキャンを開始", appName);
             var results = new List<ResidueItem>();
@@ -82,6 +82,23 @@ namespace Purge
             results.AddRange(ScanScheduledTasks(appName, cancellationToken, progress));
             results.AddRange(ScanEnvironmentPath(appName, cancellationToken, progress));
             results.AddRange(ScanStartup(appName, cancellationToken, progress));
+
+            if (!string.IsNullOrWhiteSpace(packageFamilyName))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var packageDataPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Packages", packageFamilyName);
+                if (Directory.Exists(packageDataPath))
+                {
+                    results.Add(new ResidueItem
+                    {
+                        Category = ResidueCategory.MftFile,
+                        Location = packageDataPath,
+                        Detail = "MSIX/AppXパッケージのユーザーデータフォルダ",
+                    });
+                }
+            }
 
             if (includeMftSearch)
             {
