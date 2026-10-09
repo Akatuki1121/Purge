@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="ja-jp" Codepage="932" xmlns="http://wixtoolset.org/schemas/v4/wxl">
   <String Id="InstallLanguage" Value="ja" />
-  <String Id="LicenseRtfPath" Value="License.ja-jp.rtf" />
+  <String Id="LicenseRtfPath" Value="..\License.ja-jp.rtf" />
   <String Id="ShortcutsDlgTitle" Value="{\WixUI_Font_Title}ショートカット" />
   <String Id="ShortcutsDlgDescription" Value="インストールするショートカットを選択してください。" />
   <String Id="ShortcutsDlgStartMenu" Value="スタートメニューにショートカットを作成する" />
