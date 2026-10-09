@@ -4,21 +4,17 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(依存関係)"
     labels:
-      - "dependencies"
-      - "nuget"
+      - "依存関係"
+    open-pull-requests-limit: 5
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci(依存関係)"
     labels:
-      - "dependencies"
-      - "github-actions"
+      - "依存関係"
