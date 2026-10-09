@@ -28,7 +28,8 @@ $packages = @(Get-AppxPackage | Where-Object {
 })
 $items = @(
     foreach ($package in $packages) {
-        $startApp = $startApps | Where-Object { $_.AppID -like ($package.PackageFamilyName + '!') + '*' } | Select-Object -First 1
+        $appIdPrefix = $package.PackageFamilyName + '!*'
+        $startApp = $startApps | Where-Object { $_.AppID -like $appIdPrefix } | Select-Object -First 1
         $displayName = if ($startApp -and -not [string]::IsNullOrWhiteSpace($startApp.Name)) { $startApp.Name } else { $package.Name }
         [pscustomobject]@{
             DisplayName = $displayName
