@@ -71,7 +71,7 @@ $wxs = Get-Content -LiteralPath $WxsPath -Raw
 if ($wxs -match 'UpgradeCode="([^"]+)"') {
     $expectedUpgradeCode = $Matches[1]
     $upgradeCode = Get-MsiProperty $db 'UpgradeCode'
-    Check 'UpgradeCodeがWiX定義と一致' ($upgradeCode -eq $expectedUpgradeCode) "実際=$upgradeCode 期待=$expectedUpgradeCode"
+    Check 'UpgradeCodeがWiX定義と一致' ($upgradeCode -and $expectedUpgradeCode -and ([guid]$upgradeCode -eq [guid]$expectedUpgradeCode)) "実際=$upgradeCode 期待=$expectedUpgradeCode"
 } else {
     Check 'WiX定義からUpgradeCodeを取得できた' $false "$WxsPath"
 }
