@@ -1,0 +1,46 @@
+name: Dependabot PR 日本語化
+on:
+  pull_request_target:
+    branches: ["main"]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  japanese-summary:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Translate Dependabot summary
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const match = pr.title.match(/^(?:chore\(deps\):\s*)?Bump(?:s)?\s+(.+?)\s+from\s+(\S+)\s+to\s+(\S+)$/i);
+            if (!match) {
+              core.info('タイトル形式が対象外のため変更しません。');
+              return;
+            }
+
+            const [, packageName, fromVersion, toVersion] = match;
+            const title = `依存関係の更新: ${packageName} ${fromVersion} → ${toVersion}`;
+            let body = pr.body || '';
+            const firstLine = body.match(/^(?:Updated|Bumps?)\s+(.+?)\s+from\s+(\S+)\s+to\s+(\S+)\.?\s*$/im);
+            if (firstLine) {
+              body = body.replace(firstLine[0],
+                `依存関係 ${firstLine[1]} を ${firstLine[2]} から ${firstLine[3]} に更新します。`);
+            } else {
+              body = `依存関係「${packageName}」を ${fromVersion} から ${toVersion} に更新します。\n\n` + body;
+            }
+
+            if (title !== pr.title || body !== (pr.body || '')) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title,
+                body
+              });
+              core.info(`PR #${pr.number} の概要を日本語化しました。`);
+            }
