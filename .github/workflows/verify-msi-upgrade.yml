@@ -1,0 +1,56 @@
+name: Verify MSI upgrade (manual)
+
+# アップグレード時にショートカットが削除・再作成されないことを確認する(#92)。
+# scripts/Verify-ShortcutContinuity.ps1 が旧版→新版の上書きインストールを実際に行って検証する。
+# verify/** ブランチへのpush、またはActionsタブからの手動実行で動く。GitHub Releasesへの公開は行わない。
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["verify/**"]
+
+jobs:
+  verify-upgrade:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: |
+          dotnet restore UI/Purge.UI.csproj --runtime win-x64
+          dotnet restore installer/Purge.Installer.wixproj
+
+      - name: Publish self-contained package
+        run: dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=0.0.2 --no-restore
+
+      - name: Build old MSI (0.0.1)
+        shell: pwsh
+        run: |
+          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=0.0.1 -p:Cultures=ja-JP -p:MsiCompressionLevel=none --no-restore
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP/msi" | Out-Null
+          Copy-Item installer/bin/x64/Release/ja-JP/Purge.Installer.msi "$env:RUNNER_TEMP/msi/old.msi"
+          Remove-Item installer/bin -Recurse -Force
+
+      - name: Build new MSI (0.0.2)
+        shell: pwsh
+        run: |
+          dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=0.0.2 -p:Cultures=ja-JP -p:MsiCompressionLevel=none --no-restore --no-incremental
+          Copy-Item installer/bin/x64/Release/ja-JP/Purge.Installer.msi "$env:RUNNER_TEMP/msi/new.msi"
+
+      - name: Verify upgrade keeps shortcuts
+        shell: pwsh
+        run: ./scripts/Verify-ShortcutContinuity.ps1 -OldMsi "$env:RUNNER_TEMP/msi/old.msi" -NewMsi "$env:RUNNER_TEMP/msi/new.msi"
+
+      - name: Upload msiexec logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: msi-upgrade-logs
+          path: ${{ runner.temp }}/purge_upgrade_*.log
+          if-no-files-found: ignore
