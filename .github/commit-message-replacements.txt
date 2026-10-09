@@ -31,3 +31,9 @@ literal:* fix: localize about dialog text==>* fix: バージョン情報ダイ�
 literal:* feat: finish localization of dynamic messages==>* feat: 動的メッセージの日本語化を完了
 literal:* docs: document application language switching==>* docs: アプリの表示言語切り替えについて文書化
 literal:* docs: add localization changelog entry==>* docs: 日本語化に関する変更履歴を追加
+literal:chore(依存関係): Bump xunit.runner.visualstudio from 3.1.4 to 4.0.0 (#122)==>chore(依存関係): xunit.runner.visualstudio を 3.1.4 から 4.0.0 に更新 (#122)
+literal:chore(依存関係): Bump coverlet.collector from 6.0.4 to 10.1.0 (#115)==>chore(依存関係): coverlet.collector を 6.0.4 から 10.1.0 に更新 (#115)
+literal:chore(依存関係): Bump System.ServiceProcess.ServiceController from 9.0.0 to 10.0.12 (#120)==>chore(依存関係): System.ServiceProcess.ServiceController を 9.0.0 から 10.0.12 に更新 (#120)
+literal:chore(依存関係): Bump WPF-UI from 4.0.0 to 4.3.0 (#121)==>chore(依存関係): WPF-UI を 4.0.0 から 4.3.0 に更新 (#121)
+literal:ci(依存関係): bump gitleaks/gitleaks-action from 2 to 3 (#117)==>ci(依存関係): gitleaks/gitleaks-action を 2 から 3 に更新 (#117)
+literal:ci(依存関係): bump dependabot/fetch-metadata from 2 to 3 (#134)==>ci(依存関係): dependabot/fetch-metadata を 2 から 3 に更新 (#134)
