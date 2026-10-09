@@ -53,7 +53,7 @@ function Get-MsiColumn($db, [string]$sql) {
 }
 
 function Get-MsiProperty($db, [string]$name) {
-    $rows = Get-MsiColumn $db "SELECT Value FROM Property WHERE Property='$name'"
+    $rows = @(Get-MsiColumn $db "SELECT Value FROM Property WHERE Property='$name'")
     if ($rows.Count -ge 1) { return $rows[0] } else { return $null }
 }
 
@@ -80,7 +80,8 @@ if ($wxs -match 'UpgradeCode="([^"]+)"') {
 $fileNames = Get-MsiColumn $db 'SELECT FileName FROM File'
 Check 'Purge.exe が収録されている' (@($fileNames | Where-Object { $_ -match 'Purge\.exe' }).Count -ge 1)
 Check 'Purge.Core.dll が収録されている' (@($fileNames | Where-Object { $_ -match 'Purge\.Core\.dll' }).Count -ge 1)
-Check 'ライセンス文書が収録されている' (@($fileNames | Where-Object { $_ -match 'License\.(ja-jp|en-us)\.rtf' }).Count -ge 1)
+$binaryNames = @(Get-MsiColumn $db 'SELECT Name FROM Binary')
+Check 'ライセンス文書がMSIに埋め込まれている' (@($binaryNames | Where-Object { $_ -match '(?i)license.*rtf|rtf.*license' }).Count -ge 1) "Binaryテーブルの項目=$($binaryNames -join ', ')"
 
 if ($BaselineMsiPath) {
     Write-Host ''
