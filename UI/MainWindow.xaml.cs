@@ -311,14 +311,14 @@ public partial class MainWindow : FluentWindow
         // アンインストール完了後、確認を挟まずそのまま残存物スキャンへ移行する
         // (以前は「スキャンしますか？」の確認ダイアログを挟んでいたが、
         // アンインストール後に残存物を確認するのは既定の流れなので、都度尋ねる必要はないと判断)
-        await RunResidueScanAsync(selectedApp.DisplayName);
+        await RunResidueScanAsync(selectedApp.DisplayName, packageFamilyName: selectedApp.PackageFamilyName);
     }
 
     /// <summary>
     /// 残存物スキャンの共通処理。単体アンインストール後の自動提案からも、
     /// 一括アンインストール後からも呼べるよう独立したメソッドにしている。
     /// </summary>
-    private async Task RunResidueScanAsync(string appName, bool silentIfEmpty = false)
+    private async Task RunResidueScanAsync(string appName, bool silentIfEmpty = false, string? packageFamilyName = null)
     {
         _scanCts?.Dispose();
         _scanCts = new CancellationTokenSource();
@@ -333,7 +333,7 @@ public partial class MainWindow : FluentWindow
             });
             var results = await Task.Run(() =>
                 _scanner.ScanAll(appName, includeMftSearch: false,
-                    cancellationToken: _scanCts.Token, progress: progress), _scanCts.Token);
+                    cancellationToken: _scanCts.Token, progress: progress, packageFamilyName: packageFamilyName), _scanCts.Token);
 
             RefreshLogView();
 
