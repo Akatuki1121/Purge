@@ -9,3 +9,25 @@ literal:feat: support removable MSIX/AppX apps (#102) (#138)==>feat: 削除可�
 literal:chore(deps): bump Microsoft.NET.Test.Sdk to 18.10.1 (#137)==>chore(deps): Microsoft.NET.Test.Sdk を 18.10.1 に更新 (#137)
 literal:Fix/issue 92 keep shortcut (#101)==>fix: Issue #92 のショートカット保持を修正 (#101)
 literal:Initial commit==>初回コミット
+literal:* feat: include removable MSIX/AppX apps (#102)==>* feat: 削除可能な MSIX/AppX アプリに対応 (#102)
+literal:* fix: match Store app display names by package family==>* fix: Store アプリの表示名をパッケージファミリーで照合
+literal:* feat: scan leftover MSIX package data (#102)==>* feat: 残存する MSIX パッケージデータをスキャン (#102)
+literal:Bumps [gitleaks/gitleaks-action](https://github.com/gitleaks/gitleaks-action) from 2 to 3.==>[gitleaks/gitleaks-action] を 2 から 3 に更新。
+literal:- [Release notes](https://github.com/gitleaks/gitleaks-action/releases)==>- [リリースノート](https://github.com/gitleaks/gitleaks-action/releases)
+literal:- [Commits](https://github.com/gitleaks/gitleaks-action/compare/v2...v3)==>- [変更履歴](https://github.com/gitleaks/gitleaks-action/compare/v2...v3)
+literal:Bumps [dependabot/fetch-metadata](https://github.com/dependabot/fetch-metadata) from 2 to 3.==>[dependabot/fetch-metadata] を 2 から 3 に更新。
+literal:- [Release notes](https://github.com/dependabot/fetch-metadata/releases)==>- [リリースノート](https://github.com/dependabot/fetch-metadata/releases)
+literal:- [Commits](https://github.com/dependabot/fetch-metadata/compare/v2...v3)==>- [変更履歴](https://github.com/dependabot/fetch-metadata/compare/v2...v3)
+literal:* feat: localize XAML UI text==>* feat: XAML の UI 文言を日本語化
+literal:* feat: localize code-behind UI text==>* feat: コードビハインドの UI 文言を日本語化
+literal:* feat: add language selection menu==>* feat: 言語選択メニューを追加
+literal:* feat: add runtime language switching==>* feat: 実行中の言語切り替えに対応
+literal:* feat: use installer language as initial locale==>* feat: インストーラーの言語を初期表示言語に使用
+literal:* feat: distinguish missing language preference==>* feat: 言語設定が未指定の場合を区別
+literal:* feat: persist installer language in registry==>* feat: インストーラーの言語設定をレジストリに保存
+literal:* feat: define installer language localization==>* feat: インストーラーの言語別表示文言を定義
+literal:* feat: localize formatted UI messages==>* feat: 書式付き UI メッセージを日本語化
+literal:* fix: localize about dialog text==>* fix: バージョン情報ダイアログの文言を日本語化
+literal:* feat: finish localization of dynamic messages==>* feat: 動的メッセージの日本語化を完了
+literal:* docs: document application language switching==>* docs: アプリの表示言語切り替えについて文書化
+literal:* docs: add localization changelog entry==>* docs: 日本語化に関する変更履歴を追加
