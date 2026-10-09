@@ -16,6 +16,9 @@ namespace Purge
         public string? UninstallString { get; init; }
         public string? DisplayIconPath { get; init; }
         public string RegistryKeyPath { get; init; } = "";
+        public bool IsStorePackage { get; init; }
+        public string? PackageFullName { get; init; }
+        public string? PackageFamilyName { get; init; }
 
         public override string ToString()
         {
@@ -55,6 +58,14 @@ namespace Purge
             foreach (var (hive, subKey) in UninstallKeyLocations)
             {
                 ScanUninstallKey(hive, subKey, apps, seenNames);
+            }
+
+            // MSIX/AppX は通常の Uninstall レジストリキーを持たないため、別経路で列挙する。
+            // Store 側の取得に失敗しても従来の Win32 アプリ一覧は維持する。
+            foreach (var app in new AppxPackageInventory(_log).GetInstalledApps())
+            {
+                if (seenNames.Add(app.DisplayName))
+                    apps.Add(app);
             }
 
             _log.Info("AppList", $"アプリ一覧取得完了", $"{apps.Count}件検出");
