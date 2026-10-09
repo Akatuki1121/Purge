@@ -20,7 +20,7 @@ jobs:
             if (pr.user.login !== 'dependabot[bot]') return;
 
             const body = pr.body || '';
-            const pattern = /(?:Updated|Bumps?)\s+\[([^\]]+)\]\((https?:\/\/[^)]+)\)\s+from\s+([^\s]+)\s+to\s+([^\.\s]+)\./i;
+            const pattern = /(?:Updated|Bumps?)\s+\[([^\]]+)\]\((https?:\/\/[^)]+)\)\s+from\s+([^\s]+)\s+to\s+([^\s]+)\./i;
             const match = body.match(pattern);
             if (!match) {
               core.info('Dependabot の概要文から依存関係名・バージョンを抽出できないため、変更しません。');
