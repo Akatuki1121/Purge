@@ -1,0 +1,11 @@
+# Exact English phrases in historical commit messages.
+# Format: literal:old text==>replacement text
+literal:fix: correct final MSI license verification (#141)==>fix: MSIライセンスの最終検証を修正 (#141)
+literal:* fix: compare MSI UpgradeCode as GUID==>* fix: MSI の UpgradeCode を GUID として比較
+literal:* fix: resolve localized MSI license RTF paths==>* fix: MSI のローカライズ済みライセンス RTF パスを解決
+literal:fix: correct MSI metadata and embedded license verification (#140)==>fix: MSI メタデータと埋め込みライセンスの検証を修正 (#140)
+literal:fix: stage each localized MSI immediately after build (#139)==>fix: ローカライズ版 MSI をビルド直後にステージング (#139)
+literal:feat: support removable MSIX/AppX apps (#102) (#138)==>feat: 削除可能な MSIX/AppX アプリに対応 (#102) (#138)
+literal:chore(deps): bump Microsoft.NET.Test.Sdk to 18.10.1 (#137)==>chore(deps): Microsoft.NET.Test.Sdk を 18.10.1 に更新 (#137)
+literal:Fix/issue 92 keep shortcut (#101)==>fix: Issue #92 のショートカット保持を修正 (#101)
+literal:Initial commit==>初回コミット
