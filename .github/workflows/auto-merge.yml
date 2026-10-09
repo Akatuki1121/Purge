@@ -1,0 +1,55 @@
+name: 自動マージ設定
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependabotのメタデータ取得
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 日本語の説明コメントを投稿
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          NAMES: ${{ steps.meta.outputs.dependency-names }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+        run: |
+          case "$UPDATE_TYPE" in
+            version-update:semver-patch) KIND="パッチ更新(低リスク)" ;;
+            version-update:semver-minor) KIND="マイナー更新(中リスク)" ;;
+            version-update:semver-major) KIND="メジャー更新(高リスク・自動マージ対象外)" ;;
+            *) KIND="不明" ;;
+          esac
+          gh pr comment "$PR_URL" --body "依存関係の自動更新PRです。
+          - 対象: ${NAMES}
+          - 更新種別: ${KIND}
+          - テストが通れば自動マージされます(メジャー更新を除く)。"
+
+      - name: テスト通過後の自動マージを有効化(メジャー更新を除く)
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
+
+  own:
+    if: github.actor == 'Akatuki1121'
+    runs-on: ubuntu-latest
+    steps:
+      - name: テスト通過後の自動マージを有効化
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
