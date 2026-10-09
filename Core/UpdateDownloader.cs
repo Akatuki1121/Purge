@@ -75,6 +75,26 @@ public static class UpdateDownloader
     /// </summary>
     public static void LaunchInstaller(string msiPath)
     {
+        // #91: 管理者権限で動いているPurgeからは、explorer経由ではなくmsiexecを直接起動する。
+        // explorer経由だと昇格が引き継がれず、MSIのクライアントが非昇格になって
+        // インストーラー開始時と「Purgeを起動する」のたびにUACが出てしまう。
+        // 昇格済みのままmsiexecを起動すると、MSIクライアントも昇格済みになりUACは出ない。
+        // PURGE_ELEVATED_UPDATE=1は、完了画面の起動でexplorer経由(UACあり)ではなく
+        // 直接起動(UACなし)を使うための目印(installer/ShortcutsUI.wxs)。
+        if (ElevationChecker.IsRunningAsAdministrator())
+        {
+            var elevated = new ProcessStartInfo
+            {
+                FileName = "msiexec.exe",
+                UseShellExecute = false,
+            };
+            elevated.ArgumentList.Add("/i");
+            elevated.ArgumentList.Add(msiPath);
+            elevated.ArgumentList.Add("PURGE_ELEVATED_UPDATE=1");
+            Process.Start(elevated);
+            return;
+        }
+
         var psi = new ProcessStartInfo
         {
             FileName = "explorer.exe",
