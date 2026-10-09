@@ -1,0 +1,46 @@
+name: Dependabot PR 日本語化
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  localize:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: PRタイトルと概要を日本語化
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (pr.user.login !== 'dependabot[bot]') return;
+
+            const body = pr.body || '';
+            const pattern = /(?:Updated|Bumps?)\s+\[([^\]]+)\]\((https?:\/\/[^)]+)\)\s+from\s+([^\s]+)\s+to\s+([^\s]+)\./i;
+            const match = body.match(pattern);
+            if (!match) {
+              core.info('Dependabot の概要文から依存関係名・バージョンを抽出できないため、変更しません。');
+              return;
+            }
+
+            const [, name, url, oldVersion, newVersion] = match;
+            const isGitHubAction = pr.head.ref.startsWith('dependabot/github_actions/');
+            const prefix = isGitHubAction ? 'ci(依存関係)' : 'chore(依存関係)';
+            const title = `${prefix}: ${name} を ${oldVersion} から ${newVersion} に更新`;
+            const japaneseSummary = `依存関係 [${name}](${url}) を **${oldVersion}** から **${newVersion}** に更新しました。`;
+            const localizedBody = body.replace(pattern, japaneseSummary);
+
+            if (title !== pr.title || localizedBody !== body) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title,
+                body: localizedBody
+              });
+              core.info(`PR #${pr.number} のタイトルと概要を日本語化しました。`);
+            }
