@@ -1,0 +1,25 @@
+# pre-commit設定(#109)。
+# コミット前にgitleaksで秘密情報を検出し、履歴への混入をpush前の段階で防ぐ。
+#
+# 使い方(開発者は一度だけ実行):
+#   pip install pre-commit
+#   pre-commit install
+#
+# 以後、git commit のたびに検査が走る。検出した場合はコミットが失敗する。
+# 誤検出の場合は pre-commit run --files <ファイル> で確認する。
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+        # リポジトリルートの .gitleaks.toml の設定を使う
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: '^\.github/(ISSUE_TEMPLATE|workflows)/.*\.ya?ml$'
+      - id: end-of-file-fixer
+      - id: trailing-whitespace

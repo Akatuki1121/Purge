@@ -1,0 +1,30 @@
+name: Branch Cleanup
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cleanup merged branch
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          echo "## Branch Cleanup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 同一名のブランチが存在するかチェック
+          if git ls-remote --heads origin "refs/heads/$BRANCH" | grep -q .; then
+            echo "Deleting branch: $BRANCH"
+            git push origin --delete "$BRANCH" || true
+            echo "- ✅ Deleted: \`$BRANCH\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ℹ️ Branch already deleted: \`$BRANCH\`" >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

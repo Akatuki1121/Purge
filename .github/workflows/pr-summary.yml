@@ -1,0 +1,102 @@
+name: PR Summary
+
+# PRの作成・更新時に、mainからの乖離状況と影響範囲をJob Summaryへ出力する(#111)。
+# コメントは作成せず、Job Summaryで確認できる構成にする。
+
+on:
+  pull_request:
+    branches: ["main"]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Write PR summary
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch -q origin main
+          BASE=$(git merge-base origin/main "$HEAD_SHA")
+
+          DIFFSTAT=$(git diff --shortstat "$BASE" "$HEAD_SHA" || true)
+          FILES=$(git diff --name-only "$BASE" "$HEAD_SHA" || true)
+          CHANGED=$(echo "$FILES" | grep -c . || true)
+          ADD_DEL=$(echo "$DIFFSTAT" | grep -oE '[0-9]+ insertion[s]?\([+]\), [0-9]+ deletion[s]?\([-]\)' || echo '-')
+
+          AHEAD=$(git rev-list --count "origin/main..$HEAD_SHA" 2>/dev/null || echo '?')
+          BEHIND=$(git rev-list --count "$HEAD_SHA..origin/main" 2>/dev/null || echo '?')
+
+          # インストーラー・更新機能への変更
+          INSTALLER_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/Update|scripts/Verify-MsiUpgrade)' || true)
+          # アプリ本体への変更
+          APP_FILES=$(echo "$FILES" | grep -cE '^(Core/|UI/)' || true)
+          # ドキュメントのみか
+          DOC_FILES=$(echo "$FILES" | grep -cE '\.(md)$' || true)
+          DOCS_ONLY=$([ "$CHANGED" -gt 0 ] && [ "$DOC_FILES" -eq "$CHANGED" ] && echo はい || echo いいえ)
+          # CHANGELOG.mdの更新
+          CHANGELOG=$(echo "$FILES" | grep -c '^CHANGELOG\.md$' || true)
+          # 関連Issueへの参照
+          ISSUE_REFS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body --jq '[body | scan("#[0-9]+")] | unique | join(", ")' 2>/dev/null || echo '')
+          [ -z "$ISSUE_REFS" ] && ISSUE_REFS='(なし)'
+
+          # 実行対象となる検証
+          CHECKS=""
+          if [ "$INSTALLER_FILES" -gt 0 ]; then
+            CHECKS="- MSI検証(ci.yml / verify-msi.yml)
+          - MSI更新互換性マトリクス(Verify MSI Upgrade Matrix)
+          "
+          fi
+          if [ "$APP_FILES" -gt 0 ]; then
+            CHECKS="- ビルド・単体テスト(ci.yml / build-and-test)
+          "
+          fi
+          if [ "$DOCS_ONLY" = "はい" ]; then
+            CHECKS="${CHECKS}- ドキュメントのみのため、重い検証はスキップされます
+          "
+          fi
+          [ -z "$CHECKS" ] && CHECKS="- (対象なし)"
+
+          {
+            echo "## PRサマリー (#${PR_NUMBER})"
+            echo ""
+            echo "### mainからの乖離状況"
+            echo ""
+            echo "| 項目 | 値 |"
+            echo "| --- | --- |"
+            echo "| 先行コミット数 | ${AHEAD} |"
+            echo "| 落後コミット数 | ${BEHIND} |"
+            echo ""
+            echo "### 変更の規模"
+            echo ""
+            echo "| 項目 | 値 |"
+            echo "| --- | --- |"
+            echo "| 変更ファイル数 | ${CHANGED} |"
+            echo "| 追加・削除行 | ${ADD_DEL} |"
+            echo ""
+            echo "### 影響範囲"
+            echo ""
+            echo "| 項目 | 値 |"
+            echo "| --- | --- |"
+            echo "| インストーラー・更新機能への変更 | $([ "$INSTALLER_FILES" -gt 0 ] && echo あり || echo なし) |"
+            echo "| ドキュメントのみの変更 | ${DOCS_ONLY} |"
+            echo "| CHANGELOG.md の更新 | $([ "$CHANGELOG" -gt 0 ] && echo あり || echo なし) |"
+            echo "| 関連Issue | ${ISSUE_REFS} |"
+            echo ""
+            echo "### 実行対象となる検証"
+            echo ""
+            echo "${CHECKS}"
+          } >> "$GITHUB_STEP_SUMMARY"

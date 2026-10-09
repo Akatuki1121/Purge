@@ -14,7 +14,7 @@
          afterInstallInitialize(旧版を先に全削除)だと、旧版のショートカットが一度消えてから新版が作り直す。
          afterInstallExecuteは新版を旧版の上にインストールしてから、新版に存在しないコンポーネントだけを
          旧版側から削除する。ショートカットのコンポーネントはGUIDが固定のため新旧で共有され、
-         参照カウントが増減するだけで削除も再作成もされない(scripts/Verify-MsiUpgrade.ps1でCI検証)。
+         参照カウントが増減するだけで削除も再作成もされない(scripts/Verify-ShortcutContinuity.ps1でCI検証)。
          この方式はコンポーネントGUIDを変えないことが前提。 -->
     <MajorUpgrade DowngradeErrorMessage="より新しいバージョンのPurgeが既にインストールされています。"
                   Schedule="afterInstallExecute" />
@@ -92,6 +92,15 @@
     <CustomAction Id="LaunchApplication"
                   Directory="INSTALLFOLDER"
                   ExeCommand="&quot;[WindowsFolder]explorer.exe&quot; &quot;[INSTALLFOLDER]Purge.exe&quot;"
+                  Return="asyncNoWait"
+                  Impersonate="yes" />
+
+    <!-- #91: 昇格済みのPurgeがmsiexecを直接起動したアップデート(PURGE_ELEVATED_UPDATE=1)では、
+         MSIクライアントが昇格済みのため、Purge.exeを直接起動してもUACは出ずに管理者権限で起動する。
+         それ以外(ダブルクリックでの新規インストール等)は上のexplorer経由(UACあり)を使う。 -->
+    <CustomAction Id="LaunchApplicationDirect"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]Purge.exe&quot;"
                   Return="asyncNoWait"
                   Impersonate="yes" />
 

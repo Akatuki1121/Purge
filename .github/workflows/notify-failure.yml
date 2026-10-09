@@ -1,0 +1,86 @@
+name: Notify Workflow Failure
+
+# mainブランチのワークフローが失敗したとき、失敗したジョブ・ステップと
+# エラー本文を抽出してDiscord(Webhook)へ通知する。
+#
+# 有効化するには、リポジトリの Settings > Secrets and variables > Actions に
+# ACTIONS_NOTIFY_WEBHOOK_URL という名前でDiscord Webhook URLを登録する。
+# 未設定の場合は通知を送らず成功扱いで終了する(ワークフロー自体は失敗にしない)。
+#
+# 通知対象: conclusion が failure / startup_failure の実行
+# (成功・スキップ・キャンセルは通知しない)
+#
+# 既知の挙動: workflow_runのみをトリガーとするワークフローは、pushごとに
+# 「workflow file issue」の失敗ラン(ジョブ0件)がActions履歴に表示されることが
+# ある。この失敗ランは通知を発火せず、マージにも影響しないため無害。
+# 本ワークフローが通知するのは、他ワークフローの実行が失敗したときのみ。
+
+on:
+  workflow_run:
+    types: [completed]
+
+permissions:
+  actions: read
+
+jobs:
+  notify:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' ||
+      github.event.workflow_run.conclusion == 'startup_failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Collect failure details
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          WF_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WF_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WF_URL: ${{ github.event.workflow_run.html_url }}
+          COMMIT_MSG: ${{ github.event.workflow_run.head_commit.message }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### ⚠️ ワークフロー失敗"
+            echo ""
+            echo "- ワークフロー: ${WF_NAME}"
+            echo "- 結果: ${WF_CONCLUSION}"
+            echo "- ブランチ/タグ: ${WF_BRANCH}"
+            echo "- コミット: \`${COMMIT_SHA::7}\` ${COMMIT_MSG}"
+            echo "- 実行URL: ${WF_URL}"
+          } > message.md
+
+          # 失敗したジョブと失敗ステップを取得
+          gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
+            --jq '.jobs[] | select(.conclusion == "failure") | "- ジョブ: \(.name) / 失敗ステップ: \([.steps[] | select(.conclusion == "failure") | .name] | join(", "))"' \
+            >> message.md || true
+
+          # 失敗ステップのログからエラー行を抽出
+          if gh run view "${RUN_ID}" --repo "${REPO}" --log-failed > failed.log 2>/dev/null && [ -s failed.log ]; then
+            grep -E '##\[error\]|##\[warning\]|error [A-Z]+[0-9]+|Error:|エラー' failed.log | head -15 > errors.log || true
+            if [ -s errors.log ]; then
+              echo "" >> message.md
+              echo "**原因(エラー抜粋):**" >> message.md
+              echo '```' >> message.md
+              head -c 1200 errors.log >> message.md
+              echo '```' >> message.md
+            fi
+          fi
+
+          cat message.md
+
+      - name: Send Discord notification
+        env:
+          WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "ACTIONS_NOTIFY_WEBHOOK_URL が未設定のため、通知を送らずスキップします。"
+            exit 0
+          fi
+          # Discordは2000文字制限のため頭から切り詰める
+          MSG=$(head -c 1800 message.md)
+          jq -n --arg c "$MSG" '{content: $c}' | curl -sS -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK_URL"

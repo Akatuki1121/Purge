@@ -1,7 +1,7 @@
 name: Verify MSI upgrade (manual)
 
 # アップグレード時にショートカットが削除・再作成されないことを確認する(#92)。
-# scripts/Verify-MsiUpgrade.ps1 が旧版→新版の上書きインストールを実際に行って検証する。
+# scripts/Verify-ShortcutContinuity.ps1 が旧版→新版の上書きインストールを実際に行って検証する。
 # verify/** ブランチへのpush、またはActionsタブからの手動実行で動く。GitHub Releasesへの公開は行わない。
 
 on:
@@ -45,7 +45,7 @@ jobs:
 
       - name: Verify upgrade keeps shortcuts
         shell: pwsh
-        run: ./scripts/Verify-MsiUpgrade.ps1 -OldMsi "$env:RUNNER_TEMP/msi/old.msi" -NewMsi "$env:RUNNER_TEMP/msi/new.msi"
+        run: ./scripts/Verify-ShortcutContinuity.ps1 -OldMsi "$env:RUNNER_TEMP/msi/old.msi" -NewMsi "$env:RUNNER_TEMP/msi/new.msi"
 
       - name: Upload msiexec logs
         if: always()
