@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" Codepage="1252" xmlns="http://wixtoolset.org/schemas/v4/wxl">
   <String Id="InstallLanguage" Value="en" />
-  <String Id="LicenseRtfPath" Value="..\License.en-us.rtf" />
+  <String Id="LicenseRtfPath" Value="installer\License.en-us.rtf" />
   <String Id="ShortcutsDlgTitle" Value="{\WixUI_Font_Title}Shortcuts" />
   <String Id="ShortcutsDlgDescription" Value="Choose which shortcuts to create." />
   <String Id="ShortcutsDlgStartMenu" Value="Create a Start menu shortcut" />
