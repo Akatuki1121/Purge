@@ -3,7 +3,7 @@
   <String Id="InstallLanguage" Value="ja" />
   <String Id="LicenseRtfPath" Value="Loc\..\License.ja-jp.rtf" />
   <String Id="ShortcutsDlgTitle" Value="{\WixUI_Font_Title}ショートカット" />
-  <String Id="ShortcutsDlgDescription" Value="インストールするショートカットを作成してください。" />
+  <String Id="ShortcutsDlgDescription" Value="インストールするショートカットを選択してください。" />
   <String Id="ShortcutsDlgStartMenu" Value="スタートメニューにショートカットを作成する" />
   <String Id="ShortcutsDlgDesktop" Value="デスクトップにショートカットを作成する" />
   <String Id="LaunchAppCheckbox" Value="Purgeを起動する" />
