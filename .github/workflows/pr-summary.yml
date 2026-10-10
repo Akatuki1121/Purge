@@ -35,7 +35,8 @@ jobs:
           BASE=$(git merge-base origin/main "$HEAD_SHA")
 
           DIFFSTAT=$(git diff --shortstat "$BASE" "$HEAD_SHA" || true)
-          FILES=$(git diff --name-only "$BASE" "$HEAD_SHA" || true)
+          # Match CI classification: count both source and destination paths for renames.
+          FILES=$(git diff --name-only --no-renames "$BASE" "$HEAD_SHA" || true)
           CHANGED=$(echo "$FILES" | grep -c . || true)
           ADD_DEL=$(echo "$DIFFSTAT" | grep -oE '[0-9]+ insertion[s]?\([+]\), [0-9]+ deletion[s]?\([-]\)' || echo '-')
 

@@ -50,7 +50,8 @@ jobs:
             RANGE="$BASE..$GITHUB_SHA"
           fi
 
-          FILES=$(git diff --name-only "$RANGE")
+          # Include both sides of renames so moving code into an allowed path cannot hide its removal.
+          FILES=$(git diff --name-only --no-renames "$RANGE")
           WORKFLOW_ONLY=true
           LIGHTWEIGHT_ONLY=true
           if [ -z "$FILES" ]; then
