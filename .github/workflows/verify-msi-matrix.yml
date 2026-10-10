@@ -5,8 +5,8 @@ name: Verify MSI Upgrade Matrix
 #   - 最新の公開済みリリース → リリース候補(RC)
 #   - ひとつ前の公開済みリリース → RC
 #   - 同一バージョンのMSI再実行
-# インストーラー・更新機能・検証スクリプト・ワークフロー自体の変更があるPRでのみ
-# 実行し、Windowsランナーの利用時間を抑える。
+# インストーラー・更新機能・検証スクリプト、またはこのマトリクス自体の変更があるPRでのみ
+# 実行し、無関係なワークフロー変更でWindowsランナーを消費しない。
 # 依存関係のbumpのみを行うDependabotのPRでは実行しない。
 
 on:
@@ -16,7 +16,7 @@ on:
       - 'installer/**'
       - 'Core/UpdateDownloader.cs'
       - 'scripts/Verify-MsiUpgrade.ps1'
-      - '.github/workflows/**'
+      - '.github/workflows/verify-msi-matrix.yml'
 
 jobs:
   detect-changes:
