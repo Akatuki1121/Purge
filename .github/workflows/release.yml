@@ -145,21 +145,37 @@ jobs:
     needs: create-release
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Checkout main
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Update CURRENT_STATE.md
+      - name: Update state on a unique branch
+        id: state
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAG: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          TAG="${GITHUB_REF_NAME}"
+          set -euo pipefail
           VERSION="${TAG#v}"
-          SHA="${GITHUB_SHA}"
-          URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+          URL="${GITHUB_SERVER_URL}/${REPO}/releases/tag/${TAG}"
           DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          BRANCH="automation/release-state-${TAG//./-}-${RUN_ID}"
           {
             echo "# リリース状態 (CURRENT_STATE)"
             echo ""
@@ -172,12 +188,14 @@ jobs:
             echo ""
             echo "- このファイルはGitHub Release公開成功時にのみ自動更新されます(#108)。"
           } > CURRENT_STATE.md
-
-      - name: Commit and push
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${BRANCH}"
           git add CURRENT_STATE.md
-          git commit -m "chore: CURRENT_STATE.md を ${GITHUB_REF_NAME} に更新 [skip ci]" || echo "変更なし"
-          git pull --rebase origin main
-          git push origin main
+          git commit -m "chore: CURRENT_STATE.md を ${TAG} に更新 [skip ci]"
+          git push --set-upstream origin "${BRANCH}"
+          PR_URL=$(gh pr create --repo "${REPO}" --base main --head "${BRANCH}" \
+            --title "chore: update CURRENT_STATE for ${TAG}" \
+            --body "Automated release-state update after successful release and MSI verification for ${TAG}.")
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          gh pr merge "${PR_URL}" --repo "${REPO}" --auto --squash
