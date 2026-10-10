@@ -44,7 +44,7 @@ jobs:
 
           # インストーラー・更新機能への変更
           INSTALLER_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/Update|scripts/Verify-MsiUpgrade)' || true)
-          MATRIX_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/UpdateDownloader\\.cs$|scripts/Verify-MsiUpgrade\\.ps1$|\\.github/workflows/verify-msi-matrix\\.yml$)' || true)
+          MATRIX_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/UpdateDownloader\.cs$|scripts/Verify-MsiUpgrade\.ps1$|\.github/workflows/verify-msi-matrix\.yml$)' || true)
 
           # CIと同じ許可リストで、変更ファイルがすべてドキュメントかを判定
           DOCS_ONLY=true
