@@ -33,7 +33,7 @@ jobs:
               - 'installer/**'
               - 'Core/UpdateDownloader.cs'
               - 'scripts/Verify-MsiUpgrade.ps1'
-              - '.github/workflows/**'
+              - '.github/workflows/verify-msi-matrix.yml'
 
   verify-matrix:
     needs: detect-changes
