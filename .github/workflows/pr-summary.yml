@@ -46,10 +46,10 @@ jobs:
           INSTALLER_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/Update|scripts/Verify-MsiUpgrade)' || true)
           MATRIX_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/UpdateDownloader\.cs$|scripts/Verify-MsiUpgrade\.ps1$|\.github/workflows/verify-msi-matrix\.yml$)' || true)
 
-          # CIと同じ許可リストで、変更ファイルがすべてドキュメントかを判定
-          DOCS_ONLY=true
+          # CIと同じ許可リストで、変更ファイルがすべて軽量対象かを判定
+          LIGHTWEIGHT_ONLY=true
           if [ "$CHANGED" -eq 0 ]; then
-            DOCS_ONLY=false
+            LIGHTWEIGHT_ONLY=false
           else
             while IFS= read -r file; do
               case "$file" in
@@ -59,13 +59,13 @@ jobs:
                   if [[ "$file" != */* && "$file" == *.md ]]; then
                     :
                   else
-                    DOCS_ONLY=false
+                    LIGHTWEIGHT_ONLY=false
                   fi
                   ;;
               esac
             done <<< "$FILES"
           fi
-          DOCS_ONLY=$([ "$DOCS_ONLY" = "true" ] && echo はい || echo いいえ)
+          LIGHTWEIGHT_ONLY=$([ "$LIGHTWEIGHT_ONLY" = "true" ] && echo はい || echo いいえ)
 
           # CHANGELOG.mdの更新
           CHANGELOG=$(echo "$FILES" | grep -c '^CHANGELOG\.md$' || true)
@@ -73,15 +73,17 @@ jobs:
           ISSUE_REFS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body --jq '[body | scan("#[0-9]+")] | unique | join(", ")' 2>/dev/null || echo '')
           [ -z "$ISSUE_REFS" ] && ISSUE_REFS='(なし)'
 
-          # CIの実行条件と一致させる。ドキュメントのみなら重いビルド・テストは省略。
+          # CIの実行条件と一致させる。軽量変更のみなら重いビルド・テストは省略。
           CHECKS=""
-          if [ "$DOCS_ONLY" = "はい" ]; then
-            CHECKS+=$'- ドキュメントのみのため、ビルド・単体テストはスキップされます\n'
+          if [ "$LIGHTWEIGHT_ONLY" = "はい" ]; then
+            CHECKS+=$'- 軽量変更のみのため、ビルド・単体テストはスキップされます\n'
           else
             CHECKS+=$'- ビルド・単体テスト(ci.yml / build-and-test)\n'
           fi
           if [ "$INSTALLER_FILES" -gt 0 ]; then
             CHECKS+=$'- MSI検証(ci.yml / verify-msi.yml)\n'
+          fi
+          if [ "$MATRIX_FILES" -gt 0 ]; then
             CHECKS+=$'- MSI更新互換性マトリクス(Verify MSI Upgrade Matrix)\n'
           fi
           [ -z "$CHECKS" ] && CHECKS="- (対象なし)"
@@ -108,7 +110,7 @@ jobs:
             echo "| 項目 | 値 |"
             echo "| --- | --- |"
             echo "| インストーラー・更新機能への変更 | $([ "$INSTALLER_FILES" -gt 0 ] && echo あり || echo なし) |"
-            echo "| ドキュメントのみの変更 | ${DOCS_ONLY} |"
+            echo "| 軽量変更のみの変更 | ${LIGHTWEIGHT_ONLY} |"
             echo "| CHANGELOG.md の更新 | $([ "$CHANGELOG" -gt 0 ] && echo あり || echo なし) |"
             echo "| 関連Issue | ${ISSUE_REFS} |"
             echo ""
