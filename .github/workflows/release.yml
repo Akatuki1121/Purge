@@ -214,7 +214,7 @@ jobs:
             --generate-notes
 
   update-state:
-    needs: create-release
+    needs: [create-release, build-msi]
     runs-on: ubuntu-latest
     permissions:
       contents: read
