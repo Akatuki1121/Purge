@@ -31,16 +31,16 @@ jobs:
           case "$UPDATE_TYPE" in
             version-update:semver-patch) KIND="パッチ更新(自動マージ候補)" ;;
             version-update:semver-minor) KIND="マイナー更新(自動マージ候補)" ;;
-            version-update:semver-major) KIND="メジャー更新(手動確認)" ;;
+            version-update:semver-major) KIND="メジャー更新(自動マージ候補)" ;;
             *) KIND="不明(手動確認)" ;;
           esac
           gh pr comment "$PR_URL" --body "Dependabotの依存関係更新PRです。
           - 対象: ${NAMES}
           - 更新種別: ${KIND}
-          - パッチ/マイナー更新のみ、必須チェック通過後の自動マージ対象です。メジャー更新・不明な更新種別は自動マージしません。"
+          - パッチ/マイナー/メジャー更新は、必須チェック通過後の自動マージ対象です。不明な更新種別は自動マージしません。"
 
-      - name: パッチ/マイナー更新のみ自動マージを有効化
-        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
+      - name: 既知の更新種別は自動マージを有効化
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.update-type == 'version-update:semver-major'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
