@@ -92,8 +92,11 @@ jobs:
           set -euo pipefail
           TAG=$(gh api "repos/$REPO/releases" --jq '[.[] | select(.draft == false and .prerelease == false)][0].tag_name' || true)
           if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
-            gh release download "$TAG" --repo "$REPO" --pattern '*-ja.msi' --dir baseline --clobber
-            mv baseline/*-ja.msi baseline/baseline.msi
+            mkdir -p baseline/ja baseline/en
+            gh release download "$TAG" --repo "$REPO" --pattern '*-ja.msi' --dir baseline/ja --clobber
+            gh release download "$TAG" --repo "$REPO" --pattern '*-en.msi' --dir baseline/en --clobber
+            mv baseline/ja/*-ja.msi baseline/baseline-ja.msi
+            mv baseline/en/*-en.msi baseline/baseline-en.msi
             echo "tag=$TAG" >> "$GITHUB_OUTPUT"
             echo "ベースライン(直前の公開済みリリース): $TAG"
           else
@@ -105,10 +108,15 @@ jobs:
         shell: pwsh
         run: |
           $v = '${{ needs.build-msi.outputs.version }}'
-          $msi = "$PWD/dist/Purge-$v-win-x64-ja.msi"
-          $params = @{ MsiPath = $msi; ExpectedVersion = $v }
-          if (Test-Path "$PWD/baseline/baseline.msi") { $params.BaselineMsiPath = "$PWD/baseline/baseline.msi" }
-          ./scripts/Verify-ReleaseMsi.ps1 @params
+          foreach ($culture in @('ja', 'en')) {
+            Write-Host "=== Release MSI verification: $culture ==="
+            $msi = "$PWD/dist/Purge-$v-win-x64-$culture.msi"
+            $params = @{ MsiPath = $msi; ExpectedVersion = $v }
+            $baseline = "$PWD/baseline/baseline-$culture.msi"
+            if (Test-Path $baseline) { $params.BaselineMsiPath = $baseline }
+            ./scripts/Verify-ReleaseMsi.ps1 @params
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Upload logs on failure
         if: failure()
