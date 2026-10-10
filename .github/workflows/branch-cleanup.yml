@@ -1,33 +1,84 @@
 name: Branch Cleanup
+
 on:
   pull_request:
     types: [closed]
     branches: [main]
+  schedule:
+    - cron: '31 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
-    permissions:
-      contents: write
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Cleanup merged branch
+      - name: Cleanup merged branches
         env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           echo "## Branch Cleanup" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
-          # remote-query failure must fail the job, not look like a deleted branch.
-          REMOTE_REF=$(git ls-remote --heads origin "refs/heads/$BRANCH")
-          if [[ -n "$REMOTE_REF" ]]; then
-            echo "Deleting branch: $BRANCH"
-            git push origin --delete "$BRANCH"
-            echo "- ✅ Deleted: `$BRANCH`" >> "$GITHUB_STEP_SUMMARY"
+          delete_if_unchanged() {
+            local branch="$1"
+            local expected_sha="$2"
+            local open_pr_count
+            local remote_ref
+            local actual_sha
+
+            # Never delete a branch still used by an open PR.
+            open_pr_count=$(gh pr list --repo "$REPO" --head "$branch" --state open --json number --jq 'length')
+            if [[ "$open_pr_count" != "0" ]]; then
+              echo "- ℹ️ Skipped: \`$branch\` (open PR exists)" >> "$GITHUB_STEP_SUMMARY"
+              return 0
+            fi
+
+            # A failed remote query must stop the job, not look like an absent branch.
+            remote_ref=$(git ls-remote --heads origin "refs/heads/$branch")
+            if [[ -z "$remote_ref" ]]; then
+              echo "- ℹ️ Already absent: \`$branch\`" >> "$GITHUB_STEP_SUMMARY"
+              return 0
+            fi
+
+            actual_sha="${remote_ref%%$'\t'*}"
+            # Branches may have been reused or advanced after the merged PR.
+            if [[ "$actual_sha" != "$expected_sha" ]]; then
+              echo "- ℹ️ Skipped: \`$branch\` (branch tip changed after merge)" >> "$GITHUB_STEP_SUMMARY"
+              return 0
+            fi
+
+            git push origin --delete "$branch"
+            echo "- ✅ Deleted: \`$branch\`" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            # A fork PR's branch name must never be applied to this repository.
+            if [[ "$PR_HEAD_REPO" != "$REPO" ]]; then
+              echo "- ℹ️ Skipped fork branch: \`$PR_BRANCH\`" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            delete_if_unchanged "$PR_BRANCH" "$PR_HEAD_SHA"
           else
-            echo "- ℹ️ Branch already deleted: `$BRANCH`" >> "$GITHUB_STEP_SUMMARY"
+            # GITHUB_TOKEN-triggered auto-merges may not emit follow-up workflow runs.
+            # Sweep merged PRs as a fallback, deleting only unchanged same-repository heads.
+            CANDIDATES=$(gh api "repos/$REPO/pulls?state=closed&base=main&per_page=100" --paginate \
+              --jq '.[] | select(.merged_at != null and .head.repo.full_name == env.REPO) | [.head.ref, .head.sha] | @tsv')
+            while IFS=$'\t' read -r branch expected_sha; do
+              [[ -z "$branch" || -z "$expected_sha" ]] && continue
+              delete_if_unchanged "$branch" "$expected_sha"
+            done <<< "$CANDIDATES"
           fi
