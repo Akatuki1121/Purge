@@ -59,7 +59,7 @@ jobs:
             RANGE="$BASE..$GITHUB_SHA"
           fi
           FILES=$(git diff --name-only "$RANGE")
-          if [ -n "$FILES" ] && ! printf '%s\\n' "$FILES" | grep -qv '^.github/workflows/'; then
+          if [ -n "$FILES" ] && ! printf '%s\n' "$FILES" | grep -qv '^.github/workflows/'; then
             echo "workflow-only=true" >> "$GITHUB_OUTPUT"
           else
             echo "workflow-only=false" >> "$GITHUB_OUTPUT"
