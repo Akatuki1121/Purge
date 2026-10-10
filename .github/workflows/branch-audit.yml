@@ -38,23 +38,28 @@ jobs:
 
             echo "### PR未作成ブランチ"
             echo ""
-            echo "| ブランチ | mainからの先行コミット数 | 最終更新日時 |"
-            echo "| --- | --- | --- |"
+            echo "| ブランチ | mainからの先行コミット数 | 最終更新日時 | PR確認 |"
+            echo "| --- | --- | --- | --- |"
             found=0
             for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin/main$'); do
               branch="${ref#origin/}"
-              # そのブランチをheadとするPRが存在するか(作成済み・クローズ済み両方)
-              pr_count=$(gh pr list --repo "$REPO" --head "$branch" --state all --json number --jq 'length' 2>/dev/null || echo 1)
-              [ "$pr_count" != "0" ] && continue
+              # API取得失敗を「PRあり」と扱って未作成ブランチを隠さない。
+              if pr_count=$(gh pr list --repo "$REPO" --head "$branch" --state all --json number --jq 'length' 2>/dev/null); then
+                if [ "$pr_count" != "0" ]; then
+                  continue
+                fi
+                pr_status="未作成"
+              else
+                pr_status="確認失敗"
+              fi
               ahead=$(git rev-list --count "origin/main..refs/remotes/origin/$branch" 2>/dev/null || echo '?')
               last=$(git log -1 --format='%ci' "refs/remotes/origin/$branch" | cut -d' ' -f1)
-              echo "| \`$branch\` | $ahead | $last |"
+              echo "| \`$branch\` | $ahead | $last | $pr_status |"
               found=1
             done
             if [ "$found" -eq 0 ]; then
-              echo "| (PR未作成ブランチはありません) | | |"
-            fi
-            echo ""
+              echo "| (PR未作成ブランチはありません) | | | |"
+            fi            echo ""
 
             echo "### 全ブランチの乖離状況"
             echo ""
