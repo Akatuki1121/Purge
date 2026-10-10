@@ -172,6 +172,63 @@ public partial class MainWindow : FluentWindow
         }
     }
 
+    private string _sortColumn = "DisplayName";
+    private bool _sortAscending = true;
+
+    private static readonly string[] AppSortTieBreakers =
+    {
+        "DisplayName",
+        "PublisherDisplay",
+        "DisplayVersion",
+        "InstallLocation"
+    };
+
+    private void AppListView_ColumnHeaderClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not System.Windows.Controls.GridViewColumnHeader header ||
+            header.Tag is not string propertyName ||
+            _appView == null)
+        {
+            return;
+        }
+
+        if (string.Equals(_sortColumn, propertyName, StringComparison.Ordinal))
+        {
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            _sortColumn = propertyName;
+            _sortAscending = true;
+        }
+
+        ApplyAppSort(_sortColumn, _sortAscending);
+    }
+
+    private void ApplyAppSort(string propertyName, bool ascending)
+    {
+        if (_appView == null)
+        {
+            return;
+        }
+
+        _sortColumn = propertyName;
+        _sortAscending = ascending;
+        _appView.SortDescriptions.Clear();
+
+        var direction = ascending ? ListSortDirection.Ascending : ListSortDirection.Descending;
+        _appView.SortDescriptions.Add(new SortDescription(propertyName, direction));
+
+        // 同値の行も毎回同じ順序にし、一覧が不必要に入れ替わらないようにする。
+        foreach (var tieBreaker in AppSortTieBreakers)
+        {
+            if (!string.Equals(tieBreaker, propertyName, StringComparison.Ordinal))
+            {
+                _appView.SortDescriptions.Add(new SortDescription(tieBreaker, ListSortDirection.Ascending));
+            }
+        }
+    }
+
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         LoadApps();
@@ -196,6 +253,7 @@ public partial class MainWindow : FluentWindow
         _totalAppCount = items.Count;
         _appView = CollectionViewSource.GetDefaultView(items);
         _appView.Filter = FilterApp;
+        ApplyAppSort("DisplayName", ascending: true);
         AppListView.ItemsSource = _appView;
         UpdateAppCount();
         UpdateEmptyState();
