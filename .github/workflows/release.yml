@@ -208,7 +208,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "${BRANCH}"
           git add CURRENT_STATE.md
-          git commit -m "chore: CURRENT_STATE.md を ${TAG} に更新 [skip ci]"
+          git commit -m "chore: CURRENT_STATE.md を ${TAG} に更新"
           git push --set-upstream origin "${BRANCH}"
           PR_URL=$(gh pr create --repo "${REPO}" --base main --head "${BRANCH}" \
             --title "chore: update CURRENT_STATE for ${TAG}" \
