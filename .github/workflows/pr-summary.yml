@@ -38,7 +38,9 @@ jobs:
           # Match CI classification: count both source and destination paths for renames.
           FILES=$(git diff --name-only --no-renames "$BASE" "$HEAD_SHA")
           CHANGED=$(echo "$FILES" | grep -c . || true)
-          ADD_DEL=$(echo "$DIFFSTAT" | grep -oE '[0-9]+ insertion[s]?\([+]\), [0-9]+ deletion[s]?\([-]\)' || echo '-')
+          ADDITIONS=$(printf '%s\n' "$DIFFSTAT" | grep -oE '[0-9]+ insertion[s]?\(\+\)' | grep -oE '^[0-9]+' || echo 0)
+          DELETIONS=$(printf '%s\n' "$DIFFSTAT" | grep -oE '[0-9]+ deletion[s]?\(-\)' | grep -oE '^[0-9]+' || echo 0)
+          ADD_DEL="${ADDITIONS} 追加 / ${DELETIONS} 削除"
 
           AHEAD=$(git rev-list --count "origin/main..$HEAD_SHA" 2>/dev/null || echo '?')
           BEHIND=$(git rev-list --count "$HEAD_SHA..origin/main" 2>/dev/null || echo '?')
