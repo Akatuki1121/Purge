@@ -46,7 +46,7 @@ jobs:
           INSTALLER_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/Update|scripts/Verify-MsiUpgrade)' || true)
           MATRIX_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/UpdateDownloader\.cs$|scripts/Verify-MsiUpgrade\.ps1$|\.github/workflows/verify-msi-matrix\.yml$)' || true)
 
-          # CIと同じ許可リストで、変更ファイルがすべてドキュメントかを判定
+          # CIと同じ許可リストで、変更ファイルがすべて軽量対象かを判定
           LIGHTWEIGHT_ONLY=true
           if [ "$CHANGED" -eq 0 ]; then
             LIGHTWEIGHT_ONLY=false
@@ -82,6 +82,8 @@ jobs:
           fi
           if [ "$INSTALLER_FILES" -gt 0 ]; then
             CHECKS+=$'- MSI検証(ci.yml / verify-msi.yml)\n'
+          fi
+          if [ "$MATRIX_FILES" -gt 0 ]; then
             CHECKS+=$'- MSI更新互換性マトリクス(Verify MSI Upgrade Matrix)\n'
           fi
           [ -z "$CHECKS" ] && CHECKS="- (対象なし)"
