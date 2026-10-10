@@ -102,10 +102,10 @@ namespace Purge.Localization
         }
 
         /// <summary>
-        /// 指定言語の文言表そのもの(キーと文言の対)を返す。キー過不足のテストなど検査用。
+        /// 指定言語の文言表そのもの(キーと文言の対)を返す。文言表の整合性テスト用。
         /// Auto は実際の言語ではないため指定できない。
         /// </summary>
-        public static IReadOnlyDictionary<string, string> GetTable(AppLanguage language)
+        internal static IReadOnlyDictionary<string, string> GetTable(AppLanguage language)
         {
             EnsureLoaded();
             return language switch
