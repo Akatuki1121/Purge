@@ -44,31 +44,44 @@ jobs:
 
           # インストーラー・更新機能への変更
           INSTALLER_FILES=$(echo "$FILES" | grep -cE '^(installer/|Core/Update|scripts/Verify-MsiUpgrade)' || true)
-          # アプリ本体への変更
-          APP_FILES=$(echo "$FILES" | grep -cE '^(Core/|UI/)' || true)
-          # ドキュメントのみか
-          DOC_FILES=$(echo "$FILES" | grep -cE '\.(md)$' || true)
-          DOCS_ONLY=$([ "$CHANGED" -gt 0 ] && [ "$DOC_FILES" -eq "$CHANGED" ] && echo はい || echo いいえ)
+
+          # CIと同じ許可リストで、変更ファイルがすべてドキュメントかを判定
+          DOCS_ONLY=true
+          if [ "$CHANGED" -eq 0 ]; then
+            DOCS_ONLY=false
+          else
+            while IFS= read -r file; do
+              case "$file" in
+                README.md|README.en.md|CHANGELOG.md|ROADMAP.md|判断基準.md|.github/ISSUE_TEMPLATE/*|.github/dependabot.yml|.gitleaks.toml)
+                  ;;
+                *)
+                  if [[ "$file" != */* && "$file" == *.md ]]; then
+                    :
+                  else
+                    DOCS_ONLY=false
+                  fi
+                  ;;
+              esac
+            done <<< "$FILES"
+          fi
+          DOCS_ONLY=$([ "$DOCS_ONLY" = "true" ] && echo はい || echo いいえ)
+
           # CHANGELOG.mdの更新
           CHANGELOG=$(echo "$FILES" | grep -c '^CHANGELOG\.md$' || true)
           # 関連Issueへの参照
           ISSUE_REFS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body --jq '[body | scan("#[0-9]+")] | unique | join(", ")' 2>/dev/null || echo '')
           [ -z "$ISSUE_REFS" ] && ISSUE_REFS='(なし)'
 
-          # 実行対象となる検証
+          # CIの実行条件と一致させる。ドキュメントのみなら重いビルド・テストは省略。
           CHECKS=""
-          if [ "$INSTALLER_FILES" -gt 0 ]; then
-            CHECKS="- MSI検証(ci.yml / verify-msi.yml)
-          - MSI更新互換性マトリクス(Verify MSI Upgrade Matrix)
-          "
-          fi
-          if [ "$APP_FILES" -gt 0 ]; then
-            CHECKS="- ビルド・単体テスト(ci.yml / build-and-test)
-          "
-          fi
           if [ "$DOCS_ONLY" = "はい" ]; then
-            CHECKS="${CHECKS}- ドキュメントのみのため、重い検証はスキップされます
-          "
+            CHECKS+=$'- ドキュメントのみのため、ビルド・単体テストはスキップされます\n'
+          else
+            CHECKS+=$'- ビルド・単体テスト(ci.yml / build-and-test)\n'
+          fi
+          if [ "$INSTALLER_FILES" -gt 0 ]; then
+            CHECKS+=$'- MSI検証(ci.yml / verify-msi.yml)\n'
+            CHECKS+=$'- MSI更新互換性マトリクス(Verify MSI Upgrade Matrix)\n'
           fi
           [ -z "$CHECKS" ] && CHECKS="- (対象なし)"
 
@@ -100,5 +113,5 @@ jobs:
             echo ""
             echo "### 実行対象となる検証"
             echo ""
-            echo "${CHECKS}"
+            printf '%s' "$CHECKS"
           } >> "$GITHUB_STEP_SUMMARY"
