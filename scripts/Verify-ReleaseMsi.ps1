@@ -98,7 +98,9 @@ if ($BaselineMsiPath) {
 
 Write-Host ''
 Write-Host '=== 3. インストール・起動・アンインストール検証(scripts/Verify-Msi.ps1) ==='
-& (Join-Path $PSScriptRoot 'Verify-Msi.ps1') -MsiPath $MsiPath -ExpectedVersion $ExpectedVersion
+# Verify-Msi.ps1 uses exit to report its result. Run it in a child process so
+# exit cannot terminate this release verifier before it reports all checks.
+& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'Verify-Msi.ps1') -MsiPath $MsiPath -ExpectedVersion $ExpectedVersion
 $verifyExit = $LASTEXITCODE
 Check 'Verify-Msi.ps1 が全項目合格' ($verifyExit -eq 0) "終了コード=$verifyExit"
 

@@ -90,7 +90,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          TAG=$(gh api "repos/$REPO/releases" --jq '[.[] | select(.draft == false and .prerelease == false)][0].tag_name' || true)
+          TAG=$(gh api "repos/$REPO/releases" --jq '[.[] | select(.draft == false and .prerelease == false)][0].tag_name')
           if [ -n "$TAG" ] && [ "$TAG" != "null" ]; then
             mkdir -p baseline/ja baseline/en
             gh release download "$TAG" --repo "$REPO" --pattern '*-ja.msi' --dir baseline/ja --clobber
@@ -114,8 +114,16 @@ jobs:
             $params = @{ MsiPath = $msi; ExpectedVersion = $v }
             $baseline = "$PWD/baseline/baseline-$culture.msi"
             if (Test-Path $baseline) { $params.BaselineMsiPath = $baseline }
-            ./scripts/Verify-ReleaseMsi.ps1 @params
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            # Verify-ReleaseMsi.ps1 calls exit on completion. Run it in a child
+            # PowerShell process so a successful Japanese check cannot terminate
+            # this loop before the English MSI is verified.
+            $arguments = @('-NoProfile', '-File', (Join-Path $PWD 'scripts/Verify-ReleaseMsi.ps1'),
+              '-MsiPath', $msi, '-ExpectedVersion', $v)
+            if (Test-Path $baseline) { $arguments += @('-BaselineMsiPath', $baseline) }
+            & pwsh @arguments
+            $verifyExit = $LASTEXITCODE
+            if ($verifyExit -ne 0) { exit $verifyExit }
           }
 
       - name: Upload logs on failure
