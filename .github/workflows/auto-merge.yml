@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   dependabot:
-    if: github.actor == 'dependabot[bot]'
+    # PRの作成者を検証する。イベント実行者だけでは判定しない。
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Dependabotのメタデータ取得
@@ -26,29 +27,32 @@ jobs:
           NAMES: ${{ steps.meta.outputs.dependency-names }}
           UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
         run: |
+          set -euo pipefail
           case "$UPDATE_TYPE" in
-            version-update:semver-patch) KIND="パッチ更新(低リスク)" ;;
-            version-update:semver-minor) KIND="マイナー更新(中リスク)" ;;
-            version-update:semver-major) KIND="メジャー更新(高リスク・自動マージ対象外)" ;;
-            *) KIND="不明" ;;
+            version-update:semver-patch) KIND="パッチ更新(自動マージ候補)" ;;
+            version-update:semver-minor) KIND="マイナー更新(自動マージ候補)" ;;
+            version-update:semver-major) KIND="メジャー更新(手動確認)" ;;
+            *) KIND="不明(手動確認)" ;;
           esac
-          gh pr comment "$PR_URL" --body "依存関係の自動更新PRです。
+          gh pr comment "$PR_URL" --body "Dependabotの依存関係更新PRです。
           - 対象: ${NAMES}
           - 更新種別: ${KIND}
-          - テストが通れば自動マージされます(メジャー更新を除く)。"
+          - パッチ/マイナー更新のみ、必須チェック通過後の自動マージ対象です。メジャー更新・不明な更新種別は自動マージしません。"
 
-      - name: テスト通過後の自動マージを有効化(メジャー更新を除く)
-        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+      - name: パッチ/マイナー更新のみ自動マージを有効化
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
 
   own:
-    if: github.actor == 'Akatuki1121'
+    # 作成者とイベント実行者の両方が本人の場合だけ対象にする。
+    # ワークフロー生成PRは、それを作成した専用ワークフロー側で制御する。
+    if: github.event.pull_request.user.login == 'Akatuki1121' && github.actor == 'Akatuki1121'
     runs-on: ubuntu-latest
     steps:
-      - name: テスト通過後の自動マージを有効化
+      - name: 必須チェック通過後の自動マージを有効化
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
