@@ -45,26 +45,6 @@ namespace Purge.Localization
             }
         }
 
-        public static AppLanguage Load()
-        {
-            try
-            {
-                var path = GetSettingsPath();
-                if (!File.Exists(path))
-                {
-                    return AppLanguage.Auto;
-                }
-
-                var text = ReadRootOrEmpty(path)[LanguageKey]?.GetValue<string>();
-                var parsed = Enum.TryParse<AppLanguage>(text, ignoreCase: true, out var language);
-                return parsed && Enum.IsDefined(language) ? language : AppLanguage.Auto;
-            }
-            catch
-            {
-                return AppLanguage.Auto;
-            }
-        }
-
         public static void Save(AppLanguage language)
         {
             try
