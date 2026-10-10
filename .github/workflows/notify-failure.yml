@@ -10,13 +10,28 @@ name: Notify Workflow Failure
 # 通知対象: conclusion が failure / startup_failure の実行
 # (成功・スキップ・キャンセルは通知しない)
 #
-# 既知の挙動: workflow_runのみをトリガーとするワークフローは、pushごとに
-# 「workflow file issue」の失敗ラン(ジョブ0件)がActions履歴に表示されることが
-# ある。この失敗ランは通知を発火せず、マージにも影響しないため無害。
-# 本ワークフローが通知するのは、他ワークフローの実行が失敗したときのみ。
+# workflow_run の対象ワークフロー名は workflows: に列挙する必要がある。
+# 通知ワークフロー自身は対象に含めず、再帰的な通知を避ける。
 
 on:
   workflow_run:
+    # 監視対象は workflow_run の仕様上、名前で明示する必要がある。
+    workflows:
+      - CI
+      - CodeQL
+      - gitleaks
+      - Release
+      - 自動マージ設定
+      - PR Summary
+      - Branch Audit
+      - Issue Labeler
+      - Branch Cleanup
+      - Dependabot PR 日本語化
+      - Verify MSI Upgrade
+      - Verify MSI Upgrade Matrix
+      - Verify MSI upgrade (manual)
+      - Verify Self-Uninstall
+      - Verify Service/Task Restore
     types: [completed]
 
 permissions:
