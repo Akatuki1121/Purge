@@ -1,0 +1,43 @@
+name: Owner-only release request
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-release:
+    if: >-
+      github.event.issue.number == 178 &&
+      github.event.issue.pull_request == null &&
+      github.event.comment.user.login == 'Akatuki1121'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate release command
+        id: command
+        shell: bash
+        env:
+          RELEASE_COMMENT: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_COMMENT" =~ ^/release[[:space:]]+(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$ ]]; then
+            version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          else
+            echo "No valid release command found; nothing will be dispatched."
+          fi
+
+      - name: Dispatch existing release workflow
+        if: steps.command.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.command.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh workflow run release.yml --repo "$REPO" --ref main --field "version=$VERSION"
+          echo "Dispatched release workflow for $VERSION."
