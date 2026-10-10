@@ -34,9 +34,9 @@ jobs:
           git fetch -q origin main
           BASE=$(git merge-base origin/main "$HEAD_SHA")
 
-          DIFFSTAT=$(git diff --shortstat "$BASE" "$HEAD_SHA" || true)
+          DIFFSTAT=$(git diff --shortstat "$BASE" "$HEAD_SHA")
           # Match CI classification: count both source and destination paths for renames.
-          FILES=$(git diff --name-only --no-renames "$BASE" "$HEAD_SHA" || true)
+          FILES=$(git diff --name-only --no-renames "$BASE" "$HEAD_SHA")
           CHANGED=$(echo "$FILES" | grep -c . || true)
           ADD_DEL=$(echo "$DIFFSTAT" | grep -oE '[0-9]+ insertion[s]?\([+]\), [0-9]+ deletion[s]?\([-]\)' || echo '-')
 
@@ -71,8 +71,11 @@ jobs:
           # CHANGELOG.mdの更新
           CHANGELOG=$(echo "$FILES" | grep -c '^CHANGELOG\.md$' || true)
           # 関連Issueへの参照
-          ISSUE_REFS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body --jq '[body | scan("#[0-9]+")] | unique | join(", ")' 2>/dev/null || echo '')
-          [ -z "$ISSUE_REFS" ] && ISSUE_REFS='(なし)'
+          if ISSUE_REFS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body --jq '[body | scan("#[0-9]+")] | unique | join(", ")' 2>/dev/null); then
+            [ -z "$ISSUE_REFS" ] && ISSUE_REFS='(なし)'
+          else
+            ISSUE_REFS='(取得失敗)'
+          fi
 
           # CIの実行条件と一致させる。軽量変更のみなら重いビルド・テストは省略。
           CHECKS=""

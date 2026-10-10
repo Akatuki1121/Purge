@@ -26,6 +26,7 @@ jobs:
           python -m pip install --user git-filter-repo
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      # main is never rewritten; only the dedicated preview branch is force-pushed.
       - name: Rewrite known English commit messages on a preview branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -33,7 +34,6 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git branch backup/pre-japanese-commit-messages-2026-10-09 origin/main || true
           git-filter-repo --force --replace-message .github/commit-message-replacements.txt
           git remote add rewritten "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push --force rewritten HEAD:refs/heads/preview/japanese-commit-messages
