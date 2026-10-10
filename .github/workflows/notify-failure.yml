@@ -68,21 +68,32 @@ jobs:
             echo "- 実行URL: ${WF_URL}"
           } > message.md
 
-          # 失敗したジョブと失敗ステップを取得
-          gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
-            --jq '.jobs[] | select(.conclusion == "failure") | "- ジョブ: \(.name) / 失敗ステップ: \([.steps[] | select(.conclusion == "failure") | .name] | join(", "))"' \
-            >> message.md || true
+          # 取得失敗を隠さず、通知本文に「詳細取得不可」と明記する。
+          if JOB_DETAILS=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
+            --jq '.jobs[] | select(.conclusion == "failure") | "- ジョブ: \(.name) / 失敗ステップ: \([.steps[] | select(.conclusion == "failure") | .name] | join(", "))"'); then
+            if [ -n "$JOB_DETAILS" ]; then
+              printf '%s\n' "$JOB_DETAILS" >> message.md
+            else
+              echo "- 失敗ジョブの詳細: API応答に該当ジョブがありませんでした。" >> message.md
+            fi
+          else
+            echo "- 失敗ジョブの詳細: GitHub APIから取得できませんでした。" >> message.md
+          fi
 
           # 失敗ステップのログからエラー行を抽出
-          if gh run view "${RUN_ID}" --repo "${REPO}" --log-failed > failed.log 2>/dev/null && [ -s failed.log ]; then
+          if gh run view "${RUN_ID}" --repo "${REPO}" --log-failed > failed.log 2>logs-fetch.err && [ -s failed.log ]; then
             grep -E '##\[error\]|##\[warning\]|error [A-Z]+[0-9]+|Error:|エラー' failed.log | head -15 > errors.log || true
             if [ -s errors.log ]; then
               echo "" >> message.md
               echo "**原因(エラー抜粋):**" >> message.md
-              echo '```' >> message.md
+              echo '---' >> message.md
               head -c 1200 errors.log >> message.md
-              echo '```' >> message.md
+              echo '---' >> message.md
+            else
+              echo "- エラー抜粋: ログは取得できましたが、既知のエラー形式は見つかりませんでした。" >> message.md
             fi
+          else
+            echo "- 失敗ログ: GitHub Actionsから取得できませんでした。" >> message.md
           fi
 
           cat message.md
