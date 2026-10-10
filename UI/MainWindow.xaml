@@ -161,7 +161,8 @@
                     <Grid>
                         <ListView x:Name="AppListView" SelectionMode="Extended" BorderThickness="0" Background="Transparent"
                                   ItemContainerStyle="{StaticResource AppListItemStyle}"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  GridViewColumnHeader.Click="AppListView_ColumnHeaderClick">
                             <ListView.View>
                                 <GridView AllowsColumnReorder="True" ColumnHeaderContainerStyle="{StaticResource GridHeaderStyle}">
                                     <GridViewColumn Header="" Width="32">
@@ -172,10 +173,26 @@
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
-                                    <GridViewColumn Header="{loc:Loc Col_AppName}" Width="300" DisplayMemberBinding="{Binding DisplayName}"/>
-                                    <GridViewColumn Header="{loc:Loc Col_Version}" Width="110" DisplayMemberBinding="{Binding DisplayVersion}"/>
-                                    <GridViewColumn Header="{loc:Loc Col_Publisher}" Width="210" DisplayMemberBinding="{Binding PublisherDisplay}"/>
-                                    <GridViewColumn Header="{loc:Loc Col_InstallLocation}" Width="220" DisplayMemberBinding="{Binding InstallLocation}"/>
+                                    <GridViewColumn Width="300" DisplayMemberBinding="{Binding DisplayName}">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{loc:Loc Col_AppName}" Tag="DisplayName"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Width="110" DisplayMemberBinding="{Binding DisplayVersion}">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{loc:Loc Col_Version}" Tag="DisplayVersion"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Width="210" DisplayMemberBinding="{Binding PublisherDisplay}">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{loc:Loc Col_Publisher}" Tag="PublisherDisplay"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
+                                    <GridViewColumn Width="220" DisplayMemberBinding="{Binding InstallLocation}">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{loc:Loc Col_InstallLocation}" Tag="InstallLocation"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
                                 </GridView>
                             </ListView.View>
                         </ListView>
