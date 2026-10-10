@@ -98,4 +98,4 @@ jobs:
           fi
           # Discordは2000文字制限のため頭から切り詰める
           MSG=$(head -c 1800 message.md)
-          jq -n --arg c "$MSG" '{content: $c}' | curl -sS -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK_URL"
+          jq -n --arg c "$MSG" '{content: $c}' | curl --fail-with-body --silent --show-error -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK_URL"
