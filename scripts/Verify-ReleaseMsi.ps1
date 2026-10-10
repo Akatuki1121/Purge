@@ -80,8 +80,11 @@ if ($wxs -match 'UpgradeCode="([^"]+)"') {
 $fileNames = Get-MsiColumn $db 'SELECT FileName FROM File'
 Check 'Purge.exe が収録されている' (@($fileNames | Where-Object { $_ -match 'Purge\.exe' }).Count -ge 1)
 Check 'Purge.Core.dll が収録されている' (@($fileNames | Where-Object { $_ -match 'Purge\.Core\.dll' }).Count -ge 1)
-$binaryNames = @(Get-MsiColumn $db 'SELECT Name FROM Binary')
-Check 'ライセンス文書がMSIに埋め込まれている' (@($binaryNames | Where-Object { $_ -match '(?i)license.*rtf|rtf.*license' }).Count -ge 1) "Binaryテーブルの項目=$($binaryNames -join ', ')"
+# WiXのライセンス文書(WixUILicenseRtf)は、BinaryテーブルではなくLicenseAgreementDlgの
+# ScrollableText(Controlテーブル LicenseText)のText列にRTFとして埋め込まれる。公開済みv1.3.0のMSIで確認済み。
+$licenseRtf = @(Get-MsiColumn $db "SELECT Text FROM Control WHERE Dialog_='LicenseAgreementDlg' AND Control='LicenseText'")
+$licenseOk = ($licenseRtf.Count -ge 1) -and ($licenseRtf[0] -like '{\rtf*') -and ($licenseRtf[0].Length -gt 1000)
+Check 'ライセンス文書がMSIに埋め込まれている' $licenseOk "LicenseTextのRTF長=$(if ($licenseRtf.Count -ge 1) { $licenseRtf[0].Length } else { '行なし' })"
 
 if ($BaselineMsiPath) {
     Write-Host ''
