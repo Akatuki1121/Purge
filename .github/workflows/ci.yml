@@ -11,7 +11,7 @@ jobs:
       installer: ${{ steps.changes.outputs.installer }}
       core: ${{ steps.changes.outputs.core }}
       ui: ${{ steps.changes.outputs.ui }}
-      docs-only: ${{ steps.scope.outputs.docs-only }}
+      lightweight-only: ${{ steps.scope.outputs.lightweight-only }}
       workflow-only: ${{ steps.scope.outputs.workflow-only }}
     steps:
       - uses: actions/checkout@v7
@@ -44,7 +44,7 @@ jobs:
             BASE="$BEFORE_SHA"
             if [ -z "$BASE" ] || [[ "$BASE" =~ ^0+$ ]]; then
               echo "workflow-only=false" >> "$GITHUB_OUTPUT"
-              echo "docs-only=false" >> "$GITHUB_OUTPUT"
+              echo "lightweight-only=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             RANGE="$BASE..$GITHUB_SHA"
@@ -52,10 +52,10 @@ jobs:
 
           FILES=$(git diff --name-only "$RANGE")
           WORKFLOW_ONLY=true
-          DOCS_ONLY=true
+          LIGHTWEIGHT_ONLY=true
           if [ -z "$FILES" ]; then
             WORKFLOW_ONLY=false
-            DOCS_ONLY=false
+            LIGHTWEIGHT_ONLY=false
           else
             while IFS= read -r file; do
               [[ "$file" == .github/workflows/* ]] || WORKFLOW_ONLY=false
@@ -67,7 +67,7 @@ jobs:
                   if [[ "$file" != */* && "$file" == *.md ]]; then
                     :
                   else
-                    DOCS_ONLY=false
+                    LIGHTWEIGHT_ONLY=false
                   fi
                   ;;
               esac
@@ -75,10 +75,10 @@ jobs:
           fi
 
           echo "workflow-only=$WORKFLOW_ONLY" >> "$GITHUB_OUTPUT"
-          echo "docs-only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
+          echo "lightweight-only=$LIGHTWEIGHT_ONLY" >> "$GITHUB_OUTPUT"
   build-and-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.workflow-only != 'true' && needs.detect-changes.outputs.docs-only != 'true'
+    if: needs.detect-changes.outputs.workflow-only != 'true' && needs.detect-changes.outputs.lightweight-only != 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
