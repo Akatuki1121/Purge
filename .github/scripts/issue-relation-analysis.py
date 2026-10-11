@@ -52,12 +52,10 @@ def features(text):
         token = token.strip("._:/+-")
         if len(token) > 1 and token not in STOP:
             counts["w:" + token] += 2
-    # Character bigrams allow Japanese matching without an external tokenizer.
-    compact = re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
-    for i in range(max(0, len(compact) - 1)):
-        pair = compact[i:i + 2]
-        if len(pair) == 2:
-            counts["j:" + pair] += 1
+    # Character bigrams are extracted within Japanese runs, never across word boundaries.
+    for run in re.findall(r"[ぁ-んァ-ヶ一-龯々ー]{2,}", text):
+        for i in range(len(run) - 1):
+            counts["j:" + run[i:i + 2]] += 1
     return counts
 
 def cosine(a, b, idf):
