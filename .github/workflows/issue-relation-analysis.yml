@@ -12,7 +12,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: issue-relations-${ github.event.issue.number }
+  group: issue-relations-${{ github.event.issue.number }}
   cancel-in-progress: true
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Compare issue reports and PRs
         env:
-          GH_TOKEN: ${ secrets.GITHUB_TOKEN }
-          GITHUB_REPOSITORY: ${ github.repository }
-          ISSUE_NUMBER: ${ github.event.issue.number }
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: python .github/scripts/issue-relation-analysis.py
