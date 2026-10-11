@@ -28,15 +28,9 @@ FIELD_ALIASES = {
     "to_version": ("更新先のバージョン", "update to"),
 }
 
-# Identifiers are strong evidence for a shared symptom, not proof of a shared root cause.
-SIGNATURE_PATTERNS = (
-    re.compile(r"\b0x[0-9a-f]{8}\b", re.I),
-    re.compile(r"\bHRESULT\s*[:=]?\s*0x[0-9a-f]+\b", re.I),
-    re.compile(r"\b(?:MSI|WiX|Windows Installer)\s*(?:error|エラー|code|コード)?\s*(?:0x[0-9a-f]+|\d{3,})\b", re.I),
-    re.compile(r"\b[A-Z][A-Za-z0-9_]*(?:Exception|Error)\b"),
-    re.compile(r"\b(?:error|エラー)\s*(?:code|コード|番号)?\s*[:=#]?\s*\d{3,}\b", re.I),
-    re.compile(r"\b0x[0-9a-f]{4,}\b", re.I),
-)
+# Only a full-width 32-bit hexadecimal error identifier is accepted as standalone evidence.
+# Generic exception class names and common MSI codes (for example 1603) are not distinctive enough.
+SIGNATURE_PATTERNS = (re.compile(r"\b0x[0-9a-f]{8}\b", re.I),)
 REFERENCE_PATTERN = re.compile(r"(?<![\w])#\s*(\d+)\b|/issues/(\d+)\b", re.I)
 
 
@@ -95,11 +89,7 @@ def parse_fields(body):
 def extract_signatures(text):
     found = set()
     for pattern in SIGNATURE_PATTERNS:
-        for match in pattern.findall(text or ""):
-            value = match if isinstance(match, str) else "".join(match)
-            value = normalize(value)
-            if value:
-                found.add(value)
+        found.update(normalize(match) for match in pattern.findall(text or ""))
     return found
 
 
@@ -115,7 +105,7 @@ def relation_evidence(current, candidate):
     candidate_fields = parse_fields(candidate.get("body", ""))
     same_signatures = issue_signatures(current) & issue_signatures(candidate)
     if same_signatures:
-        return "一致したエラー識別子: " + ", ".join(sorted(same_signatures))
+        return "一致した 32-bit エラー識別子: " + ", ".join(sorted(same_signatures))
     current_actual = normalize(current_fields.get("actual", ""))
     candidate_actual = normalize(candidate_fields.get("actual", ""))
     if current_actual and len(current_actual) >= 16 and current_actual == candidate_actual:
@@ -183,13 +173,10 @@ def find_issue_relations(issue):
     current_signatures = issue_signatures(issue)
     current_fields = parse_fields(issue.get("body", ""))
     current_actual = normalize(current_fields.get("actual", ""))
-    queries = []
-    for signature in sorted(current_signatures)[:3]:
-        queries.append(f'"{signature}"')
-    if not current_signatures and len(current_actual) >= 16 and len(current_actual) <= 100:
+    queries = [f'"{signature}"' for signature in sorted(current_signatures)[:3]]
+    if len(current_actual) >= 16 and len(current_actual) <= 100:
         queries.append(f'"{current_actual}"')
-
-    for term_query in queries:
+    for term_query in queries[:4]:
         query = f"repo:{REPO} is:issue in:title,body {term_query}"
         categories = sorted(category_labels) or [None]
         for category in categories:
@@ -224,7 +211,7 @@ def render(issue, relations, prs, source_fingerprint):
         f"{INPUT_MARKER}{source_fingerprint} -->",
         "## 関連 Issue / 修正 PR（根拠一致のみ）",
         "",
-        "> 文章の類似度だけでは関連付けません。ここに載る Issue は明示的な参照、同一エラー識別子、または「実際の結果」の完全一致が根拠です。共通原因・修正可能性は別途確認が必要です。",
+        "> 文章の類似度だけでは関連付けません。Issue は明示的な参照、同一の 32-bit エラー識別子、または「実際の結果」の完全一致が根拠です。共通原因・修正可能性は別途確認が必要です。",
         "",
         "### 同じ症状・明示的な関連 Issue",
     ]
