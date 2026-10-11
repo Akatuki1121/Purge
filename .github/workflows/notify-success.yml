@@ -23,7 +23,7 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.check_suite.head_sha }}
-          CHECKS_URL: ${{ github.event.check_suite.url }}
+          CHECKS_URL: ${{ github.event.check_suite.html_url }}
           PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
           WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
         run: |
