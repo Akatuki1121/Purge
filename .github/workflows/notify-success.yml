@@ -1,0 +1,39 @@
+name: Notify PR Checks Success
+
+# PRのチェック一式が完了し、GitHubが成功と判定したときにDiscordへ1回通知する。
+# 個々のジョブ成功では通知せず、チェック全体の結論を通知する。
+
+on:
+  check_suite:
+    types: [completed]
+
+permissions:
+  checks: read
+  pull-requests: read
+
+jobs:
+  notify:
+    if: >-
+      github.event.check_suite.conclusion == 'success' &&
+      github.event.check_suite.pull_requests[0] != null
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Prepare success notification
+        env:
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.check_suite.head_sha }}
+          CHECKS_URL: ${{ github.event.check_suite.html_url }}
+          PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
+          WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WEBHOOK_URL}" ]; then
+            echo "ACTIONS_NOTIFY_WEBHOOK_URL が未設定のため、通知を送らずスキップします。"
+            exit 0
+          fi
+
+          MSG=$(printf '### ✅ PRのチェックがすべて成功しました\n\n- PR: https://github.com/%s/pull/%s\n- コミット: `%.7s`\n- チェック: %s' "${REPO}" "${PR_NUMBER}" "${HEAD_SHA}" "${CHECKS_URL}")
+          jq -n --arg c "${MSG}" '{content: $c}' |
+            curl --fail-with-body --silent --show-error -X POST \
+              -H 'Content-Type: application/json' -d @- "${WEBHOOK_URL}"
