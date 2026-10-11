@@ -18,13 +18,54 @@ class RelationEvidenceTests(unittest.TestCase):
             "### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005\n"
         )
         self.assertEqual(fields["windows"], "Windows 11 24H2")
-        self.assertIn("0x80070005", fields["actual"])
         self.assertIn("0x80070005", fields["logs"])
 
     def test_same_distinctive_error_identifier_is_strong_evidence(self):
         current = {"body": "### 実際の結果\n起動に失敗\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
         candidate = {"body": "### 実際の結果\n別の説明\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
         self.assertIn("0x80070005", relation.relation_evidence(current, candidate))
+
+    def test_parses_legacy_japanese_issue_headings(self):
+        fields = relation.parse_fields(
+            "### 症状\nアップデート時に起動のたびUAC確認が出る\n"
+            "### 期待する動作\n起動時に追加確認が出ない\n"
+            "### 現象\n起動時に HRESULT 0x80070005 が表示される\n"
+        )
+        self.assertEqual(fields["actual"], "アップデート時に起動のたびUAC確認が出る")
+        self.assertEqual(fields["expected"], "起動時に追加確認が出ない")
+
+
+    def test_legacy_and_current_headings_can_match_exactly(self):
+        legacy = {"body": "### 症状\nアップデート後、起動のたびにUAC確認が表示されます。"}
+        current = {"body": "### 実際の結果\nアップデート後、起動のたびにUAC確認が表示されます。"}
+        self.assertIn("完全一致", relation.relation_evidence(legacy, current))
+
+    def test_different_legacy_symptoms_about_updates_do_not_match(self):
+        uac_issue = {"body": "### 症状\nアップデート後、起動のたびにUAC確認が表示されます。"}
+        shortcut_issue = {"body": "### 現象\nアップデート時にデスクトップのショートカットが一度削除されます。"}
+        self.assertIsNone(relation.relation_evidence(uac_issue, shortcut_issue))
+
+    def test_real_legacy_issue_examples_keep_distinct_update_symptoms_separate(self):
+        # Real excerpts from Purge Issues #91 and #92, retained as regression fixtures.
+        uac_issue = {
+            "number": 91,
+            "title": "アップデート後の「Purgeを起動する」でPurge.exeのUACが出る",
+            "body": "## 症状\nアップデート時、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が出る。\n\n## 背景\n省略",
+        }
+        shortcut_issue = {
+            "number": 92,
+            "title": "アップデート時にデスクトップ/スタートメニューのショートカットが一度削除される",
+            "body": "## 症状\nアップデートでMSIをインストールすると、デスクトップ／スタートメニューのショートカットが一度削除され、作り直される。\n\n## 背景\n省略",
+        }
+        self.assertIn("UACの確認", relation.parse_fields(uac_issue["body"])["actual"])
+        self.assertIn("ショートカット", relation.parse_fields(shortcut_issue["body"])["actual"])
+        self.assertIsNone(relation.relation_evidence(uac_issue, shortcut_issue))
+
+    def test_combined_legacy_behavior_and_error_heading_extracts_signature(self):
+        issue = {
+            "body": "### 実際の動作・エラーメッセージ\n起動に失敗します。 HRESULT: 0x80070005"
+        }
+        self.assertIn("0x80070005", relation.issue_signatures(issue))
 
     def test_generic_exception_name_alone_is_not_enough(self):
         current = {"body": "### 実際の結果\n起動時に NullReferenceException が出ます"}
