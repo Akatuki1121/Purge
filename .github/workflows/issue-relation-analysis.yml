@@ -1,0 +1,30 @@
+name: Issue Relation Analysis
+
+# Issueごとの分類とは別に、未解決IssueとPRを横断して関連候補を提示する。
+# 外部API・LLMは使わず、候補提示のみ。Issueの状態やラベルは変更しない。
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: issue-relations-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    if: github.event.issue.pull_request == null && github.event.issue.number != 178
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Compare issue reports and PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: python .github/scripts/issue-relation-analysis.py
