@@ -108,6 +108,44 @@ def issue_signatures(item):
     return extract_signatures(evidence)
 
 
+def compact_actual(value):
+    """Normalize punctuation and spacing for conservative symptom phrase comparison."""
+    return re.sub(r"[\W_]+", "", normalize(value), flags=re.UNICODE)
+
+
+def longest_shared_actual_phrase(left, right, minimum=24, maximum=48):
+    """Find an exact, distinctive-length phrase shared by both actual-result fields."""
+    left = compact_actual(left)[:500]
+    right = compact_actual(right)[:500]
+    upper = min(len(left), len(right), maximum)
+    for size in range(upper, minimum - 1, -1):
+        for start in range(0, len(left) - size + 1):
+            phrase = left[start:start + size]
+            if phrase in right:
+                return phrase
+    return None
+
+
+def actual_search_phrases(value, minimum=24, window=40, limit=4):
+    """Create a few targeted phrase queries instead of requiring the whole symptom to match."""
+    value = normalize(value)
+    if len(value) < minimum:
+        return []
+    if len(value) <= window:
+        return [value]
+    offsets = [0, (len(value) - window) // 2, len(value) - window]
+    # Add one more overlapping window to tolerate differences near either end.
+    offsets.append(min(len(value) - window, max(0, len(value) // 3 - window // 2)))
+    phrases = []
+    for offset in offsets:
+        phrase = value[offset:offset + window].strip()
+        if len(phrase) >= minimum and phrase not in phrases:
+            phrases.append(phrase)
+        if len(phrases) >= limit:
+            break
+    return phrases
+
+
 def relation_evidence(current, candidate):
     """Return a strict match reason, or None; never infer a relation from general similarity."""
     current_fields = parse_fields(current.get("body", ""))
@@ -119,6 +157,19 @@ def relation_evidence(current, candidate):
     candidate_actual = normalize(candidate_fields.get("actual", ""))
     if current_actual and len(current_actual) >= 16 and current_actual == candidate_actual:
         return "Issueフォームの「実際の結果」が正規化後に完全一致"
+    shared_phrase = longest_shared_actual_phrase(current_actual, candidate_actual)
+    if shared_phrase:
+        residual = shared_phrase
+        # Common exception names and generic outcome wording are not distinctive evidence alone.
+        for generic in (
+            "nullreferenceexception", "exception", "error", "エラー", "エラーコード",
+            "が出ます", "が出る", "が発生します", "が表示されます", "が表示される",
+            "発生します", "表示されます", "表示される", "アプリ", "設定画面",
+            "起動時", "起動", "失敗", "ファイル",
+        ):
+            residual = residual.replace(compact_actual(generic), "")
+        if len(residual) >= 12:
+            return "「実際の結果」に24文字以上の症状記述が一致（記号・空白を除外）: " + shared_phrase
     return None
 
 
@@ -194,8 +245,9 @@ def find_issue_relations(issue):
     current_fields = parse_fields(issue.get("body", ""))
     current_actual = normalize(current_fields.get("actual", ""))
     queries = [f'"{signature}"' for signature in sorted(current_signatures)[:3]]
-    if len(current_actual) >= 16 and len(current_actual) <= 100:
-        queries.append(f'"{current_actual}"')
+    # Long symptom reports often contain extra context, so search a few exact phrases
+    # from the actual-result field. Matching still requires a shared 24-character phrase.
+    queries.extend(f'"{phrase}"' for phrase in actual_search_phrases(current_actual))
 
     for term_query in queries[:4]:
         query = f"repo:{REPO} is:issue in:title,body {term_query}"
