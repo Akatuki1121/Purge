@@ -159,7 +159,17 @@ def relation_evidence(current, candidate):
         return "Issueフォームの「実際の結果」が正規化後に完全一致"
     shared_phrase = longest_shared_actual_phrase(current_actual, candidate_actual)
     if shared_phrase:
-        return "「実際の結果」に24文字以上の具体的な症状記述が一致: " + shared_phrase
+        residual = shared_phrase
+        # Common exception names and generic outcome wording are not distinctive evidence alone.
+        for generic in (
+            "nullreferenceexception", "exception", "error", "エラー", "エラーコード",
+            "が出ます", "が出る", "が発生します", "が表示されます", "が表示される",
+            "発生します", "表示されます", "表示される", "アプリ", "設定画面",
+            "起動時", "起動", "失敗", "ファイル",
+        ):
+            residual = residual.replace(compact_actual(generic), "")
+        if len(residual) >= 12:
+            return "「実際の結果」に24文字以上の症状記述が一致（記号・空白を除外）: " + shared_phrase
     return None
 
 
