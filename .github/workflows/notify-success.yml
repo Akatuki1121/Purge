@@ -1,4 +1,4 @@
-name: Notify PR Checks Success
+name: Notify PR CI Success
 
 # PRのCIワークフローが成功したときにDiscordへ通知する。
 # 他のワークフローの成功と誤認させないよう、通知対象をCIに限定する。
