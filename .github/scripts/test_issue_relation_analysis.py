@@ -33,7 +33,7 @@ class RelationEvidenceTests(unittest.TestCase):
         )
         self.assertEqual(fields["actual"], "アップデート時に起動のたびUAC確認が出る")
         self.assertEqual(fields["expected"], "起動時に追加確認が出ない")
-        self.assertIn("0x80070005", fields["actual"])
+
 
     def test_legacy_and_current_headings_can_match_exactly(self):
         legacy = {"body": "### 症状\nアップデート後、起動のたびにUAC確認が表示されます。"}
