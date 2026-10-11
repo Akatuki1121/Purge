@@ -45,6 +45,22 @@ class RelationEvidenceTests(unittest.TestCase):
         shortcut_issue = {"body": "### 現象\nアップデート時にデスクトップのショートカットが一度削除されます。"}
         self.assertIsNone(relation.relation_evidence(uac_issue, shortcut_issue))
 
+    def test_real_legacy_issue_examples_keep_distinct_update_symptoms_separate(self):
+        # Real excerpts from Purge Issues #91 and #92, retained as regression fixtures.
+        uac_issue = {
+            "number": 91,
+            "title": "アップデート後の「Purgeを起動する」でPurge.exeのUACが出る",
+            "body": "## 症状\\nアップデート時、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が出る。\\n\\n## 背景\\n省略",
+        }
+        shortcut_issue = {
+            "number": 92,
+            "title": "アップデート時にデスクトップ/スタートメニューのショートカットが一度削除される",
+            "body": "## 症状\\nアップデートでMSIをインストールすると、デスクトップ／スタートメニューのショートカットが一度削除され、作り直される。\\n\\n## 背景\\n省略",
+        }
+        self.assertIn("UACの確認", relation.parse_fields(uac_issue["body"])["actual"])
+        self.assertIn("ショートカット", relation.parse_fields(shortcut_issue["body"])["actual"])
+        self.assertIsNone(relation.relation_evidence(uac_issue, shortcut_issue))
+
     def test_combined_legacy_behavior_and_error_heading_extracts_signature(self):
         issue = {
             "body": "### 実際の動作・エラーメッセージ\n起動に失敗します。 HRESULT: 0x80070005"
