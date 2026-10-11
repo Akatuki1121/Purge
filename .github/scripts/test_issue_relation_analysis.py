@@ -26,6 +26,32 @@ class RelationEvidenceTests(unittest.TestCase):
         candidate = {"body": "### 実際の結果\n別の説明\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
         self.assertIn("0x80070005", relation.relation_evidence(current, candidate))
 
+    def test_parses_legacy_japanese_issue_headings(self):
+        fields = relation.parse_fields(
+            "### 症状\\nアップデート時に起動のたびUAC確認が出る\\n"
+            "### 期待する動作\\n起動時に追加確認が出ない\\n"
+            "### 現象\\n起動時に HRESULT 0x80070005 が表示される\\n"
+        )
+        self.assertEqual(fields["actual"], "アップデート時に起動のたびUAC確認が出る")
+        self.assertEqual(fields["expected"], "起動時に追加確認が出ない")
+        self.assertIn("0x80070005", fields["actual"])
+
+    def test_legacy_and_current_headings_can_match_exactly(self):
+        legacy = {"body": "### 症状\\nアップデート後、起動のたびにUAC確認が表示されます。"}
+        current = {"body": "### 実際の結果\\nアップデート後、起動のたびにUAC確認が表示されます。"}
+        self.assertIn("完全一致", relation.relation_evidence(legacy, current))
+
+    def test_different_legacy_symptoms_about_updates_do_not_match(self):
+        uac_issue = {"body": "### 症状\\nアップデート後、起動のたびにUAC確認が表示されます。"}
+        shortcut_issue = {"body": "### 現象\\nアップデート時にデスクトップのショートカットが一度削除されます。"}
+        self.assertIsNone(relation.relation_evidence(uac_issue, shortcut_issue))
+
+    def test_combined_legacy_behavior_and_error_heading_extracts_signature(self):
+        issue = {
+            "body": "### 実際の動作・エラーメッセージ\\n起動に失敗します。 HRESULT: 0x80070005"
+        }
+        self.assertIn("0x80070005", relation.issue_signatures(issue))
+
     def test_generic_exception_name_alone_is_not_enough(self):
         current = {"body": "### 実際の結果\n起動時に NullReferenceException が出ます"}
         candidate = {"body": "### 実際の結果\n設定画面で NullReferenceException が出ます"}
