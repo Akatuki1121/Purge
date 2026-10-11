@@ -25,6 +25,8 @@ on:
       - PR Summary
       - Branch Audit
       - Issue Labeler
+      - Issue Relation Analysis
+      - Issue Relation Tests
       - Branch Cleanup
       - Dependabot PR 日本語化
       - Verify MSI Upgrade
