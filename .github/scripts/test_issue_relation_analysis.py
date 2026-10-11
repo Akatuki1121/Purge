@@ -13,17 +13,22 @@ class RelationEvidenceTests(unittest.TestCase):
     def test_parses_japanese_issue_form_fields(self):
         fields = relation.parse_fields(
             "### Windows のバージョン\nWindows 11 24H2\n"
-            "### 実際の結果\n起動時に NullReferenceException が表示されます。\n"
-            "### 関連ログ・スクリーンショット・エラーメッセージ\nNullReferenceException at MainWindow\n"
+            "### 実際の結果\n起動時にエラーコード 0x80070005 が表示されます。\n"
+            "### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005\n"
         )
         self.assertEqual(fields["windows"], "Windows 11 24H2")
-        self.assertIn("NullReferenceException", fields["actual"])
-        self.assertIn("NullReferenceException", fields["logs"])
+        self.assertIn("0x80070005", fields["actual"])
+        self.assertIn("0x80070005", fields["logs"])
 
-    def test_exact_error_signature_is_strong_evidence(self):
-        current = {"body": "### 実際の結果\n起動に失敗\n### 関連ログ・スクリーンショット・エラーメッセージ\nSystem.NullReferenceException"}
-        candidate = {"body": "### 実際の結果\n別の説明\n### 関連ログ・スクリーンショット・エラーメッセージ\nSystem.NullReferenceException"}
-        self.assertIn("NullReferenceException", relation.relation_evidence(current, candidate))
+    def test_same_distinctive_error_identifier_is_strong_evidence(self):
+        current = {"body": "### 実際の結果\n起動に失敗\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
+        candidate = {"body": "### 実際の結果\n別の説明\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
+        self.assertIn("0x80070005", relation.relation_evidence(current, candidate))
+
+    def test_generic_exception_name_alone_is_not_enough(self):
+        current = {"body": "### 実際の結果\n起動時に NullReferenceException が出ます"}
+        candidate = {"body": "### 実際の結果\n設定画面で NullReferenceException が出ます"}
+        self.assertIsNone(relation.relation_evidence(current, candidate))
 
     def test_same_actual_result_requires_exact_normalized_match(self):
         current = {"body": "### 実際の結果\nアプリ起動時に設定ファイルを読み込めず終了します"}
