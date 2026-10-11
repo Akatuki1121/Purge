@@ -18,9 +18,17 @@ INPUT_MARKER = "<!-- purge-issue-relation-input:"
 CATEGORY_LABELS = {"installer", "update", "ui"}
 
 FIELD_ALIASES = {
-    "actual": ("実際の結果", "actual result", "actual behavior", "what happened"),
-    "logs": ("関連ログ・スクリーンショット・エラーメッセージ", "logs", "error message", "exception"),
-    "expected": ("期待する結果", "expected result", "expected behavior"),
+    # Current Issue Forms and legacy free-form Issue headings are both supported.
+    "actual": (
+        "実際の結果", "実際の動作", "実際の動作・エラーメッセージ",
+        "症状", "現象", "事象", "actual result", "actual behavior", "what happened",
+    ),
+    "logs": (
+        "関連ログ・スクリーンショット・エラーメッセージ",
+        "実際の動作・エラーメッセージ", "ログ・エラーメッセージ",
+        "logs", "error message", "exception",
+    ),
+    "expected": ("期待する結果", "期待する動作", "expected result", "expected behavior"),
     "steps": ("再現手順", "steps to reproduce", "reproduction steps"),
     "windows": ("windows のバージョン", "windows version"),
     "purge_version": ("purge のバージョン", "purge version"),
