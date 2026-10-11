@@ -67,6 +67,31 @@ class RelationEvidenceTests(unittest.TestCase):
         }
         self.assertIn("0x80070005", relation.issue_signatures(issue))
 
+    def test_partial_distinctive_symptom_phrase_matches_reworded_report(self):
+        current = {
+            "body": "### 症状\\nアップデート時、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が出る。"
+        }
+        candidate = {
+            "body": "### 実際の結果\\n更新後、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が表示される。"
+        }
+        evidence = relation.relation_evidence(current, candidate)
+        self.assertIsNotNone(evidence)
+        self.assertIn("24文字以上", evidence)
+
+    def test_partial_symptom_matching_does_not_merge_issue_91_and_92(self):
+        uac_issue = {
+            "body": "## 症状\\nアップデート時、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が出る。"
+        }
+        shortcut_issue = {
+            "body": "## 症状\\nアップデートでMSIをインストールすると、デスクトップ／スタートメニューのショートカットが一度削除され、作り直される。"
+        }
+        self.assertIsNone(relation.relation_evidence(uac_issue, shortcut_issue))
+
+    def test_short_common_phrase_does_not_create_relation(self):
+        current = {"body": "### 症状\\nアップデート時にアプリが起動しない"}
+        candidate = {"body": "### 症状\\nアップデート時にショートカットが消える"}
+        self.assertIsNone(relation.relation_evidence(current, candidate))
+
     def test_generic_exception_name_alone_is_not_enough(self):
         current = {"body": "### 実際の結果\n起動時に NullReferenceException が出ます"}
         candidate = {"body": "### 実際の結果\n設定画面で NullReferenceException が出ます"}
