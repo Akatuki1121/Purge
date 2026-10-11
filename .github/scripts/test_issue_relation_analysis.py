@@ -7,6 +7,7 @@ SCRIPT = Path(__file__).with_name("issue-relation-analysis.py")
 SPEC = importlib.util.spec_from_file_location("issue_relation_analysis", SCRIPT)
 relation = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(relation)
+relation.REPO = "Akatuki1121/Purge"
 
 
 class RelationEvidenceTests(unittest.TestCase):
@@ -46,8 +47,26 @@ class RelationEvidenceTests(unittest.TestCase):
         self.assertIsNone(relation.relation_evidence(current, candidate))
 
     def test_explicit_issue_references_are_extracted_without_self_reference(self):
-        refs = relation.extract_issue_refs("関連: #12 and https://github.com/org/repo/issues/34, self #7", 7)
+        refs = relation.extract_issue_refs(
+            "関連: #12 and https://github.com/Akatuki1121/Purge/issues/34, self #7",
+            7,
+        )
         self.assertEqual(refs, {12, 34})
+
+    def test_foreign_repository_issue_url_is_not_treated_as_local(self):
+        text = (
+            "Related: https://github.com/another-owner/another-repo/issues/34 "
+            "and https://github.com/Akatuki1121/OtherProject/issues/35"
+        )
+        self.assertEqual(relation.extract_issue_refs(text, 7), set())
+
+    def test_foreign_issue_url_does_not_leak_number_reference(self):
+        text = "See https://github.com/another-owner/another-repo/issues/34"
+        self.assertNotIn(34, relation.reference_targets(text))
+
+    def test_local_issue_url_and_shorthand_reference_are_supported(self):
+        text = "See https://github.com/akatuki1121/purge/issues/34 and #35"
+        self.assertEqual(relation.reference_targets(text), {34, 35})
 
     def test_fingerprint_changes_when_report_changes(self):
         before = {"title": "Bug", "body": "old", "labels": [{"name": "bug"}]}

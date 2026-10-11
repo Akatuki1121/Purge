@@ -31,7 +31,8 @@ FIELD_ALIASES = {
 # Only a full-width 32-bit hexadecimal error identifier is accepted as standalone evidence.
 # Generic exception class names and common MSI codes (for example 1603) are not distinctive enough.
 SIGNATURE_PATTERNS = (re.compile(r"\b0x[0-9a-f]{8}\b", re.I),)
-REFERENCE_PATTERN = re.compile(r"(?<![\w])#\s*(\d+)\b|/issues/(\d+)\b", re.I)
+REFERENCE_PATTERN = re.compile(r"(?<![\w])#\s*(\d+)\b", re.I)
+GITHUB_URL_PATTERN = re.compile(r"https?://github\.com/[^\s<>]+", re.I)
 
 
 def api(path, method="GET", payload=None):
@@ -113,14 +114,26 @@ def relation_evidence(current, candidate):
     return None
 
 
-def extract_issue_refs(text, current_number):
+def reference_targets(text):
+    """Return issue numbers referenced locally; ignore URLs to other repositories."""
+    value = text or ""
     refs = set()
-    for match in REFERENCE_PATTERN.finditer(text or ""):
-        number = int(match.group(1) or match.group(2))
-        if number != current_number:
-            refs.add(number)
+    repo_parts = REPO.strip("/").split("/", 1)
+    expected_repo = tuple(part.casefold() for part in repo_parts) if len(repo_parts) == 2 else None
+    for match in GITHUB_URL_PATTERN.finditer(value):
+        url = match.group(0).rstrip(".,;:!?)]}")
+        parsed = urllib.parse.urlparse(url)
+        parts = [part for part in parsed.path.split("/") if part]
+        if len(parts) == 4 and parts[2].casefold() == "issues" and parts[3].isdigit():
+            if expected_repo and (parts[0].casefold(), parts[1].casefold()) == expected_repo:
+                refs.add(int(parts[3]))
+    value_without_urls = GITHUB_URL_PATTERN.sub(" ", value)
+    refs.update(int(match.group(1)) for match in REFERENCE_PATTERN.finditer(value_without_urls))
     return refs
 
+
+def extract_issue_refs(text, current_number):
+    return {number for number in reference_targets(text) if number != current_number}
 
 def labels_of(item):
     labels = item.get("labels") or []
@@ -200,7 +213,7 @@ def find_referenced_prs(issue_number):
     found = {}
     for item in search_items(query):
         text = (item.get("title") or "") + "\n" + (item.get("body") or "")
-        if re.search(rf"(?<![\w])#\s*{issue_number}\b|/issues/{issue_number}\b", text, re.I):
+        if issue_number in reference_targets(text):
             found[item["number"]] = item
     return list(found.values())[:10]
 
