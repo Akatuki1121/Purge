@@ -172,13 +172,15 @@ def find_issue_relations(issue):
     current_signatures = issue_signatures(issue)
     current_fields = parse_fields(issue.get("body", ""))
     current_actual = normalize(current_fields.get("actual", ""))
-    queries = [f'"{signature}"' for signature in sorted(current_signatures)[:3]]
+    queries = [f'"{signature}"' for signature in sorted(current_signatures)[:2]]
     if len(current_actual) >= 16 and len(current_actual) <= 100:
         queries.append(f'"{current_actual}"')
 
-    for term_query in queries[:4]:
+    # Use a category filter only when classification is unambiguous; otherwise exact search
+    # remains narrow enough and avoids excluding relevant issues with multiple labels.
+    categories = [next(iter(category_labels))] if len(category_labels) == 1 else [None]
+    for term_query in queries:
         query = f"repo:{REPO} is:issue in:title,body {term_query}"
-        categories = sorted(category_labels) or [None]
         for category in categories:
             scoped_query = query + (f" label:{category}" if category else "")
             for item in search_items(scoped_query):
