@@ -1,7 +1,6 @@
 name: Issue Relation Analysis
 
-# Issueごとの分類とは別に、未解決IssueとPRを横断して関連候補を提示する。
-# 外部API・LLMは使わず、候補提示のみ。Issueの状態やラベルは変更しない。
+# 全件走査や文章類似度での推測を避け、根拠が強い関係だけを提示する。
 on:
   issues:
     types: [opened, edited, reopened]
@@ -22,7 +21,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      - name: Compare issue reports and PRs
+
+      - name: Test relation matching
+        run: python -m unittest discover -s .github/scripts -p 'test_issue_relation_analysis.py' -v
+
+      - name: Find evidence-backed relations
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
