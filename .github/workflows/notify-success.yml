@@ -1,10 +1,11 @@
-name: Notify PR Checks Success
+name: Notify PR CI Success
 
-# PRのチェック一式が完了し、GitHubが成功と判定したときにDiscordへ1回通知する。
-# 個々のジョブ成功では通知せず、チェック全体の結論を通知する。
+# PRのCIワークフローが成功したときにDiscordへ通知する。
+# 他のワークフローの成功と誤認させないよう、通知対象をCIに限定する。
 
 on:
-  check_suite:
+  workflow_run:
+    workflows: ["CI"]
     types: [completed]
 
 permissions:
@@ -14,17 +15,17 @@ permissions:
 jobs:
   notify:
     if: >-
-      github.event.check_suite.conclusion == 'success' &&
-      github.event.check_suite.pull_requests[0] != null
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.pull_requests[0] != null
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Prepare success notification
         env:
           REPO: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.check_suite.head_sha }}
-          CHECKS_URL: ${{ github.event.check_suite.html_url }}
-          PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          CHECKS_URL: ${{ github.event.workflow_run.html_url }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
           WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
         run: |
           set -euo pipefail
@@ -33,7 +34,7 @@ jobs:
             exit 0
           fi
 
-          MSG=$(printf '### ✅ PRのチェックがすべて成功しました\n\n- PR: https://github.com/%s/pull/%s\n- コミット: `%.7s`\n- チェック: %s' "${REPO}" "${PR_NUMBER}" "${HEAD_SHA}" "${CHECKS_URL}")
+          MSG=$(printf '### ✅ PRのCIが成功しました\n\n- PR: https://github.com/%s/pull/%s\n- コミット: `%.7s`\n- CI実行: %s' "${REPO}" "${PR_NUMBER}" "${HEAD_SHA}" "${CHECKS_URL}")
           jq -n --arg c "${MSG}" '{content: $c}' |
             curl --fail-with-body --silent --show-error -X POST \
               -H 'Content-Type: application/json' -d @- "${WEBHOOK_URL}"
