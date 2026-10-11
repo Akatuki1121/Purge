@@ -50,12 +50,12 @@ class RelationEvidenceTests(unittest.TestCase):
         uac_issue = {
             "number": 91,
             "title": "アップデート後の「Purgeを起動する」でPurge.exeのUACが出る",
-            "body": "## 症状\\nアップデート時、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が出る。\\n\\n## 背景\\n省略",
+            "body": "## 症状\nアップデート時、インストーラー完了画面で「Purgeを起動する」を選ぶと、Purge.exe 起動のたびにUACの確認が出る。\n\n## 背景\n省略",
         }
         shortcut_issue = {
             "number": 92,
             "title": "アップデート時にデスクトップ/スタートメニューのショートカットが一度削除される",
-            "body": "## 症状\\nアップデートでMSIをインストールすると、デスクトップ／スタートメニューのショートカットが一度削除され、作り直される。\\n\\n## 背景\\n省略",
+            "body": "## 症状\nアップデートでMSIをインストールすると、デスクトップ／スタートメニューのショートカットが一度削除され、作り直される。\n\n## 背景\n省略",
         }
         self.assertIn("UACの確認", relation.parse_fields(uac_issue["body"])["actual"])
         self.assertIn("ショートカット", relation.parse_fields(shortcut_issue["body"])["actual"])
