@@ -7,6 +7,7 @@ SCRIPT = Path(__file__).with_name("issue-relation-analysis.py")
 SPEC = importlib.util.spec_from_file_location("issue_relation_analysis", SCRIPT)
 relation = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(relation)
+relation.REPO = "Akatuki1121/Purge"
 
 
 class RelationEvidenceTests(unittest.TestCase):
