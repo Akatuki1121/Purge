@@ -110,7 +110,7 @@ def issue_signatures(item):
 
 def compact_actual(value):
     """Normalize punctuation and spacing for conservative symptom phrase comparison."""
-    return re.sub(r"[\\W_]+", "", normalize(value), flags=re.UNICODE)
+    return re.sub(r"[\W_]+", "", normalize(value), flags=re.UNICODE)
 
 
 def longest_shared_actual_phrase(left, right, minimum=24, maximum=48):
