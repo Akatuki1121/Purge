@@ -23,7 +23,6 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          CHECKS_URL: ${{ github.event.workflow_run.html_url }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -36,15 +35,11 @@ jobs:
           fi
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "repo=${REPO}" >> "$GITHUB_OUTPUT"
-          echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
-          echo "checks_url=${CHECKS_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Send Discord notification
         if: steps.resolve.outputs.pr_number != ''
         env:
           REPO: ${{ steps.resolve.outputs.repo }}
-          HEAD_SHA: ${{ steps.resolve.outputs.head_sha }}
-          CHECKS_URL: ${{ steps.resolve.outputs.checks_url }}
           PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
         run: |
@@ -54,7 +49,7 @@ jobs:
             exit 0
           fi
 
-          MSG=$(printf '### ✅ PRのCIが成功しました\\n\\n- PR: https://github.com/%s/pull/%s\\n- コミット: `%.7s`\\n- CI実行: %s' "${REPO}" "${PR_NUMBER}" "${HEAD_SHA}" "${CHECKS_URL}")
+          MSG=$(printf '✅ CI成功 — PR #%s: https://github.com/%s/pull/%s' "${PR_NUMBER}" "${REPO}" "${PR_NUMBER}")
           jq -n --arg c "${MSG}" '{content: $c}' |
             curl --fail-with-body --silent --show-error -X POST \
               -H 'Content-Type: application/json' -d @- "${WEBHOOK_URL}"
