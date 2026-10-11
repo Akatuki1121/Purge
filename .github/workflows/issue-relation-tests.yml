@@ -1,0 +1,26 @@
+name: Issue Relation Tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/issue-relation-analysis.py"
+      - ".github/scripts/test_issue_relation_analysis.py"
+      - ".github/workflows/issue-relation-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/scripts/issue-relation-analysis.py"
+      - ".github/scripts/test_issue_relation_analysis.py"
+      - ".github/workflows/issue-relation-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Run relation matching tests
+        run: python -m unittest discover -s .github/scripts -p 'test_issue_relation_analysis.py' -v
