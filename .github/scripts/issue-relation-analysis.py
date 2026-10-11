@@ -109,6 +109,20 @@ def issue_signatures(item):
     return extract_signatures(evidence)
 
 
+def relation_evidence(current, candidate):
+    """Return a strict match reason, or None; never infer a relation from general similarity."""
+    current_fields = parse_fields(current.get("body", ""))
+    candidate_fields = parse_fields(candidate.get("body", ""))
+    same_signatures = issue_signatures(current) & issue_signatures(candidate)
+    if same_signatures:
+        return "一致したエラー識別子: " + ", ".join(sorted(same_signatures))
+    current_actual = normalize(current_fields.get("actual", ""))
+    candidate_actual = normalize(candidate_fields.get("actual", ""))
+    if current_actual and len(current_actual) >= 16 and current_actual == candidate_actual:
+        return "Issueフォームの「実際の結果」が正規化後に完全一致"
+    return None
+
+
 def extract_issue_refs(text, current_number):
     refs = set()
     for match in REFERENCE_PATTERN.finditer(text or ""):
@@ -150,14 +164,11 @@ def direct_issue(number):
 
 def find_issue_relations(issue):
     current_number = issue["number"]
-    current_fields = parse_fields(issue.get("body", ""))
-    current_signatures = issue_signatures(issue)
-    current_actual = normalize(current_fields.get("actual", ""))
     current_labels = labels_of(issue)
     category_labels = current_labels & CATEGORY_LABELS
     relations = {}
 
-    # Explicit references are intentional links and do not require search.
+    # Explicit references are intentional links and do not require repository-wide search.
     refs = extract_issue_refs(issue.get("title", "") + "\n" + issue.get("body", ""), current_number)
     for number in sorted(refs):
         item = direct_issue(number)
@@ -169,53 +180,29 @@ def find_issue_relations(issue):
             }
 
     # Search only for exact, distinctive evidence; never enumerate the repository's issues.
+    current_signatures = issue_signatures(issue)
+    current_fields = parse_fields(issue.get("body", ""))
+    current_actual = normalize(current_fields.get("actual", ""))
     queries = []
     for signature in sorted(current_signatures)[:3]:
-        queries.append((f'"{signature}"', signature))
+        queries.append(f'"{signature}"')
     if not current_signatures and len(current_actual) >= 16 and len(current_actual) <= 100:
-        queries.append((f'"{current_actual}"', current_actual))
+        queries.append(f'"{current_actual}"')
 
-    for term_query, evidence_term in queries:
+    for term_query in queries:
         query = f"repo:{REPO} is:issue in:title,body {term_query}"
-        if category_labels:
-            # Search each known category separately; exact local checks remain mandatory.
-            for category in sorted(category_labels):
-                for item in search_items(query + f" label:{category}"):
-                    if item.get("number") == current_number or "pull_request" in item:
-                        continue
-                    candidate_signatures = issue_signatures(item)
-                    candidate_fields = parse_fields(item.get("body", ""))
-                    same_signature = current_signatures & candidate_signatures
-                    candidate_actual = normalize(candidate_fields.get("actual", ""))
-                    same_actual = bool(current_actual and current_actual == candidate_actual and len(current_actual) >= 16)
-                    if same_signature or same_actual:
-                        number = item["number"]
-                        relations.setdefault(number, {
-                            "item": item,
-                            "kind": "同じ症状の強い一致",
-                            "evidence": (
-                                "一致したエラー識別子: " + ", ".join(sorted(same_signature))
-                                if same_signature else "Issueフォームの「実際の結果」が正規化後に完全一致"
-                            ),
-                        })
-        else:
-            for item in search_items(query):
+        categories = sorted(category_labels) or [None]
+        for category in categories:
+            scoped_query = query + (f" label:{category}" if category else "")
+            for item in search_items(scoped_query):
                 if item.get("number") == current_number or "pull_request" in item:
                     continue
-                candidate_signatures = issue_signatures(item)
-                candidate_fields = parse_fields(item.get("body", ""))
-                same_signature = current_signatures & candidate_signatures
-                candidate_actual = normalize(candidate_fields.get("actual", ""))
-                same_actual = bool(current_actual and current_actual == candidate_actual and len(current_actual) >= 16)
-                if same_signature or same_actual:
-                    number = item["number"]
-                    relations.setdefault(number, {
+                evidence = relation_evidence(issue, item)
+                if evidence:
+                    relations.setdefault(item["number"], {
                         "item": item,
                         "kind": "同じ症状の強い一致",
-                        "evidence": (
-                            "一致したエラー識別子: " + ", ".join(sorted(same_signature))
-                            if same_signature else "Issueフォームの「実際の結果」が正規化後に完全一致"
-                        ),
+                        "evidence": evidence,
                     })
 
     return sorted(relations.values(), key=lambda relation: relation["item"]["number"])
