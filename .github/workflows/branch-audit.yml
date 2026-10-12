@@ -59,7 +59,8 @@ jobs:
             done
             if [ "$found" -eq 0 ]; then
               echo "| (PR未作成ブランチはありません) | | | |"
-            fi            echo ""
+            fi
+            echo ""
 
             echo "### 全ブランチの乖離状況"
             echo ""
