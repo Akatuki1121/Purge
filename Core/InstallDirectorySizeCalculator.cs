@@ -8,7 +8,7 @@ namespace Purge;
 /// 既知のインストール先ディレクトリのサイズを計測する。
 /// 再解析ポイントは追跡せず、権限不足や走査中の I/O エラーがあれば部分合計を返さず null とする。
 /// </summary>
-internal static class InstallDirectorySizeCalculator
+public static class InstallDirectorySizeCalculator
 {
     public static long? CalculateBytes(string? directoryPath)
     {
