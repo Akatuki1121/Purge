@@ -48,6 +48,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Collect failure details
+        timeout-minutes: 2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -101,6 +102,7 @@ jobs:
           cat message.md
 
       - name: Send Discord notification
+        timeout-minutes: 1
         env:
           WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
         run: |
@@ -111,4 +113,4 @@ jobs:
           fi
           # Discordは2000文字制限のため頭から切り詰める
           MSG=$(head -c 1800 message.md)
-          jq -n --arg c "$MSG" '{content: $c}' | curl --fail-with-body --silent --show-error -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK_URL"
+          jq -n --arg c "$MSG" '{content: $c}' | curl --connect-timeout 5 --max-time 10 --fail-with-body --silent --show-error -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK_URL"
