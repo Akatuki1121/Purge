@@ -1,0 +1,72 @@
+name: Notify Third-Party Issue
+
+# 本人とBot以外が新規作成したIssueをDiscordで通知する。
+# ACTIONS_NOTIFY_WEBHOOK_URL は notify-failure.yml と共通。
+# メンションは指定ユーザーIDだけ許可し、Issue本文内の他のメンションは無効化する。
+
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  notify:
+    if: >-
+      github.event.issue.pull_request == null &&
+      github.event.issue.user.login != 'Akatuki1121' &&
+      github.event.issue.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send Discord mention
+        env:
+          WEBHOOK_URL: ${{ secrets.ACTIONS_NOTIFY_WEBHOOK_URL }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "ACTIONS_NOTIFY_WEBHOOK_URL が未設定のため、通知をスキップします。"
+            exit 0
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+
+          mention = "<@832816710858965012>"
+          title = os.environ.get("ISSUE_TITLE", "(タイトルなし)").replace("\r", " ").replace("\n", " ")
+          author = os.environ.get("ISSUE_AUTHOR", "unknown")
+          number = os.environ.get("ISSUE_NUMBER", "?")
+          url = os.environ.get("ISSUE_URL", "")
+          body = os.environ.get("ISSUE_BODY", "").strip()
+          if not body:
+              body = "(本文なし)"
+          if len(body) > 900:
+              body = body[:900].rstrip() + "…"
+
+          message = (
+              f"{mention} 新しいIssueが投稿されました。\n"
+              f"**#{number} {title[:200]}**\n"
+              f"投稿者: `{author[:100]}`\n"
+              f"{url}\n\n"
+              f"{body}"
+          )
+          payload = {
+              "content": message[:1800],
+              "allowed_mentions": {
+                  "parse": [],
+                  "users": ["832816710858965012"]
+              }
+          }
+          with open("discord-payload.json", "w", encoding="utf-8") as f:
+              json.dump(payload, f, ensure_ascii=False)
+          PY
+
+          curl --connect-timeout 5 --max-time 10 --fail-with-body --silent --show-error \
+            -X POST -H 'Content-Type: application/json' \
+            --data-binary @discord-payload.json "$WEBHOOK_URL"
