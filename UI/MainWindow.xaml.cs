@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -180,7 +181,8 @@ public partial class MainWindow : FluentWindow
         "DisplayName",
         "PublisherDisplay",
         "DisplayVersion",
-        "InstallLocation"
+        "InstallLocation",
+        "InstallSizeBytes"
     };
 
     private void AppListView_ColumnHeaderClick(object sender, RoutedEventArgs e)
@@ -259,6 +261,9 @@ public partial class MainWindow : FluentWindow
         UpdateEmptyState();
         RefreshLogView();
 
+        // サイズ計測はアイコン・発行元の補完と並行して進める。
+        StartInstallSizeScan(items);
+
         await Task.Run(() =>
         {
             foreach (var item in items)
@@ -268,6 +273,100 @@ public partial class MainWindow : FluentWindow
                 item.ResolvePublisher();
             }
         });
+    }
+
+    /// <summary>
+    /// 既知のインストール先フォルダーだけをバックグラウンドで計測する。
+    /// 一覧表示を待たせず、重複パスは1回だけ、同時スキャン数も制限する。
+    /// </summary>
+    private void StartInstallSizeScan(IReadOnlyList<AppListItem> items)
+    {
+        var paths = items
+            .Select(item => NormalizeInstallLocation(item.InstallLocation))
+            .Where(path => path != null)
+            .Select(path => path!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var view = _appView;
+        _ = Task.Run(() =>
+        {
+            var sizes = new ConcurrentDictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            Parallel.ForEach(
+                paths,
+                new ParallelOptions { MaxDegreeOfParallelism = 2 },
+                path =>
+                {
+                    var size = InstallDirectorySizeCalculator.CalculateBytes(path);
+                    if (size.HasValue)
+                    {
+                        sizes[path] = size.Value;
+                    }
+                });
+
+            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                foreach (var item in items)
+                {
+                    var path = NormalizeInstallLocation(item.InstallLocation);
+                    item.SetInstallSize(path != null && sizes.TryGetValue(path, out var bytes) ? bytes : null);
+                }
+
+                // サイズ確定後に1回だけ再評価し、サイズ列でのソートも反映する。
+                if (ReferenceEquals(_appView, view))
+                {
+                    view?.Refresh();
+                }
+            }));
+        });
+    }
+
+    private static string? NormalizeInstallLocation(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var fullPath = Path.GetFullPath(path.Trim());
+            var normalizedPath = Path.TrimEndingDirectorySeparator(fullPath);
+            var driveRoot = Path.TrimEndingDirectorySeparator(Path.GetPathRoot(fullPath) ?? string.Empty);
+
+            // Uninstall レジストリがアプリ固有ではない親フォルダーを返す場合、
+            // その中の全アプリを同じ巨大なサイズとして表示しないよう「不明」にする。
+            var genericLocations = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsApps"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Common Files"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Common Files")
+            }
+            .Where(location => !string.IsNullOrWhiteSpace(location))
+            .Select(location => Path.TrimEndingDirectorySeparator(Path.GetFullPath(location)))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (string.Equals(normalizedPath, driveRoot, StringComparison.OrdinalIgnoreCase) ||
+                genericLocations.Contains(normalizedPath))
+            {
+                return null;
+            }
+
+            return fullPath;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private bool FilterApp(object item)

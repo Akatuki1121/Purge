@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.Globalization;
+using Purge.Localization;
 using System.Windows;
 using System.Windows.Media;
 using Purge;
@@ -23,6 +25,8 @@ namespace Purge.UI
         public ImageSource? Icon { get; private set; }
 
         private string? _publisher;
+        private long? _installSizeBytes;
+        private bool _installSizeResolved;
 
         public string DisplayName => App.DisplayName;
         public string? DisplayVersion => App.DisplayVersion;
@@ -35,11 +39,46 @@ namespace Purge.UI
         public string PublisherDisplay => string.IsNullOrWhiteSpace(_publisher) ? "発行元情報なし" : _publisher;
 
         public string? InstallLocation => App.InstallLocation;
+        public long? InstallSizeBytes => _installSizeBytes;
+        public string InstallSizeDisplay => _installSizeResolved
+            ? _installSizeBytes.HasValue ? FormatSize(_installSizeBytes.Value) : Loc.T("Size_Unknown")
+            : Loc.T("Size_Calculating");
 
         public AppListItem(InstalledApp app)
         {
             App = app;
             _publisher = app.Publisher;
+            _installSizeResolved = string.IsNullOrWhiteSpace(app.InstallLocation);
+        }
+
+        /// <summary>
+        /// インストール先フォルダーのサイズを反映する。null は計測不能・アクセス不可を表す。
+        /// </summary>
+        public void SetInstallSize(long? bytes)
+        {
+            SetOnUiThread(() =>
+            {
+                _installSizeBytes = bytes;
+                _installSizeResolved = true;
+                RaisePropertyChanged(nameof(InstallSizeBytes));
+                RaisePropertyChanged(nameof(InstallSizeDisplay));
+            });
+        }
+
+        private static string FormatSize(long bytes)
+        {
+            string[] units = { "B", "KB", "MB", "GB", "TB" };
+            double size = bytes;
+            var unit = 0;
+            while (size >= 1024 && unit < units.Length - 1)
+            {
+                size /= 1024;
+                unit++;
+            }
+
+            return unit == 0
+                ? $"{bytes.ToString(CultureInfo.CurrentCulture)} {units[unit]}"
+                : $"{size.ToString("0.#", CultureInfo.CurrentCulture)} {units[unit]}";
         }
 
         /// <summary>

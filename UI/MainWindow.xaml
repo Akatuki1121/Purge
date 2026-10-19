@@ -193,6 +193,12 @@
                                             <GridViewColumnHeader Content="{loc:Loc Col_InstallLocation}" Tag="InstallLocation"/>
                                         </GridViewColumn.Header>
                                     </GridViewColumn>
+                                    <GridViewColumn Width="105" DisplayMemberBinding="{Binding InstallSizeDisplay}">
+                                        <GridViewColumn.Header>
+                                            <GridViewColumnHeader Content="{loc:Loc Col_InstallSize}" Tag="InstallSizeBytes"
+                                                                  ToolTip="{loc:Loc Tip_InstallSize}"/>
+                                        </GridViewColumn.Header>
+                                    </GridViewColumn>
                                 </GridView>
                             </ListView.View>
                         </ListView>
