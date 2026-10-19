@@ -16,6 +16,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -29,23 +30,31 @@ jobs:
         run: |
           set -euo pipefail
           git fetch -q origin '+refs/heads/*:refs/remotes/origin/*'
+          BRANCH_REFS=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin/main$' || true)
+
+          # PR一覧を一度だけ取得し、ブランチ数に比例するAPI呼び出しを避ける。
+          # 取得失敗時は「PR未作成」と断定せず、各ブランチを確認失敗として残す。
+          if PR_HEADS=$(gh pr list --repo "$REPO" --state all --limit 1000 --json headRefName,headRepository,headRepositoryOwner | jq -r --arg owner "${REPO%%/*}" --arg repo "${REPO#*/}" '.[] | select(.headRepository.name == $repo and .headRepositoryOwner.login == $owner) | .headRefName'); then
+            PR_QUERY_OK=true
+          else
+            PR_QUERY_OK=false
+            PR_HEADS=""
+          fi
 
           {
             echo "## ブランチ監査"
             echo ""
             echo "- 実行日時: $(date -u '+%Y-%m-%d %H:%M UTC')"
             echo ""
-
             echo "### PR未作成ブランチ"
             echo ""
             echo "| ブランチ | mainからの先行コミット数 | 最終更新日時 | PR確認 |"
             echo "| --- | --- | --- | --- |"
             found=0
-            for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin/main$'); do
+            for ref in $BRANCH_REFS; do
               branch="${ref#origin/}"
-              # API取得失敗を「PRあり」と扱って未作成ブランチを隠さない。
-              if pr_count=$(gh pr list --repo "$REPO" --head "$branch" --state all --json number --jq 'length' 2>/dev/null); then
-                if [ "$pr_count" != "0" ]; then
+              if [ "$PR_QUERY_OK" = true ]; then
+                if grep -Fxq -- "$branch" <<< "$PR_HEADS"; then
                   continue
                 fi
                 pr_status="未作成"
@@ -54,22 +63,21 @@ jobs:
               fi
               ahead=$(git rev-list --count "origin/main..refs/remotes/origin/$branch" 2>/dev/null || echo '?')
               last=$(git log -1 --format='%ci' "refs/remotes/origin/$branch" | cut -d' ' -f1)
-              echo "| \`$branch\` | $ahead | $last | $pr_status |"
+              echo "| `$branch` | $ahead | $last | $pr_status |"
               found=1
             done
             if [ "$found" -eq 0 ]; then
               echo "| (PR未作成ブランチはありません) | | | |"
             fi
             echo ""
-
             echo "### 全ブランチの乖離状況"
             echo ""
             echo "| ブランチ | mainからの先行コミット数 | 最終更新日時 |"
             echo "| --- | --- | --- |"
-            for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin/main$'); do
+            for ref in $BRANCH_REFS; do
               branch="${ref#origin/}"
               ahead=$(git rev-list --count "origin/main..refs/remotes/origin/$branch" 2>/dev/null || echo '-')
               last=$(git log -1 --format='%ci' "refs/remotes/origin/$branch" | cut -d' ' -f1)
-              echo "| \`$branch\` | $ahead | $last |"
+              echo "| `$branch` | $ahead | $last |"
             done
           } >> "$GITHUB_STEP_SUMMARY"
