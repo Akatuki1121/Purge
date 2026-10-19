@@ -140,5 +140,27 @@ class RelationEvidenceTests(unittest.TestCase):
         self.assertNotEqual(relation.fingerprint(before), relation.fingerprint(after))
 
 
+class StrongPRRelationTests(unittest.TestCase):
+    def test_pr_with_same_distinctive_error_identifier_is_candidate(self):
+        issue = {"body": "### 実際の結果\n起動に失敗\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
+        pr = {"title": "fix: handle HRESULT 0x80070005 during startup", "body": "Permission error"}
+        evidence = relation.pr_relation_evidence(issue, pr)
+        self.assertIn("0x80070005", evidence)
+
+    def test_pr_with_only_generic_shared_word_is_not_candidate(self):
+        issue = {"body": "### 実際の結果\nアプリ起動時に設定ファイルを読み込めず終了します"}
+        pr = {"title": "fix: application file handling", "body": "Improve startup behavior"}
+        self.assertIsNone(relation.pr_relation_evidence(issue, pr))
+
+    def test_search_terms_are_separate_not_joined_with_or(self):
+        issue = {"body": "### 実際の結果\nインストーラー完了画面でPurgeを起動すると、起動のたびにUACの確認が出る。\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
+        terms = relation.evidence_search_terms(issue)
+        self.assertGreater(len(terms), 1)
+        self.assertTrue(all(" OR " not in term for term in terms))
+        queries = [relation.build_evidence_query("issue", term) for term in terms]
+        self.assertEqual(len(queries), len(terms))
+        self.assertTrue(all(query.count('"') == 2 for query in queries))
+
+
 if __name__ == "__main__":
     unittest.main()
