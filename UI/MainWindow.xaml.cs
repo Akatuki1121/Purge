@@ -261,6 +261,9 @@ public partial class MainWindow : FluentWindow
         UpdateEmptyState();
         RefreshLogView();
 
+        // サイズ計測はアイコン・発行元の補完と並行して進める。
+        StartInstallSizeScan(items);
+
         await Task.Run(() =>
         {
             foreach (var item in items)
@@ -270,8 +273,6 @@ public partial class MainWindow : FluentWindow
                 item.ResolvePublisher();
             }
         });
-
-        StartInstallSizeScan(items);
     }
 
     /// <summary>
@@ -286,11 +287,6 @@ public partial class MainWindow : FluentWindow
             .Select(path => path!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-
-        if (paths.Length == 0)
-        {
-            return;
-        }
 
         var view = _appView;
         _ = Task.Run(() =>
@@ -308,7 +304,7 @@ public partial class MainWindow : FluentWindow
                     }
                 });
 
-            Application.Current?.Dispatcher.BeginInvoke(() =>
+            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
                 foreach (var item in items)
                 {
@@ -321,7 +317,7 @@ public partial class MainWindow : FluentWindow
                 {
                     view?.Refresh();
                 }
-            });
+            }));
         });
     }
 
