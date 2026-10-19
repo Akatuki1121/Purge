@@ -9,10 +9,6 @@ name: Verify Self-Uninstall
 # SelfUninstaller や Verify-SelfUninstall.ps1 を変更したPRで自動実行し、手動実行もできる。
 
 on:
-concurrency:
-  group: verify-self-uninstall-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
   pull_request:
     paths:
       - "Core/SelfUninstaller.cs"
@@ -24,6 +20,11 @@ concurrency:
         description: "検証用MSIのバージョン(例: 0.0.1)。Uninstall登録のバージョン照合に使う"
         default: "0.0.1"
         required: true
+
+concurrency:
+  group: verify-self-uninstall-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 
 jobs:
   verify:
