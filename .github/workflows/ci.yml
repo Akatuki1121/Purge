@@ -20,6 +20,7 @@ jobs:
       ui: ${{ steps.changes.outputs.ui }}
       lightweight-only: ${{ steps.scope.outputs.lightweight-only }}
       workflow-only: ${{ steps.scope.outputs.workflow-only }}
+      workflows: ${{ steps.changes.outputs.workflows }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -28,6 +29,8 @@ jobs:
         id: changes
         with:
           filters: |
+            workflows:
+              - '.github/workflows/**'
             installer:
               - 'installer/**'
               - 'Core/UpdateDownloader.cs'
@@ -101,6 +104,16 @@ jobs:
         run: dotnet build --no-restore
       - name: Test
         run: dotnet test --no-build
+  workflow-lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate workflow YAML syntax
+        run: |
+          ruby -e 'require "yaml"; Dir.glob(".github/workflows/*.{yml,yaml}").sort.each { |path| YAML.load_file(path); puts "Validated #{path}" }'
   msi-verify:
     needs: detect-changes
     if: needs.detect-changes.outputs.installer == 'true'
