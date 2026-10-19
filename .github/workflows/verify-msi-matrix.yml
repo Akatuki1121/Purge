@@ -18,9 +18,14 @@ on:
       - 'scripts/Verify-MsiUpgrade.ps1'
       - '.github/workflows/verify-msi-matrix.yml'
 
+concurrency:
+  group: verify-msi-matrix-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       installer: ${{ steps.changes.outputs.installer }}
     steps:
@@ -35,20 +40,11 @@ jobs:
               - 'scripts/Verify-MsiUpgrade.ps1'
               - '.github/workflows/verify-msi-matrix.yml'
 
-  verify-matrix:
+  build-candidate:
     needs: detect-changes
     if: needs.detect-changes.outputs.installer == 'true' && github.actor != 'dependabot[bot]'
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - upgrade-path: 'latest -> rc'
-            baseline: 'latest'
-          - upgrade-path: 'previous -> rc'
-            baseline: 'previous'
-          - upgrade-path: 'same -> same'
-            baseline: 'none'
+    timeout-minutes: 30
     env:
       RC_VERSION: '9.9.9'
     steps:
@@ -73,11 +69,45 @@ jobs:
           dotnet restore UI/Purge.UI.csproj --runtime win-x64
           dotnet restore installer/Purge.Installer.wixproj
 
-      - name: Build RC MSI
+      - name: Build RC MSI once
+        shell: pwsh
         run: |
           dotnet publish UI/Purge.UI.csproj --configuration Release --runtime win-x64 --self-contained true --output publish/Purge -p:Version=$env:RC_VERSION --no-restore
           dotnet build installer/Purge.Installer.wixproj -p:Platform=x64 -p:Configuration=Release -p:ProductVersion=$env:RC_VERSION -p:Cultures=ja-JP --no-restore
-        shell: pwsh
+
+      - name: Upload RC MSI
+        uses: actions/upload-artifact@v7
+        with:
+          name: rc-msi
+          path: installer/bin/x64/Release/ja-JP/Purge.Installer.msi
+          if-no-files-found: error
+
+  verify-matrix:
+    needs: [detect-changes, build-candidate]
+    if: needs.detect-changes.outputs.installer == 'true' && github.actor != 'dependabot[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - upgrade-path: 'latest -> rc'
+            baseline: 'latest'
+          - upgrade-path: 'previous -> rc'
+            baseline: 'previous'
+          - upgrade-path: 'same -> same'
+            baseline: 'none'
+    env:
+      RC_VERSION: '9.9.9'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download RC MSI
+        uses: actions/download-artifact@v8
+        with:
+          name: rc-msi
+          path: candidate
 
       - name: Determine baseline releases
         id: baseline
@@ -123,7 +153,7 @@ jobs:
         if: steps.download.outputs.skip != 'true'
         shell: pwsh
         run: |
-          $rc = "$PWD/installer/bin/x64/Release/ja-JP/Purge.Installer.msi"
+          $rc = "$PWD/candidate/Purge.Installer.msi"
           if ('${{ matrix.baseline }}' -eq 'none') {
             # 同一バージョンの再実行: RCをインストールしてから同じMSIを再実行する
             ./scripts/Verify-MsiUpgrade.ps1 -FromMsi $rc -ToMsi $rc -FromVersion $env:RC_VERSION -ToVersion $env:RC_VERSION

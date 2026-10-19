@@ -11,6 +11,7 @@ jobs:
   localize:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - name: PRタイトルと概要を日本語化
         uses: actions/github-script@v9

@@ -13,6 +13,7 @@ jobs:
     # PRの作成者を検証する。イベント実行者だけでは判定しない。
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Dependabotのメタデータ取得
         id: meta
@@ -51,6 +52,7 @@ jobs:
     # ワークフロー生成PRは、それを作成した専用ワークフロー側で制御する。
     if: github.event.pull_request.user.login == 'Akatuki1121' && github.actor == 'Akatuki1121'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: 必須チェック通過後の自動マージを有効化
         env:

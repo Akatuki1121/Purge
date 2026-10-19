@@ -51,5 +51,5 @@ jobs:
 
           MSG=$(printf '✅ CI成功 — PR #%s: https://github.com/%s/pull/%s' "${PR_NUMBER}" "${REPO}" "${PR_NUMBER}")
           jq -n --arg c "${MSG}" '{content: $c}' |
-            curl --fail-with-body --silent --show-error -X POST \
+            curl --connect-timeout 5 --max-time 10 --fail-with-body --silent --show-error -X POST \
               -H 'Content-Type: application/json' -d @- "${WEBHOOK_URL}"
