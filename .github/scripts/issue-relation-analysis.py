@@ -271,7 +271,6 @@ def direct_issue(number):
 
 def find_issue_relations(issue):
     current_number = issue["number"]
-    category_labels = labels_of(issue) & CATEGORY_LABELS
     relations = {}
 
     # Explicit references are intentional links and do not require repository-wide search.
@@ -285,23 +284,21 @@ def find_issue_relations(issue):
                 "evidence": f"本文またはタイトルに #{number} の参照があります。",
             }
 
-    # Search each exact signature/phrase separately. Search first within the same category,
-    # then without a label filter so a mislabelled related issue is not silently missed.
-    terms = evidence_search_terms(issue)
-    categories = sorted(category_labels) + ([None] if category_labels else [None])
-    for term in terms:
-        for category in categories:
-            query = build_evidence_query("issue", term, category)
-            for item in search_items(query):
-                if item.get("number") == current_number or "pull_request" in item:
-                    continue
-                evidence = relation_evidence(issue, item)
-                if evidence:
-                    relations.setdefault(item["number"], {
-                        "item": item,
-                        "kind": "同じ症状の強い一致",
-                        "evidence": evidence,
-                    })
+    # Search each exact signature/phrase separately without label scoping. This avoids
+    # missing a strong match due to an incorrect/missing label and bounds search API use.
+    # Every query contains one evidence term; the repository is never enumerated.
+    for term in evidence_search_terms(issue):
+        query = build_evidence_query("issue", term)
+        for item in search_items(query):
+            if item.get("number") == current_number or "pull_request" in item:
+                continue
+            evidence = relation_evidence(issue, item)
+            if evidence:
+                relations.setdefault(item["number"], {
+                    "item": item,
+                    "kind": "同じ症状の強い一致",
+                    "evidence": evidence,
+                })
 
     return sorted(relations.values(), key=lambda relation: relation["item"]["number"])
 
