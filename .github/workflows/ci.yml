@@ -89,7 +89,7 @@ jobs:
           echo "lightweight-only=$LIGHTWEIGHT_ONLY" >> "$GITHUB_OUTPUT"
   build-and-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.workflow-only != 'true' && needs.detect-changes.outputs.lightweight-only != 'true'
+    if: (needs.detect-changes.outputs.workflow-only != 'true' && needs.detect-changes.outputs.lightweight-only != 'true') || needs.detect-changes.outputs.workflows == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
