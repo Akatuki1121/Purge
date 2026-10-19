@@ -330,7 +330,38 @@ public partial class MainWindow : FluentWindow
 
         try
         {
-            return Path.GetFullPath(path.Trim());
+            var fullPath = Path.GetFullPath(path.Trim());
+            var normalizedPath = Path.TrimEndingDirectorySeparator(fullPath);
+            var driveRoot = Path.TrimEndingDirectorySeparator(Path.GetPathRoot(fullPath) ?? string.Empty);
+
+            // Uninstall レジストリがアプリ固有ではない親フォルダーを返す場合、
+            // その中の全アプリを同じ巨大なサイズとして表示しないよう「不明」にする。
+            var genericLocations = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsApps"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Common Files"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Common Files")
+            }
+            .Where(location => !string.IsNullOrWhiteSpace(location))
+            .Select(location => Path.TrimEndingDirectorySeparator(Path.GetFullPath(location)))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (string.Equals(normalizedPath, driveRoot, StringComparison.OrdinalIgnoreCase) ||
+                genericLocations.Contains(normalizedPath))
+            {
+                return null;
+            }
+
+            return fullPath;
         }
         catch
         {
