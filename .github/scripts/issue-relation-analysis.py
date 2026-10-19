@@ -56,7 +56,7 @@ def api(path, method="GET", payload=None):
     if data is not None:
         headers["Content-Type"] = "application/json"
     request = urllib.request.Request(API + path, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=25) as response:
+    with urllib.request.urlopen(request, timeout=10) as response:
         raw = response.read()
         return json.loads(raw) if raw else {}
 
@@ -274,8 +274,10 @@ def find_issue_relations(issue):
     relations = {}
 
     # Explicit references are intentional links and do not require repository-wide search.
-    refs = extract_issue_refs(issue.get("title", "") + "\n" + issue.get("body", ""), current_number)
-    for number in sorted(refs):
+    refs = sorted(extract_issue_refs(issue.get("title", "") + "\n" + issue.get("body", ""), current_number))
+    if len(refs) > 10:
+        print(f"Limiting explicit Issue references from {len(refs)} to 10 to bound API calls.")
+    for number in refs[:10]:
         item = direct_issue(number)
         if item:
             relations[number] = {
