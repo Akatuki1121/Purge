@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   analyze:
+    timeout-minutes: 5
     if: github.event.issue.pull_request == null && github.event.issue.number != 178
     runs-on: ubuntu-latest
     steps:
