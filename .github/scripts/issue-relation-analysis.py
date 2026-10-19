@@ -56,7 +56,7 @@ def api(path, method="GET", payload=None):
     if data is not None:
         headers["Content-Type"] = "application/json"
     request = urllib.request.Request(API + path, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=25) as response:
+    with urllib.request.urlopen(request, timeout=10) as response:
         raw = response.read()
         return json.loads(raw) if raw else {}
 
@@ -146,8 +146,21 @@ def actual_search_phrases(value, minimum=24, window=40, limit=4):
     return phrases
 
 
+def is_distinctive_phrase(phrase):
+    """Reject shared symptom text that becomes generic after removing boilerplate."""
+    residual = phrase
+    for generic in (
+        "nullreferenceexception", "exception", "error", "エラー", "エラーコード",
+        "が出ます", "が出る", "が発生します", "が表示されます", "が表示される",
+        "発生します", "表示されます", "表示される", "アプリ", "設定画面",
+        "起動時", "起動", "失敗", "ファイル", "問題", "できません",
+    ):
+        residual = residual.replace(compact_actual(generic), "")
+    return len(residual) >= 12
+
+
 def relation_evidence(current, candidate):
-    """Return a strict match reason, or None; never infer a relation from general similarity."""
+    """Return only strong, inspectable evidence; never infer a relation from general similarity."""
     current_fields = parse_fields(current.get("body", ""))
     candidate_fields = parse_fields(candidate.get("body", ""))
     same_signatures = issue_signatures(current) & issue_signatures(candidate)
@@ -155,21 +168,53 @@ def relation_evidence(current, candidate):
         return "一致した 32-bit エラー識別子: " + ", ".join(sorted(same_signatures))
     current_actual = normalize(current_fields.get("actual", ""))
     candidate_actual = normalize(candidate_fields.get("actual", ""))
-    if current_actual and len(current_actual) >= 16 and current_actual == candidate_actual:
+    compact_current = compact_actual(current_actual)
+    compact_candidate = compact_actual(candidate_actual)
+    if len(compact_current) >= 24 and compact_current == compact_candidate and is_distinctive_phrase(compact_current):
         return "Issueフォームの「実際の結果」が正規化後に完全一致"
     shared_phrase = longest_shared_actual_phrase(current_actual, candidate_actual)
-    if shared_phrase:
-        residual = shared_phrase
-        # Common exception names and generic outcome wording are not distinctive evidence alone.
-        for generic in (
-            "nullreferenceexception", "exception", "error", "エラー", "エラーコード",
-            "が出ます", "が出る", "が発生します", "が表示されます", "が表示される",
-            "発生します", "表示されます", "表示される", "アプリ", "設定画面",
-            "起動時", "起動", "失敗", "ファイル",
-        ):
-            residual = residual.replace(compact_actual(generic), "")
-        if len(residual) >= 12:
-            return "「実際の結果」に24文字以上の症状記述が一致（記号・空白を除外）: " + shared_phrase
+    if shared_phrase and is_distinctive_phrase(shared_phrase):
+        return "「実際の結果」に24文字以上の特徴的な症状記述が一致（記号・空白を除外）: " + shared_phrase
+    return None
+
+
+def evidence_search_terms(issue, limit=6):
+    """Return separate evidence terms; never combine them with OR/AND into one query."""
+    signatures = sorted(issue_signatures(issue))
+    fields = parse_fields(issue.get("body", ""))
+    phrases = actual_search_phrases(fields.get("actual", ""))
+    terms = []
+    for term in signatures + phrases:
+        term = normalize(term)
+        if term and term not in terms:
+            terms.append(term)
+    return terms[:limit]
+
+
+def build_evidence_query(kind, term, category=None):
+    """Build one bounded GitHub search query for one term (no boolean operators)."""
+    escaped = term.replace("\\", "\\\\").replace('"', '\\"')
+    query = f'repo:{REPO} is:{kind} in:title,body "{escaped}"'
+    if category:
+        query += f" label:{category}"
+    # GitHub Search rejects queries with more than five boolean operators. This builder
+    # deliberately emits one evidence term per request and never joins terms with OR.
+    return query
+
+
+def pr_relation_evidence(issue, candidate):
+    """Only surface a PR without an explicit reference when its title/body shares strong evidence."""
+    signatures = issue_signatures(issue)
+    candidate_text = (candidate.get("title") or "") + "\n" + (candidate.get("body") or "")
+    same_signatures = signatures & extract_signatures(candidate_text)
+    if same_signatures:
+        return "PR のタイトルまたは本文に同じ 32-bit エラー識別子: " + ", ".join(sorted(same_signatures))
+    fields = parse_fields(issue.get("body", ""))
+    current_actual = normalize(fields.get("actual", ""))
+    candidate_text = normalize(candidate_text)
+    shared_phrase = longest_shared_actual_phrase(current_actual, candidate_text)
+    if shared_phrase and is_distinctive_phrase(shared_phrase):
+        return "Issue の実際の結果と PR のタイトル・本文に24文字以上の特徴的な症状記述が一致: " + shared_phrase
     return None
 
 
@@ -226,12 +271,13 @@ def direct_issue(number):
 
 def find_issue_relations(issue):
     current_number = issue["number"]
-    category_labels = labels_of(issue) & CATEGORY_LABELS
     relations = {}
 
     # Explicit references are intentional links and do not require repository-wide search.
-    refs = extract_issue_refs(issue.get("title", "") + "\n" + issue.get("body", ""), current_number)
-    for number in sorted(refs):
+    refs = sorted(extract_issue_refs(issue.get("title", "") + "\n" + issue.get("body", ""), current_number))
+    if len(refs) > 10:
+        print(f"Limiting explicit Issue references from {len(refs)} to 10 to bound API calls.")
+    for number in refs[:10]:
         item = direct_issue(number)
         if item:
             relations[number] = {
@@ -240,42 +286,55 @@ def find_issue_relations(issue):
                 "evidence": f"本文またはタイトルに #{number} の参照があります。",
             }
 
-    # Search only for exact, distinctive evidence; never enumerate the repository's issues.
-    current_signatures = issue_signatures(issue)
-    current_fields = parse_fields(issue.get("body", ""))
-    current_actual = normalize(current_fields.get("actual", ""))
-    queries = [f'"{signature}"' for signature in sorted(current_signatures)[:3]]
-    # Long symptom reports often contain extra context, so search a few exact phrases
-    # from the actual-result field. Matching still requires a shared 24-character phrase.
-    queries.extend(f'"{phrase}"' for phrase in actual_search_phrases(current_actual))
-
-    for term_query in queries[:4]:
-        query = f"repo:{REPO} is:issue in:title,body {term_query}"
-        categories = sorted(category_labels) or [None]
-        for category in categories:
-            scoped_query = query + (f" label:{category}" if category else "")
-            for item in search_items(scoped_query):
-                if item.get("number") == current_number or "pull_request" in item:
-                    continue
-                evidence = relation_evidence(issue, item)
-                if evidence:
-                    relations.setdefault(item["number"], {
-                        "item": item,
-                        "kind": "同じ症状の強い一致",
-                        "evidence": evidence,
-                    })
+    # Search each exact signature/phrase separately without label scoping. This avoids
+    # missing a strong match due to an incorrect/missing label and bounds search API use.
+    # Every query contains one evidence term; the repository is never enumerated.
+    for term in evidence_search_terms(issue):
+        query = build_evidence_query("issue", term)
+        for item in search_items(query):
+            if item.get("number") == current_number or "pull_request" in item:
+                continue
+            evidence = relation_evidence(issue, item)
+            if evidence:
+                relations.setdefault(item["number"], {
+                    "item": item,
+                    "kind": "同じ症状の強い一致",
+                    "evidence": evidence,
+                })
 
     return sorted(relations.values(), key=lambda relation: relation["item"]["number"])
 
 
-def find_referenced_prs(issue_number):
-    query = f"repo:{REPO} is:pr #{issue_number}"
+def find_related_prs(issue):
+    current_number = issue["number"]
     found = {}
+
+    # Direct references are the strongest relationship evidence.
+    query = f"repo:{REPO} is:pr #{current_number}"
     for item in search_items(query):
         text = (item.get("title") or "") + "\n" + (item.get("body") or "")
-        if issue_number in reference_targets(text):
-            found[item["number"]] = item
-    return list(found.values())[:10]
+        if current_number in reference_targets(text):
+            found[item["number"]] = {
+                "item": item,
+                "kind": "明示的な Issue 参照",
+                "evidence": f"PR のタイトルまたは本文に #{current_number} の参照があります。",
+            }
+
+    # A PR without a direct reference is only a candidate when the same distinctive
+    # error identifier or long symptom phrase appears in its title/body. Each term is
+    # queried independently; never construct a large OR query.
+    for term in evidence_search_terms(issue):
+        query = build_evidence_query("pr", term)
+        for item in search_items(query):
+            evidence = pr_relation_evidence(issue, item)
+            if evidence:
+                found.setdefault(item["number"], {
+                    "item": item,
+                    "kind": "同じ根拠を含む PR 候補",
+                    "evidence": evidence,
+                })
+
+    return sorted(found.values(), key=lambda relation: relation["item"]["number"])[:10]
 
 
 def render(issue, relations, prs, source_fingerprint):
@@ -284,7 +343,7 @@ def render(issue, relations, prs, source_fingerprint):
         f"{INPUT_MARKER}{source_fingerprint} -->",
         "## 関連 Issue / 修正 PR（根拠一致のみ）",
         "",
-        "> 文章の類似度だけでは関連付けません。Issue は明示的な参照、同一の 32-bit エラー識別子、または「実際の結果」の完全一致が根拠です。共通原因・修正可能性は別途確認が必要です。",
+        "> 文章の類似度だけでは関連付けません。Issue は明示的な参照、同一の 32-bit エラー識別子、または「実際の結果」の完全一致・24文字以上の特徴的な部分一致が根拠です。共通原因・同じ修正で直ることは自動確定しません。",
         "",
         "### 同じ症状・明示的な関連 Issue",
     ]
@@ -298,22 +357,26 @@ def render(issue, relations, prs, source_fingerprint):
     else:
         lines.append("- 根拠の強い関連は確認できませんでした。推測で関連付けていません。")
 
-    lines += ["", "### 明示的に Issue を参照する PR"]
+    lines += ["", "### 明示参照または同じ強い根拠を含む PR 候補"]
     if prs:
-        for item in prs:
+        for relation in prs:
+            item = relation["item"]
             title = (item.get("title") or "(タイトルなし)").replace("[", r"\[").replace("]", r"\]")
             state = "merged" if item.get("pull_request", {}).get("merged_at") else item.get("state", "unknown")
             lines.append(f"- [#{item['number']}: {title}]({item.get('html_url', '')}) — {state}")
+            lines.append(f"  - 判定: {relation['kind']}")
+            lines.append(f"  - 根拠: {relation['evidence']}")
     else:
-        lines.append("- 本 Issue を明示的に参照する PR は検索結果から確認できませんでした。")
+        lines.append("- 根拠の強い PR 候補は確認できませんでした。")
 
     lines += [
         "",
         "### 判定上の制約",
         "- 同じ症状: 強い一致の根拠がある場合のみ表示",
-        "- 同じ原因: 自動確定しない",
-        "- 同じ修正で直る: PR が Issue を明示参照している場合のみ表示",
+        "- 同じ原因・同じ修正で直ること: 自動確定しない",
+        "- PR: Issue への明示参照、または同一のエラー識別子・特徴的な症状記述がタイトル/本文にある場合のみ候補表示",
         "- Issue のラベル・状態・他の Issue の状態は変更しない",
+        "- GitHub 検索は証拠語句ごとに個別実行し、OR 演算子の上限に依存しない",
     ]
     return "\n".join(lines)
 
@@ -337,14 +400,14 @@ def main():
         return
 
     relations = find_issue_relations(current)
-    prs = find_referenced_prs(CURRENT)
+    prs = find_related_prs(current)
     body = render(current, relations, prs, source_fingerprint)
     endpoint = (
         f"/repos/{REPO}/issues/comments/{existing['id']}"
         if existing else f"/repos/{REPO}/issues/{CURRENT}/comments"
     )
     api(endpoint, method="PATCH" if existing else "POST", payload={"body": body})
-    print(f"Updated evidence-backed report for #{CURRENT}: {len(relations)} issue relations, {len(prs)} explicitly referencing PRs.")
+    print(f"Updated evidence-backed report for #{CURRENT}: {len(relations)} issue relations, {len(prs)} PR candidates.")
 
 
 if __name__ == "__main__":

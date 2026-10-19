@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("issue-relation-analysis.py")
 SPEC = importlib.util.spec_from_file_location("issue_relation_analysis", SCRIPT)
@@ -140,5 +141,59 @@ class RelationEvidenceTests(unittest.TestCase):
         self.assertNotEqual(relation.fingerprint(before), relation.fingerprint(after))
 
 
+class StrongPRRelationTests(unittest.TestCase):
+    def test_pr_with_same_distinctive_error_identifier_is_candidate(self):
+        issue = {"body": "### 実際の結果\n起動に失敗\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
+        pr = {"title": "fix: handle HRESULT 0x80070005 during startup", "body": "Permission error"}
+        evidence = relation.pr_relation_evidence(issue, pr)
+        self.assertIn("0x80070005", evidence)
+
+    def test_pr_with_only_generic_shared_word_is_not_candidate(self):
+        issue = {"body": "### 実際の結果\nアプリ起動時に設定ファイルを読み込めず終了します"}
+        pr = {"title": "fix: application file handling", "body": "Improve startup behavior"}
+        self.assertIsNone(relation.pr_relation_evidence(issue, pr))
+
+    def test_search_terms_are_separate_not_joined_with_or(self):
+        issue = {"body": "### 実際の結果\nインストーラー完了画面でPurgeを起動すると、起動のたびにUACの確認が出る。\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
+        terms = relation.evidence_search_terms(issue)
+        self.assertGreater(len(terms), 1)
+        self.assertTrue(all(" OR " not in term for term in terms))
+        queries = [relation.build_evidence_query("issue", term) for term in terms]
+        self.assertEqual(len(queries), len(terms))
+        self.assertTrue(all(query.count('"') == 2 for query in queries))
+
+
+    def test_evidence_search_terms_are_bounded(self):
+        issue = {
+            "body": (
+                "### 実際の結果\n" + "特徴的な症状記述 " * 30 +
+                "\n### 関連ログ・スクリーンショット・エラーメッセージ\n" +
+                " ".join(f"0x{i:08x}" for i in range(0x80070000, 0x80070010))
+            )
+        }
+        terms = relation.evidence_search_terms(issue)
+        self.assertLessEqual(len(terms), 6)
+        self.assertEqual(len(terms), len(set(terms)))
+
+    def test_search_query_uses_one_quoted_term_without_boolean_join(self):
+        query = relation.build_evidence_query("issue", "distinctive symptom phrase")
+        self.assertEqual(query.count('"'), 2)
+        self.assertNotIn(" OR ", query)
+        self.assertNotIn(" AND ", query)
+        self.assertIn("repo:Akatuki1121/Purge", query)
+        self.assertIn("is:issue", query)
+
+    def test_explicit_issue_lookups_are_capped_at_ten(self):
+        issue = {
+            "number": 999,
+            "title": "Many refs",
+            "body": " ".join(f"#{i}" for i in range(1, 30)),
+        }
+        with patch.object(relation, "direct_issue", return_value=None) as direct_issue, \
+             patch.object(relation, "search_items", return_value=[]) as search_items:
+            result = relation.find_issue_relations(issue)
+        self.assertEqual(result, [])
+        self.assertEqual(direct_issue.call_count, 10)
+        self.assertEqual(search_items.call_count, 0)
 if __name__ == "__main__":
     unittest.main()
