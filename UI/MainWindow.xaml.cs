@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -180,7 +181,8 @@ public partial class MainWindow : FluentWindow
         "DisplayName",
         "PublisherDisplay",
         "DisplayVersion",
-        "InstallLocation"
+        "InstallLocation",
+        "InstallSizeBytes"
     };
 
     private void AppListView_ColumnHeaderClick(object sender, RoutedEventArgs e)
@@ -268,6 +270,76 @@ public partial class MainWindow : FluentWindow
                 item.ResolvePublisher();
             }
         });
+
+        StartInstallSizeScan(items);
+    }
+
+    /// <summary>
+    /// 既知のインストール先フォルダーだけをバックグラウンドで計測する。
+    /// 一覧表示を待たせず、重複パスは1回だけ、同時スキャン数も制限する。
+    /// </summary>
+    private void StartInstallSizeScan(IReadOnlyList<AppListItem> items)
+    {
+        var paths = items
+            .Select(item => NormalizeInstallLocation(item.InstallLocation))
+            .Where(path => path != null)
+            .Select(path => path!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (paths.Length == 0)
+        {
+            return;
+        }
+
+        var view = _appView;
+        _ = Task.Run(() =>
+        {
+            var sizes = new ConcurrentDictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            Parallel.ForEach(
+                paths,
+                new ParallelOptions { MaxDegreeOfParallelism = 2 },
+                path =>
+                {
+                    var size = InstallDirectorySizeCalculator.CalculateBytes(path);
+                    if (size.HasValue)
+                    {
+                        sizes[path] = size.Value;
+                    }
+                });
+
+            Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                foreach (var item in items)
+                {
+                    var path = NormalizeInstallLocation(item.InstallLocation);
+                    item.SetInstallSize(path != null && sizes.TryGetValue(path, out var bytes) ? bytes : null);
+                }
+
+                // サイズ確定後に1回だけ再評価し、サイズ列でのソートも反映する。
+                if (ReferenceEquals(_appView, view))
+                {
+                    view?.Refresh();
+                }
+            });
+        });
+    }
+
+    private static string? NormalizeInstallLocation(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return Path.GetFullPath(path.Trim());
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private bool FilterApp(object item)
