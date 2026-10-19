@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 SCRIPT = Path(__file__).with_name("issue-relation-analysis.py")
 SPEC = importlib.util.spec_from_file_location("issue_relation_analysis", SCRIPT)
@@ -162,5 +163,37 @@ class StrongPRRelationTests(unittest.TestCase):
         self.assertTrue(all(query.count('"') == 2 for query in queries))
 
 
+    def test_evidence_search_terms_are_bounded(self):
+        issue = {
+            "body": (
+                "### 実際の結果\n" + "特徴的な症状記述 " * 30 +
+                "\n### 関連ログ・スクリーンショット・エラーメッセージ\n" +
+                " ".join(f"0x{i:08x}" for i in range(0x80070000, 0x80070010))
+            )
+        }
+        terms = relation.evidence_search_terms(issue)
+        self.assertLessEqual(len(terms), 6)
+        self.assertEqual(len(terms), len(set(terms)))
+
+    def test_search_query_uses_one_quoted_term_without_boolean_join(self):
+        query = relation.build_evidence_query("issue", "distinctive symptom phrase")
+        self.assertEqual(query.count('"'), 2)
+        self.assertNotIn(" OR ", query)
+        self.assertNotIn(" AND ", query)
+        self.assertIn("repo:Akatuki1121/Purge", query)
+        self.assertIn("is:issue", query)
+
+    def test_explicit_issue_lookups_are_capped_at_ten(self):
+        issue = {
+            "number": 999,
+            "title": "Many refs",
+            "body": " ".join(f"#{i}" for i in range(1, 30)),
+        }
+        with patch.object(relation, "direct_issue", return_value=None) as direct_issue, \
+             patch.object(relation, "search_items", return_value=[]) as search_items:
+            result = relation.find_issue_relations(issue)
+        self.assertEqual(result, [])
+        self.assertEqual(direct_issue.call_count, 10)
+        self.assertEqual(search_items.call_count, 0)
 if __name__ == "__main__":
     unittest.main()
