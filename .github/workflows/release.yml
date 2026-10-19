@@ -21,6 +21,7 @@ permissions:
 jobs:
   build-msi:
     runs-on: windows-latest
+    timeout-minutes: 45
     outputs:
       version: ${{ steps.ver.outputs.version }}
       tag: ${{ steps.ver.outputs.tag }}
@@ -100,6 +101,7 @@ jobs:
   final-verify:
     needs: build-msi
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -167,6 +169,7 @@ jobs:
   create-release:
     needs: [build-msi, final-verify]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout release commit
         uses: actions/checkout@v7
@@ -216,6 +219,7 @@ jobs:
   update-state:
     needs: [create-release, build-msi]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
