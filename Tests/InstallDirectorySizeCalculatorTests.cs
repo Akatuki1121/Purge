@@ -30,7 +30,7 @@ public class InstallDirectorySizeCalculatorTests : IDisposable
         var nested = Directory.CreateDirectory(Path.Combine(_root, "nested")).FullName;
         File.WriteAllBytes(Path.Combine(nested, "two.bin"), new byte[30]);
 
-        Assert.Equal(42, InstallDirectorySizeCalculator.CalculateBytes(_root));
+        Assert.Equal(42L, InstallDirectorySizeCalculator.CalculateBytes(_root));
     }
 
     [Fact]
