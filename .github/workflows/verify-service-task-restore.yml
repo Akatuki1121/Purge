@@ -9,10 +9,6 @@ name: Verify Service/Task Restore
 # RemovalRestoreService や検証スクリプトを変更したPRで自動実行し、手動実行もできる。
 
 on:
-concurrency:
-  group: verify-service-task-restore-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
   pull_request:
     paths:
       - "Core/RemovalRestoreService.cs"
@@ -20,6 +16,11 @@ concurrency:
       - "scripts/Verify-ServiceTaskRestore.ps1"
       - ".github/workflows/verify-service-task-restore.yml"
   workflow_dispatch:
+
+concurrency:
+  group: verify-service-task-restore-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 
 jobs:
   verify:
