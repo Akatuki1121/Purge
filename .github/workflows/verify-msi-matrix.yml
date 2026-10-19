@@ -21,6 +21,7 @@ on:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       installer: ${{ steps.changes.outputs.installer }}
     steps:
@@ -39,6 +40,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.installer == 'true' && github.actor != 'dependabot[bot]'
     runs-on: windows-latest
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
