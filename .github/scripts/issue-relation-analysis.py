@@ -364,6 +364,12 @@ def find_related_prs(issue):
     return sorted(found.values(), key=lambda relation: relation["item"]["number"])[:10]
 
 
+def safe_title(value):
+    """Escape untrusted GitHub titles before embedding them in Markdown links."""
+    value = " ".join(str(value or "").splitlines()).replace("<", "").replace(">", "")
+    special = set(chr(92) + "`*_{}[]()#+.!|")
+    return "".join(chr(92) + char if char in special else char for char in value)[:180]
+
 def render(issue, relations, prs, source_fingerprint):
     lines = [
         MARKER,
@@ -377,7 +383,7 @@ def render(issue, relations, prs, source_fingerprint):
     if relations:
         for relation in relations[:10]:
             item = relation["item"]
-            title = (item.get("title") or "(タイトルなし)").replace("[", r"\[").replace("]", r"\]")
+            title = safe_title(item.get("title") or "(タイトルなし)")
             lines.append(f"- [#{item['number']}: {title}]({item.get('html_url', '')})")
             lines.append(f"  - 判定: {relation['kind']}")
             lines.append(f"  - 根拠: {relation['evidence']}")
@@ -388,7 +394,7 @@ def render(issue, relations, prs, source_fingerprint):
     if prs:
         for relation in prs:
             item = relation["item"]
-            title = (item.get("title") or "(タイトルなし)").replace("[", r"\[").replace("]", r"\]")
+            title = safe_title(item.get("title") or "(タイトルなし)")
             state = "merged" if item.get("pull_request", {}).get("merged_at") else item.get("state", "unknown")
             lines.append(f"- [#{item['number']}: {title}]({item.get('html_url', '')}) — {state}")
             lines.append(f"  - 判定: {relation['kind']}")
