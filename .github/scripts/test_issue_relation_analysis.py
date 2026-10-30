@@ -219,7 +219,7 @@ class StrongPRRelationTests(unittest.TestCase):
             "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
             "labels": [{"name": "installer"}],
         }
-        with patch.object(relation, "direct_issue", return_value=None), \\
+        with patch.object(relation, "direct_issue", return_value=None), \
              patch.object(relation, "search_items", return_value=[candidate]) as search:
             result = relation.find_issue_relations(current)
         self.assertEqual(len(result), 1)
@@ -239,7 +239,7 @@ class StrongPRRelationTests(unittest.TestCase):
             "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
             "labels": [{"name": "ui"}],
         }
-        with patch.object(relation, "direct_issue", return_value=None), \\
+        with patch.object(relation, "direct_issue", return_value=None), \
              patch.object(relation, "search_items", side_effect=[[], [candidate]]) as search:
             result = relation.find_issue_relations(current)
         self.assertEqual(len(result), 1)
