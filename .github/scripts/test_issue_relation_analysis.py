@@ -283,5 +283,8 @@ class StrongPRRelationTests(unittest.TestCase):
         self.assertIn("bad" + slash + "]" + slash + "(https://example" + slash + ".invalid" + slash + ")", rendered)
         self.assertIn(slash + "`code" + slash + "` next", rendered)
         self.assertNotIn("bad](https://example.invalid)", rendered)
+        self.assertIn("最大5件の証拠語句を1クエリにまとめ", rendered)
+        self.assertIn("分類ラベルがある場合はラベル付き検索を優先", rendered)
+        self.assertNotIn("証拠語句ごとに個別実行", rendered)
 if __name__ == "__main__":
     unittest.main()
