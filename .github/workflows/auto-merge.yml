@@ -11,7 +11,7 @@ permissions:
 jobs:
   dependabot:
     # PRの作成者を検証する。イベント実行者だけでは判定しない。
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    if: github.event.pull_request.draft == false && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -50,7 +50,7 @@ jobs:
   own:
     # 作成者とイベント実行者の両方が本人の場合だけ対象にする。
     # ワークフロー生成PRは、それを作成した専用ワークフロー側で制御する。
-    if: github.event.pull_request.user.login == 'Akatuki1121' && github.actor == 'Akatuki1121'
+    if: github.event.pull_request.draft == false && github.event.pull_request.user.login == 'Akatuki1121' && github.actor == 'Akatuki1121'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
