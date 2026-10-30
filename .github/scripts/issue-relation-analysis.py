@@ -179,7 +179,7 @@ def relation_evidence(current, candidate):
 
 
 def evidence_search_terms(issue, limit=6):
-    """Return separate evidence terms; never combine them with OR/AND into one query."""
+    """Return a bounded set of distinctive evidence terms for grouped GitHub search."""
     signatures = sorted(issue_signatures(issue))
     fields = parse_fields(issue.get("body", ""))
     phrases = actual_search_phrases(fields.get("actual", ""))
@@ -192,14 +192,36 @@ def evidence_search_terms(issue, limit=6):
 
 
 def build_evidence_query(kind, term, category=None):
-    """Build one bounded GitHub search query for one term (no boolean operators)."""
+    """Build a GitHub search query for one quoted evidence term."""
     escaped = term.replace("\\", "\\\\").replace('"', '\\"')
     query = f'repo:{REPO} is:{kind} in:title,body "{escaped}"'
     if category:
-        query += f" label:{category}"
-    # GitHub Search rejects queries with more than five boolean operators. This builder
-    # deliberately emits one evidence term per request and never joins terms with OR.
+        query += f' label:"{category}"'
     return query
+
+
+def build_evidence_queries(kind, terms, category=None):
+    """Build at most two bounded searches: category-first, then an unfiltered fallback."""
+    selected = []
+    for term in terms:
+        term = normalize(term)
+        if term and term not in selected:
+            selected.append(term)
+        if len(selected) >= 5:
+            break
+    if not selected:
+        return []
+
+    alternatives = " OR ".join(
+        '"' + term.replace("\\", "\\\\").replace('"', '\\"') + '"'
+        for term in selected
+    )
+    base = f"repo:{REPO} is:{kind} in:title,body ({alternatives})"
+    queries = []
+    if category:
+        queries.append(base + f' label:"{category}"')
+    queries.append(base)
+    return list(dict.fromkeys(queries))[:2]
 
 
 def pr_relation_evidence(issue, candidate):
@@ -286,21 +308,27 @@ def find_issue_relations(issue):
                 "evidence": f"本文またはタイトルに #{number} の参照があります。",
             }
 
-    # Search each exact signature/phrase separately without label scoping. This avoids
-    # missing a strong match due to an incorrect/missing label and bounds search API use.
-    # Every query contains one evidence term; the repository is never enumerated.
-    for term in evidence_search_terms(issue):
-        query = build_evidence_query("issue", term)
+    # Search up to five distinctive terms in one OR query. If a category label is
+    # available, try it first and run one unfiltered fallback only when no strong
+    # candidate was found. Evidence validation remains strict after retrieval.
+    labels = labels_of(issue)
+    category = next((label for label in sorted(CATEGORY_LABELS) if label in labels), None)
+    queries = build_evidence_queries("issue", evidence_search_terms(issue), category)
+    for query in queries:
+        matched_by_search = False
         for item in search_items(query):
             if item.get("number") == current_number or "pull_request" in item:
                 continue
             evidence = relation_evidence(issue, item)
             if evidence:
+                matched_by_search = True
                 relations.setdefault(item["number"], {
                     "item": item,
                     "kind": "同じ症状の強い一致",
                     "evidence": evidence,
                 })
+        if matched_by_search:
+            break
 
     return sorted(relations.values(), key=lambda relation: relation["item"]["number"])
 
@@ -321,10 +349,9 @@ def find_related_prs(issue):
             }
 
     # A PR without a direct reference is only a candidate when the same distinctive
-    # error identifier or long symptom phrase appears in its title/body. Each term is
-    # queried independently; never construct a large OR query.
-    for term in evidence_search_terms(issue):
-        query = build_evidence_query("pr", term)
+    # error identifier or long symptom phrase appears in its title/body. Search at most
+    # five terms in one OR query, then apply the same strict evidence validation.
+    for query in build_evidence_queries("pr", evidence_search_terms(issue)):
         for item in search_items(query):
             evidence = pr_relation_evidence(issue, item)
             if evidence:
@@ -336,6 +363,12 @@ def find_related_prs(issue):
 
     return sorted(found.values(), key=lambda relation: relation["item"]["number"])[:10]
 
+
+def safe_title(value):
+    """Escape untrusted GitHub titles before embedding them in Markdown links."""
+    value = " ".join(str(value or "").splitlines()).replace("<", "").replace(">", "")
+    special = set(chr(92) + "`*_{}[]()#+.!|")
+    return "".join(chr(92) + char if char in special else char for char in value)[:180]
 
 def render(issue, relations, prs, source_fingerprint):
     lines = [
@@ -350,7 +383,7 @@ def render(issue, relations, prs, source_fingerprint):
     if relations:
         for relation in relations[:10]:
             item = relation["item"]
-            title = (item.get("title") or "(タイトルなし)").replace("[", r"\[").replace("]", r"\]")
+            title = safe_title(item.get("title") or "(タイトルなし)")
             lines.append(f"- [#{item['number']}: {title}]({item.get('html_url', '')})")
             lines.append(f"  - 判定: {relation['kind']}")
             lines.append(f"  - 根拠: {relation['evidence']}")
@@ -361,7 +394,7 @@ def render(issue, relations, prs, source_fingerprint):
     if prs:
         for relation in prs:
             item = relation["item"]
-            title = (item.get("title") or "(タイトルなし)").replace("[", r"\[").replace("]", r"\]")
+            title = safe_title(item.get("title") or "(タイトルなし)")
             state = "merged" if item.get("pull_request", {}).get("merged_at") else item.get("state", "unknown")
             lines.append(f"- [#{item['number']}: {title}]({item.get('html_url', '')}) — {state}")
             lines.append(f"  - 判定: {relation['kind']}")
@@ -376,7 +409,8 @@ def render(issue, relations, prs, source_fingerprint):
         "- 同じ原因・同じ修正で直ること: 自動確定しない",
         "- PR: Issue への明示参照、または同一のエラー識別子・特徴的な症状記述がタイトル/本文にある場合のみ候補表示",
         "- Issue のラベル・状態・他の Issue の状態は変更しない",
-        "- GitHub 検索は証拠語句ごとに個別実行し、OR 演算子の上限に依存しない",
+        "- GitHub 検索は最大5件の証拠語句を1クエリにまとめ、OR演算子を最大4個に制限",
+        "- 分類ラベルがある場合はラベル付き検索を優先し、強い候補がなければラベルなし検索を1回だけ実行",
     ]
     return "\n".join(lines)
 

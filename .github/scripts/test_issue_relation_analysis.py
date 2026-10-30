@@ -153,15 +153,26 @@ class StrongPRRelationTests(unittest.TestCase):
         pr = {"title": "fix: application file handling", "body": "Improve startup behavior"}
         self.assertIsNone(relation.pr_relation_evidence(issue, pr))
 
-    def test_search_terms_are_separate_not_joined_with_or(self):
-        issue = {"body": "### 実際の結果\nインストーラー完了画面でPurgeを起動すると、起動のたびにUACの確認が出る。\n### 関連ログ・スクリーンショット・エラーメッセージ\nHRESULT: 0x80070005"}
-        terms = relation.evidence_search_terms(issue)
-        self.assertGreater(len(terms), 1)
-        self.assertTrue(all(" OR " not in term for term in terms))
-        queries = [relation.build_evidence_query("issue", term) for term in terms]
-        self.assertEqual(len(queries), len(terms))
-        self.assertTrue(all(query.count('"') == 2 for query in queries))
+    def test_search_queries_group_up_to_five_terms_and_scope_category_first(self):
+        queries = relation.build_evidence_queries(
+            "issue",
+            ["0x80070005", "インストーラー完了画面", "UAC確認", "起動失敗", "アクセス拒否", "sixth-term"],
+            "installer",
+        )
+        self.assertEqual(len(queries), 2)
+        self.assertIn('label:"installer"', queries[0])
+        self.assertNotIn("label:", queries[1])
+        self.assertEqual(queries[0].count(" OR "), 4)
+        self.assertEqual(queries[1].count(" OR "), 4)
+        self.assertNotIn("sixth-term", queries[0])
+        self.assertNotIn("sixth-term", queries[1])
 
+    def test_search_queries_without_category_use_one_bounded_query(self):
+        queries = relation.build_evidence_queries("issue", [f"term-{i}" for i in range(8)])
+        self.assertEqual(len(queries), 1)
+        self.assertEqual(queries[0].count(" OR "), 4)
+        self.assertIn("repo:Akatuki1121/Purge", queries[0])
+        self.assertIn("is:issue", queries[0])
 
     def test_evidence_search_terms_are_bounded(self):
         issue = {
@@ -195,5 +206,85 @@ class StrongPRRelationTests(unittest.TestCase):
         self.assertEqual(result, [])
         self.assertEqual(direct_issue.call_count, 10)
         self.assertEqual(search_items.call_count, 0)
+    def test_category_search_stops_before_fallback_after_strong_match(self):
+        current = {
+            "number": 999,
+            "title": "Installer startup failure",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
+            "labels": [{"name": "installer"}],
+        }
+        candidate = {
+            "number": 1000,
+            "title": "Installer startup failure",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
+            "labels": [{"name": "installer"}],
+        }
+        with patch.object(relation, "direct_issue", return_value=None), \
+             patch.object(relation, "search_items", return_value=[candidate]) as search:
+            result = relation.find_issue_relations(current)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(search.call_count, 1)
+        self.assertIn('label:"installer"', search.call_args.args[0])
+
+    def test_category_search_falls_back_once_when_no_strong_match(self):
+        current = {
+            "number": 999,
+            "title": "Installer startup failure",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
+            "labels": [{"name": "installer"}],
+        }
+        candidate = {
+            "number": 1000,
+            "title": "Installer startup failure",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
+            "labels": [{"name": "ui"}],
+        }
+        with patch.object(relation, "direct_issue", return_value=None), \
+             patch.object(relation, "search_items", side_effect=[[], [candidate]]) as search:
+            result = relation.find_issue_relations(current)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(search.call_count, 2)
+        self.assertIn('label:"installer"', search.call_args_list[0].args[0])
+        self.assertNotIn("label:", search.call_args_list[1].args[0])
+
+    def test_pr_search_uses_one_bounded_evidence_query(self):
+        issue = {
+            "number": 999,
+            "title": "Installer startup failure",
+            "body": "### 実際の結果\nInstaller failed with HRESULT 0x80070005 during package launch",
+        }
+        candidate = {
+            "number": 1001,
+            "title": "fix: handle HRESULT 0x80070005 during installation",
+            "body": "Permission failure during package launch",
+            "pull_request": {"merged_at": None},
+        }
+        with patch.object(relation, "search_items", side_effect=[[], [candidate]]) as search:
+            result = relation.find_related_prs(issue)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(search.call_count, 2)  # explicit-reference search + one evidence search
+        evidence_query = search.call_args_list[1].args[0]
+        self.assertIn("is:pr", evidence_query)
+        self.assertLessEqual(evidence_query.count(" OR "), 4)
+
+    def test_render_escapes_untrusted_titles_in_markdown_links(self):
+        issue = {"number": 1, "title": "Current"}
+        candidate = {
+            "item": {
+                "number": 2,
+                "title": "bad](https://example.invalid) `code`\nnext",
+                "html_url": "https://github.com/Akatuki1121/Purge/issues/2",
+            },
+            "kind": "同じ症状の強い一致",
+            "evidence": "一致した識別子",
+        }
+        rendered = relation.render(issue, [candidate], [], "fingerprint")
+        slash = chr(92)
+        self.assertIn("bad" + slash + "]" + slash + "(https://example" + slash + ".invalid" + slash + ")", rendered)
+        self.assertIn(slash + "`code" + slash + "` next", rendered)
+        self.assertNotIn("bad](https://example.invalid)", rendered)
+        self.assertIn("最大5件の証拠語句を1クエリにまとめ", rendered)
+        self.assertIn("分類ラベルがある場合はラベル付き検索を優先", rendered)
+        self.assertNotIn("証拠語句ごとに個別実行", rendered)
 if __name__ == "__main__":
     unittest.main()
