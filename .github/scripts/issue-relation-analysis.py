@@ -360,9 +360,7 @@ def find_related_prs(issue):
                     "kind": "同じ根拠を含む PR 候補",
                     "evidence": evidence,
                 })
-        break
-
-    return sorted(found.values(), key=lambda relation: relation["item"]["number"])[:10]
+\n    return sorted(found.values(), key=lambda relation: relation["item"]["number"])[:10]
 
 
 def render(issue, relations, prs, source_fingerprint):
