@@ -272,7 +272,7 @@ class StrongPRRelationTests(unittest.TestCase):
         candidate = {
             "item": {
                 "number": 2,
-                "title": "bad](https://example.invalid) `code`\\nnext",
+                "title": "bad](https://example.invalid) `code`\nnext",
                 "html_url": "https://github.com/Akatuki1121/Purge/issues/2",
             },
             "kind": "同じ症状の強い一致",
