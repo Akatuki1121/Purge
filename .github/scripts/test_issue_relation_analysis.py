@@ -153,7 +153,7 @@ class StrongPRRelationTests(unittest.TestCase):
         pr = {"title": "fix: application file handling", "body": "Improve startup behavior"}
         self.assertIsNone(relation.pr_relation_evidence(issue, pr))
 
-        def test_search_queries_group_up_to_five_terms_and_scope_category_first(self):
+    def test_search_queries_group_up_to_five_terms_and_scope_category_first(self):
         queries = relation.build_evidence_queries(
             "issue",
             ["0x80070005", "インストーラー完了画面", "UAC確認", "起動失敗", "アクセス拒否", "sixth-term"],
@@ -210,13 +210,13 @@ class StrongPRRelationTests(unittest.TestCase):
         current = {
             "number": 999,
             "title": "Installer startup failure",
-            "body": "### 実際の結果\\nインストーラー完了画面でUAC確認が毎回表示される",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
             "labels": [{"name": "installer"}],
         }
         candidate = {
             "number": 1000,
             "title": "Installer startup failure",
-            "body": "### 実際の結果\\nインストーラー完了画面でUAC確認が毎回表示される",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
             "labels": [{"name": "installer"}],
         }
         with patch.object(relation, "direct_issue", return_value=None), \\
@@ -230,13 +230,13 @@ class StrongPRRelationTests(unittest.TestCase):
         current = {
             "number": 999,
             "title": "Installer startup failure",
-            "body": "### 実際の結果\\nインストーラー完了画面でUAC確認が毎回表示される",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
             "labels": [{"name": "installer"}],
         }
         candidate = {
             "number": 1000,
             "title": "Installer startup failure",
-            "body": "### 実際の結果\\nインストーラー完了画面でUAC確認が毎回表示される",
+            "body": "### 実際の結果\nインストーラー完了画面でUAC確認が毎回表示される",
             "labels": [{"name": "ui"}],
         }
         with patch.object(relation, "direct_issue", return_value=None), \\
