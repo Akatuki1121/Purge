@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   analyze:
-    if: github.event.issue.pull_request == null && github.event.issue.number != 178
+    if: github.event.issue.pull_request == null && github.event.issue.number != 178 && (github.event.action != 'edited' || vars.SEARCH_RELATED_ISSUES_ON_EDIT != 'false')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
