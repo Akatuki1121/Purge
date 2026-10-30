@@ -267,5 +267,21 @@ class StrongPRRelationTests(unittest.TestCase):
         self.assertIn("is:pr", evidence_query)
         self.assertLessEqual(evidence_query.count(" OR "), 4)
 
+    def test_render_escapes_untrusted_titles_in_markdown_links(self):
+        issue = {"number": 1, "title": "Current"}
+        candidate = {
+            "item": {
+                "number": 2,
+                "title": "bad](https://example.invalid) `code`\\nnext",
+                "html_url": "https://github.com/Akatuki1121/Purge/issues/2",
+            },
+            "kind": "同じ症状の強い一致",
+            "evidence": "一致した識別子",
+        }
+        rendered = relation.render(issue, [candidate], [], "fingerprint")
+        slash = chr(92)
+        self.assertIn("bad" + slash + "]" + slash + "(https://example.invalid" + slash + ")", rendered)
+        self.assertIn(slash + "`code" + slash + "` next", rendered)
+        self.assertNotIn("bad](https://example.invalid)", rendered)
 if __name__ == "__main__":
     unittest.main()
