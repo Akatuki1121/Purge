@@ -247,5 +247,25 @@ class StrongPRRelationTests(unittest.TestCase):
         self.assertIn('label:"installer"', search.call_args_list[0].args[0])
         self.assertNotIn("label:", search.call_args_list[1].args[0])
 
+    def test_pr_search_uses_one_bounded_evidence_query(self):
+        issue = {
+            "number": 999,
+            "title": "Installer startup failure",
+            "body": "### 実際の結果\\nInstaller failed with HRESULT 0x80070005 during package launch",
+        }
+        candidate = {
+            "number": 1001,
+            "title": "fix: handle HRESULT 0x80070005 during installation",
+            "body": "Permission failure during package launch",
+            "pull_request": {"merged_at": None},
+        }
+        with patch.object(relation, "search_items", side_effect=[[], [candidate]]) as search:
+            result = relation.find_related_prs(issue)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(search.call_count, 2)  # explicit-reference search + one evidence search
+        evidence_query = search.call_args_list[1].args[0]
+        self.assertIn("is:pr", evidence_query)
+        self.assertLessEqual(evidence_query.count(" OR "), 4)
+
 if __name__ == "__main__":
     unittest.main()
