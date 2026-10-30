@@ -192,14 +192,36 @@ def evidence_search_terms(issue, limit=6):
 
 
 def build_evidence_query(kind, term, category=None):
-    """Build one bounded GitHub search query for one term (no boolean operators)."""
+    """Build a GitHub search query for one quoted evidence term."""
     escaped = term.replace("\\", "\\\\").replace('"', '\\"')
     query = f'repo:{REPO} is:{kind} in:title,body "{escaped}"'
     if category:
-        query += f" label:{category}"
-    # GitHub Search rejects queries with more than five boolean operators. This builder
-    # deliberately emits one evidence term per request and never joins terms with OR.
+        query += f' label:"{category}"'
     return query
+
+
+def build_evidence_queries(kind, terms, category=None):
+    """Build at most two bounded searches: category-first, then an unfiltered fallback."""
+    selected = []
+    for term in terms:
+        term = normalize(term)
+        if term and term not in selected:
+            selected.append(term)
+        if len(selected) >= 5:
+            break
+    if not selected:
+        return []
+
+    alternatives = " OR ".join(
+        '"' + term.replace("\\", "\\\\").replace('"', '\\"') + '"'
+        for term in selected
+    )
+    base = f"repo:{REPO} is:{kind} in:title,body ({alternatives})"
+    queries = []
+    if category:
+        queries.append(base + f' label:"{category}"')
+    queries.append(base)
+    return list(dict.fromkeys(queries))[:2]
 
 
 def pr_relation_evidence(issue, candidate):
@@ -286,21 +308,27 @@ def find_issue_relations(issue):
                 "evidence": f"本文またはタイトルに #{number} の参照があります。",
             }
 
-    # Search each exact signature/phrase separately without label scoping. This avoids
-    # missing a strong match due to an incorrect/missing label and bounds search API use.
-    # Every query contains one evidence term; the repository is never enumerated.
-    for term in evidence_search_terms(issue):
-        query = build_evidence_query("issue", term)
+    # Search up to five distinctive terms in one OR query. If a category label is
+    # available, try it first and run one unfiltered fallback only when no strong
+    # candidate was found. Evidence validation remains strict after retrieval.
+    labels = labels_of(issue)
+    category = next((label for label in sorted(CATEGORY_LABELS) if label in labels), None)
+    queries = build_evidence_queries("issue", evidence_search_terms(issue), category)
+    for query in queries:
+        matched_by_search = False
         for item in search_items(query):
             if item.get("number") == current_number or "pull_request" in item:
                 continue
             evidence = relation_evidence(issue, item)
             if evidence:
+                matched_by_search = True
                 relations.setdefault(item["number"], {
                     "item": item,
                     "kind": "同じ症状の強い一致",
                     "evidence": evidence,
                 })
+        if matched_by_search:
+            break
 
     return sorted(relations.values(), key=lambda relation: relation["item"]["number"])
 
@@ -321,10 +349,9 @@ def find_related_prs(issue):
             }
 
     # A PR without a direct reference is only a candidate when the same distinctive
-    # error identifier or long symptom phrase appears in its title/body. Each term is
-    # queried independently; never construct a large OR query.
-    for term in evidence_search_terms(issue):
-        query = build_evidence_query("pr", term)
+    # error identifier or long symptom phrase appears in its title/body. Search at most
+    # five terms in one OR query, then apply the same strict evidence validation.
+    for query in build_evidence_queries("pr", evidence_search_terms(issue)):
         for item in search_items(query):
             evidence = pr_relation_evidence(issue, item)
             if evidence:
@@ -333,6 +360,7 @@ def find_related_prs(issue):
                     "kind": "同じ根拠を含む PR 候補",
                     "evidence": evidence,
                 })
+        break
 
     return sorted(found.values(), key=lambda relation: relation["item"]["number"])[:10]
 
