@@ -179,7 +179,7 @@ def relation_evidence(current, candidate):
 
 
 def evidence_search_terms(issue, limit=6):
-    """Return separate evidence terms; never combine them with OR/AND into one query."""
+    """Return a bounded set of distinctive evidence terms for grouped GitHub search."""
     signatures = sorted(issue_signatures(issue))
     fields = parse_fields(issue.get("body", ""))
     phrases = actual_search_phrases(fields.get("actual", ""))
@@ -409,7 +409,8 @@ def render(issue, relations, prs, source_fingerprint):
         "- 同じ原因・同じ修正で直ること: 自動確定しない",
         "- PR: Issue への明示参照、または同一のエラー識別子・特徴的な症状記述がタイトル/本文にある場合のみ候補表示",
         "- Issue のラベル・状態・他の Issue の状態は変更しない",
-        "- GitHub 検索は証拠語句ごとに個別実行し、OR 演算子の上限に依存しない",
+        "- GitHub 検索は最大5件の証拠語句を1クエリにまとめ、OR演算子を最大4個に制限",
+        "- 分類ラベルがある場合はラベル付き検索を優先し、強い候補がなければラベルなし検索を1回だけ実行",
     ]
     return "\n".join(lines)
 
