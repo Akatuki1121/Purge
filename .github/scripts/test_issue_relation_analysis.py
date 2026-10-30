@@ -280,7 +280,7 @@ class StrongPRRelationTests(unittest.TestCase):
         }
         rendered = relation.render(issue, [candidate], [], "fingerprint")
         slash = chr(92)
-        self.assertIn("bad" + slash + "]" + slash + "(https://example.invalid" + slash + ")", rendered)
+        self.assertIn("bad" + slash + "]" + slash + "(https://example" + slash + ".invalid" + slash + ")", rendered)
         self.assertIn(slash + "`code" + slash + "` next", rendered)
         self.assertNotIn("bad](https://example.invalid)", rendered)
 if __name__ == "__main__":
