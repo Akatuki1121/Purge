@@ -251,7 +251,7 @@ class StrongPRRelationTests(unittest.TestCase):
         issue = {
             "number": 999,
             "title": "Installer startup failure",
-            "body": "### 実際の結果\\nInstaller failed with HRESULT 0x80070005 during package launch",
+            "body": "### 実際の結果\nInstaller failed with HRESULT 0x80070005 during package launch",
         }
         candidate = {
             "number": 1001,
