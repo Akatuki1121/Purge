@@ -35,11 +35,11 @@ Your choice is kept across restarts and reinstalls.
 > Purge is currently not code-signed, so Windows SmartScreen may show a warning.
 > Choose "More info" → "Run anyway" to continue.
 
-The first time you use Purge, "Safe mode" is turned on.
+Every time you launch Purge, it starts with "Safe mode" turned on.
 While it is on, pressing the buttons does not actually delete anything,
 so you can check what would be found before moving on to real deletion.
 
-| Safe mode (default) | Execute mode (really deletes) |
+| Safe mode (at launch) | Execute mode (really deletes) |
 |---|---|
 | ![Safe mode screen](./assets/screenshots/main-safe-mode-en.png) | ![Execute mode screen](./assets/screenshots/main-execute-mode-en.png) |
 
