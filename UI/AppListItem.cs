@@ -48,7 +48,9 @@ namespace Purge.UI
         {
             App = app;
             _publisher = app.Publisher;
-            _installSizeResolved = string.IsNullOrWhiteSpace(app.InstallLocation);
+            // サイズは全件スキャンで確定する。InstallLocation が空でも導出や
+            // EstimatedSize で埋まる可能性があるため、最初から「不明」にはしない。
+            _installSizeResolved = false;
         }
 
         /// <summary>

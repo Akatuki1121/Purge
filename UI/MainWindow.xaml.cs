@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
@@ -276,15 +276,21 @@ public partial class MainWindow : FluentWindow
     }
 
     /// <summary>
-    /// 既知のインストール先フォルダーだけをバックグラウンドで計測する。
-    /// 一覧表示を待たせず、重複パスは1回だけ、同時スキャン数も制限する。
+    /// インストール先フォルダーのサイズをバックグラウンドで計測する。
+    /// $MFT 索引（ドライブごとに1回構築）→ 実走査 → レジストリの EstimatedSize の順に試し、
+    /// 一覧表示を待たせず、重複パスは1回だけ測る。
     /// </summary>
     private void StartInstallSizeScan(IReadOnlyList<AppListItem> items)
     {
-        var paths = items
-            .Select(item => NormalizeInstallLocation(item.InstallLocation))
-            .Where(path => path != null)
-            .Select(path => path!)
+        // 計測対象のフォルダーをアプリごとに決める。InstallLocation が使えない場合は
+        // UninstallString / DisplayIcon から本体フォルダーを導出する。
+        var targets = items
+            .Select(item => (Item: item, Path: NormalizeInstallLocation(item.InstallLocation)
+                ?? NormalizeInstallLocation(InstallDirectoryDeriver.Derive(item.App))))
+            .ToArray();
+        var paths = targets
+            .Where(target => target.Path != null)
+            .Select(target => target.Path!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -292,8 +298,30 @@ public partial class MainWindow : FluentWindow
         _ = Task.Run(() =>
         {
             var sizes = new ConcurrentDictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+            // 第1段: $MFT 索引。ドライブごとに1回だけ構築し、引けるフォルダーは即座に確定する。
+            // ACL で読めないサブフォルダーがあっても全体が不明にならないのが実走査との違い。
+            var unresolvedPaths = new List<string>();
+            foreach (var driveGroup in paths.GroupBy(path => Path.GetPathRoot(path) ?? string.Empty))
+            {
+                var index = MftSizeIndex.TryBuild(driveGroup.Key, _log);
+                foreach (var path in driveGroup)
+                {
+                    var size = index?.GetFolderSizeBytes(path);
+                    if (size.HasValue)
+                    {
+                        sizes[path] = size.Value;
+                    }
+                    else
+                    {
+                        unresolvedPaths.Add(path);
+                    }
+                }
+            }
+
+            // 第2段: 索引で引けなかった分だけ、従来の実走査で測る。
             Parallel.ForEach(
-                paths,
+                unresolvedPaths,
                 new ParallelOptions { MaxDegreeOfParallelism = 2 },
                 path =>
                 {
@@ -306,10 +334,13 @@ public partial class MainWindow : FluentWindow
 
             Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
-                foreach (var item in items)
+                foreach (var (item, path) in targets)
                 {
-                    var path = NormalizeInstallLocation(item.InstallLocation);
-                    item.SetInstallSize(path != null && sizes.TryGetValue(path, out var bytes) ? bytes : null);
+                    // 第3段: それでも実測できない場合は、レジストリの EstimatedSize を最後の手がかりにする。
+                    long? bytes = path != null && sizes.TryGetValue(path, out var measured)
+                        ? measured
+                        : item.App.EstimatedSizeBytes;
+                    item.SetInstallSize(bytes);
                 }
 
                 // サイズ確定後に1回だけ再評価し、サイズ列でのソートも反映する。

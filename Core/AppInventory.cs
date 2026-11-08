@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Win32;
 
@@ -15,6 +15,13 @@ namespace Purge
         public string? InstallLocation { get; init; }
         public string? UninstallString { get; init; }
         public string? DisplayIconPath { get; init; }
+
+        /// <summary>
+        /// レジストリの EstimatedSize（インストーラーの自己申告値、キロバイト単位）をバイトに換算したもの。
+        /// 実測できない場合の最後の手がかりであり、実測値より精度は落ちる。未登録・0 の場合は null。
+        /// </summary>
+        public long? EstimatedSizeBytes { get; init; }
+
         public string RegistryKeyPath { get; init; } = "";
         public bool IsStorePackage { get; init; }
         public string? PackageFullName { get; init; }
@@ -72,6 +79,20 @@ namespace Purge
             return apps;
         }
 
+        /// <summary>
+        /// レジストリの EstimatedSize（DWORD、キロバイト単位）をバイトへ換算する。
+        /// 未登録・0・想定外の型の場合は null。
+        /// </summary>
+        private static long? ToEstimatedSizeBytes(object? rawValue)
+        {
+            if (rawValue is int kilobytes && kilobytes > 0)
+            {
+                return kilobytes * WellKnownConstants.RegistryValueNames.EstimatedSizeBytesPerKilobyte;
+            }
+
+            return null;
+        }
+
         private void ScanUninstallKey(RegistryHive hive, string subKeyPath, List<InstalledApp> apps, HashSet<string> seenNames)
         {
             var fullPath = $@"{hive}\{subKeyPath}";
@@ -119,6 +140,7 @@ namespace Purge
                             InstallLocation = appKey.GetValue(WellKnownConstants.RegistryValueNames.InstallLocation) as string,
                             UninstallString = appKey.GetValue(WellKnownConstants.RegistryValueNames.UninstallString) as string,
                             DisplayIconPath = appKey.GetValue(WellKnownConstants.RegistryValueNames.DisplayIcon) as string,
+                            EstimatedSizeBytes = ToEstimatedSizeBytes(appKey.GetValue(WellKnownConstants.RegistryValueNames.EstimatedSize)),
                             RegistryKeyPath = $@"{fullPath}\{subKeyName}",
                         };
 

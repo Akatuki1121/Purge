@@ -1,4 +1,4 @@
-namespace Purge
+﻿namespace Purge
 {
     /// <summary>
     /// レジストリ値名・外部プロセス名・環境変数名など、複数クラスにまたがって
@@ -17,7 +17,11 @@ namespace Purge
             public const string InstallLocation = "InstallLocation";
             public const string UninstallString = "UninstallString";
             public const string DisplayIcon = "DisplayIcon";
+            public const string EstimatedSize = "EstimatedSize";
             public const string SystemComponent = "SystemComponent";
+
+            /// <summary>EstimatedSize の単位はキロバイト。バイトへの換算係数。</summary>
+            public const long EstimatedSizeBytesPerKilobyte = 1024;
 
             /// <summary>SystemComponent値がこの値の場合、システムコンポーネントとして一覧から除外する。</summary>
             public const int SystemComponentTrueValue = 1;
